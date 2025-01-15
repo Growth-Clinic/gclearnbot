@@ -1,0 +1,5 @@
+# Always use LF for scripts
+*.sh text eol=lf
+
+# Use native line endings for everything else
+* text=auto
