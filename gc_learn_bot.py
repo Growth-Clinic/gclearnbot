@@ -436,9 +436,7 @@ def handle_message(update: Update, context: CallbackContext):
 
 # Set up the bot
 def main():
-    # Get token from environment variable
-    TOKEN = os.getenv("7865567051:AAENPgQ1cmYeJGY4IAQTdjwG-Hoyrwfu9P8")
-    updater = Updater("TOKEN", use_context=True)
+    updater = Updater("7865567051:AAH0i08bEq_jM14doJuh2a88lkYszryBufM", use_context=True)
     dp = updater.dispatcher
 
     dp.add_handler(CommandHandler("start", start))
