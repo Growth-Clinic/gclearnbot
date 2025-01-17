@@ -1,12 +1,13 @@
-from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
+from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, BotCommand, ParseMode
 from telegram.ext import Updater, CommandHandler, CallbackQueryHandler, MessageHandler, Filters, CallbackContext
 import os
-from flask import Flask, jsonify
+from flask import Flask, jsonify, request
 import threading
-import sys
-from pathlib import Path
 import json
 from datetime import datetime
+from pathlib import Path
+import pandas as pd
+import sys
 
 
 
@@ -31,6 +32,112 @@ def is_already_running():
 
 # Create Flask app
 app = Flask(__name__)
+
+
+
+# Create directories for storage
+DATA_DIR = Path("bot_data")
+DATA_DIR.mkdir(exist_ok=True)
+
+JOURNALS_DIR = DATA_DIR / "learning_journals"
+JOURNALS_DIR.mkdir(exist_ok=True)
+
+USERS_DIR = DATA_DIR / "users"
+USERS_DIR.mkdir(exist_ok=True)
+
+FEEDBACK_DIR = DATA_DIR / "feedback"
+FEEDBACK_DIR.mkdir(exist_ok=True)
+
+# Configure admin users
+ADMIN_IDS = [
+    471827125,  # add other admin Telegram user ID
+]
+
+class UserManager:
+    @staticmethod
+    def save_user_info(user):
+        """Save user information when they start using the bot"""
+        user_file = USERS_DIR / f"user_{user.id}.json"
+        user_data = {
+            "user_id": user.id,
+            "username": user.username,
+            "first_name": user.first_name,
+            "last_name": user.last_name,
+            "language_code": user.language_code,
+            "joined_date": datetime.now().isoformat(),
+            "current_lesson": "lesson_1",
+            "completed_lessons": []
+        }
+        
+        with open(user_file, 'w') as f:
+            json.dump(user_data, f, indent=2)
+        return user_data
+
+    @staticmethod
+    def get_user_info(user_id):
+        """Get user information"""
+        user_file = USERS_DIR / f"user_{user_id}.json"
+        if user_file.exists():
+            with open(user_file) as f:
+                return json.load(f)
+        return None
+
+    @staticmethod
+    def update_user_progress(user_id, lesson_key):
+        """Update user's progress"""
+        user_file = USERS_DIR / f"user_{user_id}.json"
+        if user_file.exists():
+            with open(user_file) as f:
+                user_data = json.load(f)
+            
+            user_data["current_lesson"] = lesson_key
+            if lesson_key not in user_data["completed_lessons"]:
+                user_data["completed_lessons"].append(lesson_key)
+            
+            with open(user_file, 'w') as f:
+                json.dump(user_data, f, indent=2)
+
+class FeedbackManager:
+    @staticmethod
+    def save_feedback(user_id, feedback_text):
+        """Save user feedback"""
+        feedback_file = FEEDBACK_DIR / f"feedback_{datetime.now().strftime('%Y%m%d_%H%M%S')}_{user_id}.json"
+        feedback_data = {
+            "user_id": user_id,
+            "feedback": feedback_text,
+            "timestamp": datetime.now().isoformat()
+        }
+        
+        with open(feedback_file, 'w') as f:
+            json.dump(feedback_data, f, indent=2)
+
+    @staticmethod
+    def get_all_feedback():
+        """Get all feedback"""
+        feedback_list = []
+        for feedback_file in FEEDBACK_DIR.glob("feedback_*.json"):
+            with open(feedback_file) as f:
+                feedback_list.append(json.load(f))
+        return feedback_list
+
+# Task Manager using local JSON storage (could be replaced with Google Sheets integration)
+class TaskManager:
+    TASKS_FILE = DATA_DIR / "tasks.json"
+    
+    @staticmethod
+    def load_tasks():
+        """Load tasks from storage"""
+        if TaskManager.TASKS_FILE.exists():
+            with open(TaskManager.TASKS_FILE) as f:
+                return json.load(f)
+        return {"tasks": []}
+
+    @staticmethod
+    def get_tasks_for_lesson(lesson_key):
+        """Get relevant tasks for a lesson"""
+        tasks = TaskManager.load_tasks()
+        return [task for task in tasks["tasks"] 
+                if task["lesson"] == lesson_key and task["is_active"]]
 
 
 
@@ -475,9 +582,22 @@ Reply 📝 with your answers to close the sprint.
 user_data = {}
 
 def start(update: Update, context: CallbackContext):
-    """Send the first lesson."""
-    chat_id = update.message.chat_id
-    user_data[chat_id] = "lesson_1"  # Start at lesson 1
+    """Start command handler"""
+    user = update.message.from_user
+    UserManager.save_user_info(user)
+    
+    welcome_text = """
+Welcome to the Learning Bot! 🎓
+
+Available commands:
+/start - Start or restart the learning journey
+/journal - View your learning journal
+/feedback - Send feedback or questions to us
+/help - Show this help message
+
+Type /start to begin your learning journey!
+    """
+    update.message.reply_text(welcome_text)
     send_lesson(update, context, "lesson_1")
 
 
@@ -616,10 +736,72 @@ async def setup_commands(bot):
 
 
 
+def feedback_command(update: Update, context: CallbackContext):
+    """Handle feedback command"""
+    update.message.reply_text(
+        "Please share your feedback or questions. Your message will be sent to our team."
+    )
+    context.user_data['expecting_feedback'] = True
+
+def handle_feedback(update: Update, context: CallbackContext):
+    """Handle incoming feedback"""
+    if context.user_data.get('expecting_feedback'):
+        FeedbackManager.save_feedback(update.message.from_user.id, update.message.text)
+        update.message.reply_text(
+            "Thank you for your feedback! Our team will review it. 🙏"
+        )
+        context.user_data['expecting_feedback'] = False
+        return True
+    return False
+
+# Admin Commands
+def is_admin(user_id):
+    """Check if user is an admin"""
+    return user_id in ADMIN_IDS
+
+def list_users(update: Update, context: CallbackContext):
+    """Admin command to list all users"""
+    if not is_admin(update.message.from_user.id):
+        update.message.reply_text("This command is only available to admins.")
+        return
+
+    users_list = []
+    for user_file in USERS_DIR.glob("user_*.json"):
+        with open(user_file) as f:
+            users_list.append(json.load(f))
+    
+    report = "📊 Users Report:\n\n"
+    for user in users_list:
+        report += f"👤 User: {user['username'] or user['first_name']}\n"
+        report += f"📝 Current Lesson: {user['current_lesson']}\n"
+        report += f"✅ Completed: {len(user['completed_lessons'])} lessons\n\n"
+    
+    update.message.reply_text(report)
+
+def view_feedback(update: Update, context: CallbackContext):
+    """Admin command to view all feedback"""
+    if not is_admin(update.message.from_user.id):
+        update.message.reply_text("This command is only available to admins.")
+        return
+
+    feedback_list = FeedbackManager.get_all_feedback()
+    report = "📬 Feedback Report:\n\n"
+    for feedback in feedback_list:
+        user = UserManager.get_user_info(feedback['user_id'])
+        report += f"From: {user['username'] if user else 'Unknown'}\n"
+        report += f"Time: {feedback['timestamp']}\n"
+        report += f"Message: {feedback['feedback']}\n\n"
+    
+    update.message.reply_text(report)
+
+
+
 #put Flask in a separate function
 def run_flask():
     port = int(os.environ.get('PORT', 5000))
     app.run(host='0.0.0.0', port=port)
+
+
 
 def error_handler(update: Update, context: CallbackContext):
     """Log Errors caused by Updates."""
@@ -633,19 +815,28 @@ def main():
     dp = updater.dispatcher
 
 
-     # Set up command handlers
+    # Regular user commands
     dp.add_handler(CommandHandler("start", start))
-    dp.add_handler(CommandHandler("journal", get_journal))  # Add journal command
-    dp.add_handler(CommandHandler("help", help_command))  # Add help command
+    dp.add_handler(CommandHandler("journal", get_journal))
+    dp.add_handler(CommandHandler("feedback", feedback_command))
+    dp.add_handler(CommandHandler("help", help_command))
+
+
+    # Admin commands
+    dp.add_handler(CommandHandler("users", list_users))
+    dp.add_handler(CommandHandler("viewfeedback", view_feedback))
+
+
+    # Message handlers
     dp.add_handler(CallbackQueryHandler(handle_response))
     dp.add_handler(MessageHandler(Filters.text & ~Filters.command, handle_message))
-    dp.add_error_handler(error_handler)  # Add error handler
 
 
-# Set up commands in Telegram client
+    # Set up commands in Telegram client
     updater.bot.set_my_commands([
         ("start", "Start or restart the learning journey"),
         ("journal", "View your learning journal"),
+        ("feedback", "Send feedback or questions"),
         ("help", "Show help information")
     ])
 
@@ -653,6 +844,7 @@ def main():
     # Start Flask in a separate thread
     flask_thread = threading.Thread(target=run_flask)
     flask_thread.start()
+
 
     # Start the bot
     print("Bot started successfully!")
