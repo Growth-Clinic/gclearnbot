@@ -3,6 +3,29 @@ from telegram.ext import Updater, CommandHandler, CallbackQueryHandler, MessageH
 import os
 from flask import Flask
 import threading
+import sys
+from pathlib import Path
+
+
+
+# Lock file check
+def is_already_running():
+    lockfile = Path("/tmp/telegram_bot.lock")
+    
+    if lockfile.exists():
+        try:
+            with open(lockfile) as f:
+                pid = int(f.read())
+            os.kill(pid, 0)  # Check if process is running
+            return True
+        except (OSError, ValueError):
+            lockfile.unlink(missing_ok=True)
+    
+    with open(lockfile, 'w') as f:
+        f.write(str(os.getpid()))
+    return False
+
+
 
 # Create Flask app
 app = Flask(__name__)
@@ -10,6 +33,8 @@ app = Flask(__name__)
 @app.route('/')
 def home():
     return "Bot is running!"
+
+
 
 # Define the lessons and steps
 lessons = {
@@ -387,6 +412,8 @@ Reply 📝 with your answers to close the sprint.
 
 }
 
+
+
 # Track user progress
 user_data = {}
 
@@ -395,6 +422,8 @@ def start(update: Update, context: CallbackContext):
     chat_id = update.message.chat_id
     user_data[chat_id] = "lesson_1"  # Start at lesson 1
     send_lesson(update, context, "lesson_1")
+
+
 
 def send_lesson(update: Update, context: CallbackContext, lesson_key: str):
     """Send the lesson content."""
@@ -414,6 +443,8 @@ def send_lesson(update: Update, context: CallbackContext, lesson_key: str):
             ]) if lesson["next"] else None
         )
 
+
+
 def handle_response(update: Update, context: CallbackContext):
     """Handle button responses."""
     query = update.callback_query
@@ -425,6 +456,14 @@ def handle_response(update: Update, context: CallbackContext):
         send_lesson(update, context, next_step)
     else:
         query.edit_message_text(text="Please reply with your input to proceed.")
+
+
+
+def error_handler(update: Update, context: CallbackContext):
+    """Log Errors caused by Updates."""
+    print(f'Update "{update}" caused error "{context.error}"')
+
+
 
 def handle_message(update: Update, context: CallbackContext):
     """Handle user input."""
@@ -439,6 +478,8 @@ def handle_message(update: Update, context: CallbackContext):
     else:
         context.bot.send_message(chat_id, "Use the buttons to navigate.")
 
+
+
 #put Flask in a separate function
 def run_flask():
     port = int(os.environ.get('PORT', 5000))
@@ -447,6 +488,8 @@ def run_flask():
 def error_handler(update: Update, context: CallbackContext):
     """Log Errors caused by Updates."""
     print(f'Update "{update}" caused error "{context.error}"')
+
+
 
 # Set up the bot
 def main():
@@ -465,8 +508,11 @@ def main():
     flask_thread.start()
 
     # Start the bot
+    print("Bot started successfully!")
     updater.start_polling()
     updater.idle()
+
+
 
 if __name__ == "__main__":
     main()
