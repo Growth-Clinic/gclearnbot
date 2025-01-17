@@ -192,30 +192,50 @@ class TaskManager:
                 break
         TaskManager.save_tasks(tasks_data)
 
+
+
+
+def format_task_report(task):
+    """Helper function to format task details without f-strings"""
+    status = "🟢 Active" if task["is_active"] else "🔴 Inactive"
+    lines = [
+        f"Task #{task['id']} ({status})",
+        f"Company: {task['company']}",
+        f"Lesson: {task['lesson']}",
+        f"Description: {task['description']}"
+    ]
+    
+    if task["requirements"]:
+        lines.append("Requirements:")
+        for req in task["requirements"]:
+            lines.append(f"- {req}")
+    
+    return "\n".join(lines)
+
+
+
 def add_task_command(update: Update, context: CallbackContext):
     """Admin command to add a new task"""
     if not is_admin(update.message.from_user.id):
         update.message.reply_text("This command is only available to admins.")
         return
 
-    usage = """
-To add a task, use the following format:
-/addtask lesson_key
-Company Name
-Task Description
-Requirement 1
-Requirement 2
-...
+    usage = (
+        "To add a task, use the following format:\n"
+        "/addtask lesson_key\n"
+        "Company Name\n"
+        "Task Description\n"
+        "Requirement 1\n"
+        "Requirement 2\n"
+        "...\n\n"
+        "Example:\n"
+        "/addtask lesson_2\n"
+        "TechStartup Inc\n"
+        "Design an onboarding flow for our mobile app\n"
+        "- Experience with UX design\n"
+        "- Knowledge of mobile design patterns"
+    )
 
-Example:
-/addtask lesson_2
-TechStartup Inc
-Design an onboarding flow for our mobile app
-- Experience with UX design
-- Knowledge of mobile design patterns
-    """
-
-    # Check if message has the correct format
     try:
         lines = update.message.text.split('\n')
         if len(lines) < 3:
@@ -237,18 +257,20 @@ Design an onboarding flow for our mobile app
         # Add the task
         task = TaskManager.add_task(company, lesson_key, description, requirements)
         
-        # Confirm addition
-        confirmation = f"""
-✅ Task added successfully!
-
-📝 Task Details:
-Company: {task['company']}
-Lesson: {task['lesson']}
-Description: {task['description']}
-
-Requirements:
-{"- " + "\n- ".join(task['requirements']) if task['requirements'] else "None specified"}
-        """
+        # Format confirmation message
+        confirmation_parts = [
+            "✅ Task added successfully!\n",
+            "📝 Task Details:",
+            f"Company: {task['company']}",
+            f"Lesson: {task['lesson']}",
+            f"Description: {task['description']}"
+        ]
+        
+        if task['requirements']:
+            confirmation_parts.append("Requirements:")
+            confirmation_parts.extend(f"- {req}" for req in task['requirements'])
+        
+        confirmation = "\n".join(confirmation_parts)
         update.message.reply_text(confirmation)
 
     except ValueError:
@@ -265,21 +287,12 @@ def list_tasks_command(update: Update, context: CallbackContext):
         update.message.reply_text("No tasks found.")
         return
 
-    report = "📋 All Tasks:\n\n"
+    report_parts = ["📋 All Tasks:\n"]
     for task in tasks_data["tasks"]:
-        status = "🟢 Active" if task["is_active"] else "🔴 Inactive"
-        report += (
-            f"Task #{task['id']} ({status})\n"
-            f"Company: {task['company']}\n"
-            f"Lesson: {task['lesson']}\n"
-            f"Description: {task['description']}\n"
-        )
-        if task["requirements"]:
-            report += "Requirements:\n"
-            for req in task["requirements"]:
-                report += f"- {req}\n"
-        report += "\n"
-
+        report_parts.append(format_task_report(task))
+        report_parts.append("")  # Add blank line between tasks
+    
+    report = "\n".join(report_parts)
     update.message.reply_text(report)
 
 def deactivate_task_command(update: Update, context: CallbackContext):
@@ -398,19 +411,17 @@ def list_journals():
 # Define the lessons and steps
 lessons = {
     "lesson_1": {
-        "text": """👋 Hello and welcome!
-
-We're excited to help you learn how to build and grow products by leveraging communities. Here's how this will work:
-
-✨ You'll complete a series of tasks designed to teach mental models for building your own processes. These mental models include:
-
-- 🧠 Design Thinking
-- 📊 Business Model Thinking
-- 🌍 Market Thinking
-- 👤 User Thinking
-- 🏗️ Agile Project Thinking
-
-Let's start with Design Thinking! Ready? Reply ✅ to continue.""",
+        "text": (
+            "👋 Hello and welcome!\n\n"
+            "We're excited to help you learn how to build and grow products by leveraging communities. Here's how this will work:\n\n"
+            "✨ You'll complete a series of tasks designed to teach mental models for building your own processes. These mental models include:\n\n"
+            "- 🧠 Design Thinking\n"
+            "- 📊 Business Model Thinking\n"
+            "- 🌍 Market Thinking\n"
+            "- 👤 User Thinking\n"
+            "- 🏗️ Agile Project Thinking\n\n"
+            "Let's start with Design Thinking! Ready? Reply ✅ to continue."
+        ),
         "next": "lesson_2"
     },
     "lesson_2": {
