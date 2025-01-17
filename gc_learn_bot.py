@@ -535,6 +535,9 @@ def handle_message(update: Update, context: CallbackContext):
         # Get next step from lessons dictionary
         next_step = lessons[current_step].get("next")
         if next_step:
+            # Update the user's current step in `user_data`
+            user_data[chat_id] = next_step
+
             # Send confirmation and next lesson
             context.bot.send_message(
                 chat_id=chat_id,
