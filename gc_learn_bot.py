@@ -34,6 +34,20 @@ app = Flask(__name__)
 
 
 
+# Global updater instance
+updater = Updater("7865567051:AAH0i08bEq_jM14doJuh2a88lkYszryBufM", use_context=True)
+
+
+
+@app.route('/webhook', methods=['POST'])
+def webhook():
+    """Handle incoming webhook updates from Telegram."""
+    update = Update.de_json(request.get_json(force=True), updater.bot)
+    updater.dispatcher.process_update(update)
+    return jsonify({"status": "ok"})
+
+
+
 # Create directories for storage
 DATA_DIR = Path("bot_data")
 DATA_DIR.mkdir(exist_ok=True)
@@ -1016,8 +1030,9 @@ def error_handler(update: Update, context: CallbackContext):
 
 # Set up the bot
 def main():
-    updater = Updater("7865567051:AAH0i08bEq_jM14doJuh2a88lkYszryBufM", use_context=True)
+    global updater
     dp = updater.dispatcher
+    
 
 
     # Regular user commands
@@ -1049,15 +1064,16 @@ def main():
     ])
 
 
-    # Start Flask in a separate thread
-    flask_thread = threading.Thread(target=run_flask)
-    flask_thread.start()
+    # Set the webhook URL using Render's environment variable
+    webhook_url = f"https://{os.getenv('RENDER_EXTERNAL_URL')}/webhook"
+    updater.bot.delete_webhook()  # Delete any existing webhooks
+    updater.bot.set_webhook(webhook_url)
 
 
-    # Start the bot
-    print("Bot started successfully!")
-    updater.start_polling()
-    updater.idle()
+    print(f"Bot is running and webhook is set to {webhook_url}!")
+
+    # Run Flask directly to handle webhook events
+    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
 
 
 
