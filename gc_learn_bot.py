@@ -398,7 +398,12 @@ def start(update: Update, context: CallbackContext):
 
 def send_lesson(update: Update, context: CallbackContext, lesson_key: str):
     """Send the lesson content."""
-    chat_id = update.message.chat_id
+    # Get chat_id from either message or callback query
+    if update.message:
+        chat_id = update.message.chat_id
+    else:
+        chat_id = update.callback_query.message.chat_id
+        
     lesson = lessons.get(lesson_key)
     if lesson:
         context.bot.send_message(
@@ -412,12 +417,11 @@ def send_lesson(update: Update, context: CallbackContext, lesson_key: str):
 def handle_response(update: Update, context: CallbackContext):
     """Handle button responses."""
     query = update.callback_query
-    chat_id = query.message.chat_id
-    query.answer()
+    query.answer()  # Acknowledge the button press to remove loading state
 
     next_step = query.data
-    if next_step:
-        user_data[chat_id] = next_step
+    if next_step and next_step in lessons:  # Check if next_step exists in lessons
+        user_data[query.message.chat_id] = next_step
         send_lesson(update, context, next_step)
     else:
         query.edit_message_text(text="Please reply with your input to proceed.")
@@ -440,6 +444,10 @@ def run_flask():
     port = int(os.environ.get('PORT', 5000))
     app.run(host='0.0.0.0', port=port)
 
+def error_handler(update: Update, context: CallbackContext):
+    """Log Errors caused by Updates."""
+    print(f'Update "{update}" caused error "{context.error}"')
+
 # Set up the bot
 def main():
     updater = Updater("7865567051:AAH0i08bEq_jM14doJuh2a88lkYszryBufM", use_context=True)
@@ -448,6 +456,9 @@ def main():
     dp.add_handler(CommandHandler("start", start))
     dp.add_handler(CallbackQueryHandler(handle_response))
     dp.add_handler(MessageHandler(Filters.text & ~Filters.command, handle_message))
+
+    # Add error handler
+    dp.add_error_handler(error_handler)
 
     # Start Flask in a separate thread
     flask_thread = threading.Thread(target=run_flask)
