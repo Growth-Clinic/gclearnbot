@@ -412,9 +412,6 @@ def send_lesson(update: Update, context: CallbackContext, lesson_key: str):
 
 
 
-# Simple file-based storage for learning journals
-JOURNALS_DIR = Path("learning_journals")
-JOURNALS_DIR.mkdir(exist_ok=True)
 
 def save_journal_entry(user_id, lesson_key, response):
     db = SessionLocal()
@@ -439,24 +436,51 @@ def home():
 
 
 
-# Add routes to view journals
 @app.route('/journals/<user_id>')
 def view_journal(user_id):
-    journal_file = JOURNALS_DIR / f"journal_{user_id}.json"
-    if journal_file.exists():
-        with open(journal_file) as f:
-            return jsonify(json.load(f))
-    return jsonify({"error": "Journal not found"}), 404
+    db = SessionLocal()
+    try:
+        user = db.query(User).filter(User.telegram_id == int(user_id)).first()
+        if not user:
+            return jsonify({"error": "User not found"}), 404
+
+        entries = db.query(JournalEntry).filter(JournalEntry.user_id == user.id).all()
+        if not entries:
+            return jsonify({"error": "No journal entries found"}), 404
+
+        journal = {
+            "user_id": user.telegram_id,
+            "entries": [
+                {"lesson": entry.lesson, "response": entry.response, "timestamp": entry.timestamp.isoformat()}
+                for entry in entries
+            ]
+        }
+        return jsonify(journal)
+    finally:
+        db.close()
 
 
 
 @app.route('/journals')
 def list_journals():
-    journals = []
-    for journal_file in JOURNALS_DIR.glob("journal_*.json"):
-        with open(journal_file) as f:
-            journals.append(json.load(f))
-    return jsonify(journals)
+    db = SessionLocal()
+    try:
+        users = db.query(User).all()
+        journals = []
+        for user in users:
+            entries = db.query(JournalEntry).filter(JournalEntry.user_id == user.id).all()
+            if entries:
+                journal = {
+                    "user_id": user.telegram_id,
+                    "entries": [
+                        {"lesson": entry.lesson, "response": entry.response, "timestamp": entry.timestamp.isoformat()}
+                        for entry in entries
+                    ]
+                }
+                journals.append(journal)
+        return jsonify(journals)
+    finally:
+        db.close()
 
 
 
@@ -947,28 +971,18 @@ def handle_message(update: Update, context: CallbackContext):
 def get_journal(update: Update, context: CallbackContext):
     """Send user their learning journal"""
     chat_id = update.message.chat_id
-    journal_file = JOURNALS_DIR / f"journal_{chat_id}.json"
+    entries = JournalManager.get_entries(chat_id)
     
-    if journal_file.exists():
-        with open(journal_file) as f:
-            journal = json.load(f)
-        
-        # Format journal entries as text
+    if entries:
         entries_text = "📚 Your Learning Journal:\n\n"
-        for entry in journal["entries"]:
-            entries_text += f"📝 {entry['lesson']}\n"
-            entries_text += f"💭 Your response: {entry['response']}\n"
-            entries_text += f"⏰ {entry['timestamp']}\n\n"
+        for entry in entries:
+            entries_text += f"📝 {entry.lesson}\n"
+            entries_text += f"💭 Your response: {entry.response}\n"
+            entries_text += f"⏰ {entry.timestamp}\n\n"
         
-        context.bot.send_message(
-            chat_id=chat_id,
-            text=entries_text
-        )
+        context.bot.send_message(chat_id=chat_id, text=entries_text)
     else:
-        context.bot.send_message(
-            chat_id=chat_id,
-            text="No journal entries found yet. Complete some lessons first!"
-        )
+        context.bot.send_message(chat_id=chat_id, text="No journal entries found yet. Complete some lessons first!")
 
 
 
@@ -1067,22 +1081,22 @@ def list_users(update: Update, context: CallbackContext):
     update.message.reply_text(report)
 
 def view_feedback(update: Update, context: CallbackContext):
+    """Admin command to view all feedback"""
     if not is_admin(update.message.from_user.id):
         update.message.reply_text("This command is only available to admins.")
         return
 
     feedback_list = FeedbackManager.get_all_feedback()
-    if not feedback_list:
-        update.message.reply_text("No feedback available.")
-        return
+    if feedback_list:
+        report = "📬 Feedback Report:\n\n"
+        for feedback in feedback_list:
+            report += f"User ID: {feedback.user_id}\n"
+            report += f"Time: {feedback.timestamp}\n"
+            report += f"Message: {feedback.feedback}\n\n"
+        update.message.reply_text(report)
+    else:
+        update.message.reply_text("No feedback found.")
 
-    report = "📬 Feedback Report:\n\n"
-    for feedback in feedback_list:
-        report += f"User ID: {feedback.user_id}\n"
-        report += f"Message: {feedback.feedback}\n"
-        report += f"Time: {feedback.timestamp}\n\n"
-
-    update.message.reply_text(report)
 
 
 
@@ -1196,7 +1210,6 @@ def main():
     app.run(
         host='0.0.0.0',
         port=port,
-        ssl_context='adhoc'  # Enable HTTPS
     )
 
 
