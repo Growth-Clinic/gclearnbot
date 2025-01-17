@@ -1065,7 +1065,7 @@ def main():
 
 
     # Set the webhook URL using Render's environment variable
-    webhook_url = f"https://{os.getenv('RENDER_EXTERNAL_URL')}/webhook"
+    webhook_url = f"{os.getenv('RENDER_EXTERNAL_URL', 'https://gclearnbot.onrender.com')}/webhook"
     updater.bot.delete_webhook()  # Delete any existing webhooks
     updater.bot.set_webhook(webhook_url)
 
