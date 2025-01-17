@@ -269,6 +269,9 @@ def add_task_command(update: Update, context: CallbackContext):
 
         # Add the task
         task = TaskManager.add_task(company, lesson_key, description, requirements)
+
+        # Log task creation
+        print(f"Task added: {task}")
         
         # Format confirmation message
         confirmation_parts = [
@@ -864,14 +867,22 @@ def error_handler(update: Update, context: CallbackContext):
 def handle_message(update: Update, context: CallbackContext):
     """Handle user input and responses"""
     chat_id = update.message.chat_id
-    current_step = user_data.get(chat_id)
     user_response = update.message.text
 
+    # Check if the user is sending feedback
+    if context.user_data.get('expecting_feedback'):
+        FeedbackManager.save_feedback(chat_id, user_response)
+        update.message.reply_text("Thank you for your feedback! It has been sent to our team. 🙏")
+        context.user_data['expecting_feedback'] = False
+        return  # Do not process this message further
+
+    # Default: Process as a lesson response
+    current_step = user_data.get(chat_id)
     if current_step in lessons:
         # Save the response to the user's journal
         save_journal_entry(chat_id, current_step, user_response)
-        
-        # Get next step from lessons dictionary
+
+        # Get the next step from lessons
         next_step = lessons[current_step].get("next")
         if next_step:
             # Update the user's current step in `user_data`
@@ -922,6 +933,26 @@ def get_journal(update: Update, context: CallbackContext):
             chat_id=chat_id,
             text="No journal entries found yet. Complete some lessons first!"
         )
+
+
+
+def adminhelp_command(update: Update, context: CallbackContext):
+    """Send a list of admin commands with descriptions."""
+    if not is_admin(update.message.from_user.id):
+        update.message.reply_text("This command is only available to admins.")
+        return
+
+    help_text = """
+    🤖 Admin Commands:
+
+    /users - View a list of all users
+    /viewfeedback - View all feedback submitted by users
+    /addtask <lesson_key> - Add a task to a lesson
+    /listtasks - List all tasks
+    /deactivatetask <task_id> - Deactivate a task
+    /adminhelp - Show this help message
+    """
+    update.message.reply_text(help_text)
 
 
 
@@ -1043,6 +1074,7 @@ def main():
 
 
     # Admin commands
+    dp.add_handler(CommandHandler("adminhelp", adminhelp_command))
     dp.add_handler(CommandHandler("users", list_users))
     dp.add_handler(CommandHandler("viewfeedback", view_feedback))
     dp.add_handler(CommandHandler("addtask", add_task_command))
