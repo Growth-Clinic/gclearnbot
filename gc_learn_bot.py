@@ -138,6 +138,199 @@ class TaskManager:
         tasks = TaskManager.load_tasks()
         return [task for task in tasks["tasks"] 
                 if task["lesson"] == lesson_key and task["is_active"]]
+    
+
+
+class TaskManager:
+    TASKS_FILE = DATA_DIR / "tasks.json"
+    
+    @staticmethod
+    def load_tasks():
+        """Load tasks from storage"""
+        if TaskManager.TASKS_FILE.exists():
+            with open(TaskManager.TASKS_FILE) as f:
+                return json.load(f)
+        return {"tasks": []}
+
+    @staticmethod
+    def save_tasks(tasks_data):
+        """Save tasks to storage"""
+        with open(TaskManager.TASKS_FILE, 'w') as f:
+            json.dump(tasks_data, f, indent=2)
+
+    @staticmethod
+    def add_task(company, lesson_key, description, requirements=None):
+        """Add a new task"""
+        tasks_data = TaskManager.load_tasks()
+        new_task = {
+            "id": len(tasks_data["tasks"]) + 1,
+            "company": company,
+            "lesson": lesson_key,
+            "description": description,
+            "requirements": requirements or [],
+            "created_at": datetime.now().isoformat(),
+            "is_active": True
+        }
+        tasks_data["tasks"].append(new_task)
+        TaskManager.save_tasks(tasks_data)
+        return new_task
+
+    @staticmethod
+    def get_tasks_for_lesson(lesson_key):
+        """Get relevant tasks for a lesson"""
+        tasks = TaskManager.load_tasks()
+        return [task for task in tasks["tasks"] 
+                if task["lesson"] == lesson_key and task["is_active"]]
+
+    @staticmethod
+    def deactivate_task(task_id):
+        """Deactivate a task"""
+        tasks_data = TaskManager.load_tasks()
+        for task in tasks_data["tasks"]:
+            if task["id"] == task_id:
+                task["is_active"] = False
+                break
+        TaskManager.save_tasks(tasks_data)
+
+def add_task_command(update: Update, context: CallbackContext):
+    """Admin command to add a new task"""
+    if not is_admin(update.message.from_user.id):
+        update.message.reply_text("This command is only available to admins.")
+        return
+
+    usage = """
+To add a task, use the following format:
+/addtask lesson_key
+Company Name
+Task Description
+Requirement 1
+Requirement 2
+...
+
+Example:
+/addtask lesson_2
+TechStartup Inc
+Design an onboarding flow for our mobile app
+- Experience with UX design
+- Knowledge of mobile design patterns
+    """
+
+    # Check if message has the correct format
+    try:
+        lines = update.message.text.split('\n')
+        if len(lines) < 3:
+            update.message.reply_text(usage)
+            return
+
+        # Parse command and lesson key
+        _, lesson_key = lines[0].split()
+        
+        # Validate lesson key
+        if lesson_key not in lessons:
+            update.message.reply_text(f"Invalid lesson key. Available lessons: {', '.join(lessons.keys())}")
+            return
+
+        company = lines[1]
+        description = lines[2]
+        requirements = lines[3:] if len(lines) > 3 else []
+
+        # Add the task
+        task = TaskManager.add_task(company, lesson_key, description, requirements)
+        
+        # Confirm addition
+        confirmation = f"""
+✅ Task added successfully!
+
+📝 Task Details:
+Company: {task['company']}
+Lesson: {task['lesson']}
+Description: {task['description']}
+
+Requirements:
+{"- " + "\n- ".join(task['requirements']) if task['requirements'] else "None specified"}
+        """
+        update.message.reply_text(confirmation)
+
+    except ValueError:
+        update.message.reply_text(usage)
+
+def list_tasks_command(update: Update, context: CallbackContext):
+    """Admin command to list all tasks"""
+    if not is_admin(update.message.from_user.id):
+        update.message.reply_text("This command is only available to admins.")
+        return
+
+    tasks_data = TaskManager.load_tasks()
+    if not tasks_data["tasks"]:
+        update.message.reply_text("No tasks found.")
+        return
+
+    report = "📋 All Tasks:\n\n"
+    for task in tasks_data["tasks"]:
+        status = "🟢 Active" if task["is_active"] else "🔴 Inactive"
+        report += f"Task #{task['id']} ({status})\n"
+        report += f"Company: {task['company']}\n"
+        report += f"Lesson: {task['lesson']}\n"
+        report += f"Description: {task['description']}\n"
+        if task["requirements"]:
+            report += "Requirements:\n"
+            for req in task["requirements"]:
+                report += f"- {req}\n"
+        report += "\n"
+
+    update.message.reply_text(report)
+
+def deactivate_task_command(update: Update, context: CallbackContext):
+    """Admin command to deactivate a task"""
+    if not is_admin(update.message.from_user.id):
+        update.message.reply_text("This command is only available to admins.")
+        return
+
+    try:
+        # Command format: /deactivatetask task_id
+        task_id = int(context.args[0])
+        TaskManager.deactivate_task(task_id)
+        update.message.reply_text(f"Task #{task_id} has been deactivated.")
+    except (IndexError, ValueError):
+        update.message.reply_text("Please provide a valid task ID: /deactivatetask <task_id>")
+
+# Modified send_lesson function to include real-world tasks
+def send_lesson(update: Update, context: CallbackContext, lesson_key: str):
+    """Send the lesson content with available real-world tasks"""
+    # Get chat_id from either message or callback query
+    if update.message:
+        chat_id = update.message.chat_id
+    else:
+        chat_id = update.callback_query.message.chat_id
+        
+    lesson = lessons.get(lesson_key)
+    if lesson:
+        # Get real-world tasks for this lesson
+        available_tasks = TaskManager.get_tasks_for_lesson(lesson_key)
+        
+        # Prepare the message
+        message = lesson["text"]
+        
+        # Add available tasks if any
+        if available_tasks:
+            message += "\n\n🌟 Real World Tasks Available!\n"
+            for task in available_tasks:
+                message += f"\n🏢 From {task['company']}:\n"
+                message += f"📝 {task['description']}\n"
+                if task["requirements"]:
+                    message += "Requirements:\n"
+                    for req in task["requirements"]:
+                        message += f"- {req}\n"
+        
+        # Send the message with next step button if available
+        context.bot.send_message(
+            chat_id=chat_id,
+            text=message,
+            parse_mode=ParseMode.MARKDOWN,
+            reply_markup=InlineKeyboardMarkup([
+                [InlineKeyboardButton("✅", callback_data=lesson["next"])]
+            ]) if lesson.get("next") else None
+        )
 
 
 
@@ -825,6 +1018,9 @@ def main():
     # Admin commands
     dp.add_handler(CommandHandler("users", list_users))
     dp.add_handler(CommandHandler("viewfeedback", view_feedback))
+    dp.add_handler(CommandHandler("addtask", add_task_command))
+    dp.add_handler(CommandHandler("listtasks", list_tasks_command))
+    dp.add_handler(CommandHandler("deactivatetask", deactivate_task_command))
 
 
     # Message handlers
