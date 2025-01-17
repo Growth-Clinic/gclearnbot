@@ -268,10 +268,12 @@ def list_tasks_command(update: Update, context: CallbackContext):
     report = "📋 All Tasks:\n\n"
     for task in tasks_data["tasks"]:
         status = "🟢 Active" if task["is_active"] else "🔴 Inactive"
-        report += f"Task #{task['id']} ({status})\n"
-        report += f"Company: {task['company']}\n"
-        report += f"Lesson: {task['lesson']}\n"
-        report += f"Description: {task['description']}\n"
+        report += (
+            f"Task #{task['id']} ({status})\n"
+            f"Company: {task['company']}\n"
+            f"Lesson: {task['lesson']}\n"
+            f"Description: {task['description']}\n"
+        )
         if task["requirements"]:
             report += "Requirements:\n"
             for req in task["requirements"]:
