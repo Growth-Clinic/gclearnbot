@@ -2,3 +2,5 @@ python-telegram-bot==13.7
 flask==2.0.1
 Werkzeug==2.0.3
 pathlib==1.0.1
+python-dotenv>=1.0.0
+cryptography>=42.0.0  # For SSL support

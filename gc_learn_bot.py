@@ -1,12 +1,43 @@
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, BotCommand, ParseMode
 from telegram.ext import Updater, CommandHandler, CallbackQueryHandler, MessageHandler, Filters, CallbackContext
 import os
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request, Response
 import threading
 import json
 from datetime import datetime
 from pathlib import Path
 import sys
+import secrets
+from werkzeug.middleware.proxy_fix import ProxyFix
+import logging
+from dotenv import load_dotenv
+from sqlalchemy import create_engine, Column, Integer, String, JSON, DateTime, Boolean, ForeignKey
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import sessionmaker, relationship
+
+
+
+# Database setup
+DATABASE_URL = os.getenv('DATABASE_URL', 'postgresql://user:password@localhost:5432/botdb')
+engine = create_engine(DATABASE_URL)
+SessionLocal = sessionmaker(bind=engine)
+Base = declarative_base()
+
+
+
+BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
+
+
+
+# Load environment variables
+load_dotenv()
+
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+logger = logging.getLogger(__name__)
 
 
 
@@ -29,13 +60,66 @@ def is_already_running():
 
 
 
-# Create Flask app
+# Create Flask app with security configurations
 app = Flask(__name__)
+app.config.update(
+    SESSION_COOKIE_SECURE=True,
+    SESSION_COOKIE_HTTPONLY=True,
+    SESSION_COOKIE_SAMESITE='Strict',
+    PERMANENT_SESSION_LIFETIME=1800,  # 30 minutes
+)
 
 
 
-# Global updater instance
-updater = Updater("7865567051:AAH0i08bEq_jM14doJuh2a88lkYszryBufM", use_context=True)
+class User(Base):
+    __tablename__ = "users"
+    
+    id = Column(Integer, primary_key=True)
+    telegram_id = Column(Integer, unique=True)
+    username = Column(String)
+    first_name = Column(String)
+    last_name = Column(String)
+    language_code = Column(String)
+    joined_date = Column(DateTime, default=datetime.utcnow)
+    current_lesson = Column(String)
+    completed_lessons = Column(JSON)
+    
+    journals = relationship("JournalEntry", back_populates="user")
+
+class JournalEntry(Base):
+    __tablename__ = "journal_entries"
+    
+    id = Column(Integer, primary_key=True)
+    user_id = Column(Integer, ForeignKey("users.id"))
+    lesson = Column(String)
+    response = Column(String)
+    timestamp = Column(DateTime, default=datetime.utcnow)
+    
+    user = relationship("User", back_populates="journals")
+
+class Task(Base):
+    __tablename__ = "tasks"
+    
+    id = Column(Integer, primary_key=True)
+    company = Column(String)
+    lesson = Column(String)
+    description = Column(String)
+    requirements = Column(JSON)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    is_active = Column(Boolean, default=True)
+
+class Feedback(Base):
+    __tablename__ = "feedback"
+    
+    id = Column(Integer, primary_key=True)
+    user_id = Column(Integer, ForeignKey("users.id"))
+    feedback = Column(String)
+    timestamp = Column(DateTime, default=datetime.utcnow)
+    
+    user = relationship("User")
+
+# Create all tables
+Base.metadata.create_all(engine)
 
 
 
@@ -48,19 +132,6 @@ def webhook():
 
 
 
-# Create directories for storage
-DATA_DIR = Path("bot_data")
-DATA_DIR.mkdir(exist_ok=True)
-
-JOURNALS_DIR = DATA_DIR / "learning_journals"
-JOURNALS_DIR.mkdir(exist_ok=True)
-
-USERS_DIR = DATA_DIR / "users"
-USERS_DIR.mkdir(exist_ok=True)
-
-FEEDBACK_DIR = DATA_DIR / "feedback"
-FEEDBACK_DIR.mkdir(exist_ok=True)
-
 # Configure admin users
 ADMIN_IDS = [
     471827125,  # add other admin Telegram user ID
@@ -69,141 +140,117 @@ ADMIN_IDS = [
 class UserManager:
     @staticmethod
     def save_user_info(user):
-        """Save user information when they start using the bot"""
-        user_file = USERS_DIR / f"user_{user.id}.json"
-        user_data = {
-            "user_id": user.id,
-            "username": user.username,
-            "first_name": user.first_name,
-            "last_name": user.last_name,
-            "language_code": user.language_code,
-            "joined_date": datetime.now().isoformat(),
-            "current_lesson": "lesson_1",
-            "completed_lessons": []
-        }
-        
-        with open(user_file, 'w') as f:
-            json.dump(user_data, f, indent=2)
-        return user_data
+        db = SessionLocal()
+        try:
+            user_data = User(
+                telegram_id=user.id,
+                username=user.username,
+                first_name=user.first_name,
+                last_name=user.last_name,
+                language_code=user.language_code,
+                current_lesson="lesson_1",
+                completed_lessons=[]
+            )
+            db.add(user_data)
+            db.commit()
+            db.refresh(user_data)
+            return user_data
+        finally:
+            db.close()
 
     @staticmethod
-    def get_user_info(user_id):
-        """Get user information"""
-        user_file = USERS_DIR / f"user_{user_id}.json"
-        if user_file.exists():
-            with open(user_file) as f:
-                return json.load(f)
-        return None
-
-    @staticmethod
-    def update_user_progress(user_id, lesson_key):
-        """Update user's progress"""
-        user_file = USERS_DIR / f"user_{user_id}.json"
-        if user_file.exists():
-            with open(user_file) as f:
-                user_data = json.load(f)
-            
-            user_data["current_lesson"] = lesson_key
-            if lesson_key not in user_data["completed_lessons"]:
-                user_data["completed_lessons"].append(lesson_key)
-            
-            with open(user_file, 'w') as f:
-                json.dump(user_data, f, indent=2)
+    def get_user_info(telegram_id):
+        db = SessionLocal()
+        try:
+            return db.query(User).filter(User.telegram_id == telegram_id).first()
+        finally:
+            db.close()
 
 class FeedbackManager:
     @staticmethod
     def save_feedback(user_id, feedback_text):
-        """Save user feedback"""
-        feedback_file = FEEDBACK_DIR / f"feedback_{datetime.now().strftime('%Y%m%d_%H%M%S')}_{user_id}.json"
-        feedback_data = {
-            "user_id": user_id,
-            "feedback": feedback_text,
-            "timestamp": datetime.now().isoformat()
-        }
-        
-        with open(feedback_file, 'w') as f:
-            json.dump(feedback_data, f, indent=2)
+        db = SessionLocal()
+        try:
+            feedback = Feedback(user_id=user_id, feedback=feedback_text)
+            db.add(feedback)
+            db.commit()
+        finally:
+            db.close()
 
     @staticmethod
     def get_all_feedback():
-        """Get all feedback"""
-        feedback_list = []
-        for feedback_file in FEEDBACK_DIR.glob("feedback_*.json"):
-            with open(feedback_file) as f:
-                feedback_list.append(json.load(f))
-        return feedback_list
+        db = SessionLocal()
+        try:
+            return db.query(Feedback).all()
+        finally:
+            db.close()
 
-# Task Manager using local JSON storage (could be replaced with Google Sheets integration)
+class JournalManager:
+    @staticmethod
+    def save_entry(telegram_id, lesson_key, response):
+        db = SessionLocal()
+        try:
+            user = db.query(User).filter(User.telegram_id == telegram_id).first()
+            if user:
+                entry = JournalEntry(
+                    user_id=user.id,
+                    lesson=lesson_key,
+                    response=response
+                )
+                db.add(entry)
+                db.commit()
+        finally:
+            db.close()
+
+    @staticmethod
+    def get_entries(telegram_id):
+        db = SessionLocal()
+        try:
+            user = db.query(User).filter(User.telegram_id == telegram_id).first()
+            if user:
+                return db.query(JournalEntry).filter(
+                    JournalEntry.user_id == user.id
+                ).all()
+            return []
+        finally:
+            db.close()
+
 class TaskManager:
-    TASKS_FILE = DATA_DIR / "tasks.json"
-    
-    @staticmethod
-    def load_tasks():
-        """Load tasks from storage"""
-        if TaskManager.TASKS_FILE.exists():
-            with open(TaskManager.TASKS_FILE) as f:
-                return json.load(f)
-        return {"tasks": []}
-
-    @staticmethod
-    def get_tasks_for_lesson(lesson_key):
-        """Get relevant tasks for a lesson"""
-        tasks = TaskManager.load_tasks()
-        return [task for task in tasks["tasks"] 
-                if task["lesson"] == lesson_key and task["is_active"]]
-    
-
-
-class TaskManager:
-    TASKS_FILE = DATA_DIR / "tasks.json"
-    
-    @staticmethod
-    def load_tasks():
-        """Load tasks from storage"""
-        if TaskManager.TASKS_FILE.exists():
-            with open(TaskManager.TASKS_FILE) as f:
-                return json.load(f)
-        return {"tasks": []}
-
-    @staticmethod
-    def save_tasks(tasks_data):
-        """Save tasks to storage"""
-        with open(TaskManager.TASKS_FILE, 'w') as f:
-            json.dump(tasks_data, f, indent=2)
-
     @staticmethod
     def add_task(company, lesson_key, description, requirements=None):
-        """Add a new task"""
-        tasks_data = TaskManager.load_tasks()
-        new_task = {
-            "id": len(tasks_data["tasks"]) + 1,
-            "company": company,
-            "lesson": lesson_key,
-            "description": description,
-            "requirements": requirements or [],
-            "created_at": datetime.now().isoformat(),
-            "is_active": True
-        }
-        tasks_data["tasks"].append(new_task)
-        TaskManager.save_tasks(tasks_data)
-        return new_task
+        db = SessionLocal()
+        try:
+            task = Task(
+                company=company,
+                lesson=lesson_key,
+                description=description,
+                requirements=requirements or []
+            )
+            db.add(task)
+            db.commit()
+            db.refresh(task)
+            return task
+        finally:
+            db.close()
 
     @staticmethod
     def get_tasks_for_lesson(lesson_key):
-        """Get relevant tasks for a lesson"""
-        tasks = TaskManager.load_tasks()
-        return [task for task in tasks["tasks"] 
-                if task["lesson"] == lesson_key and task["is_active"]]
-
+        db = SessionLocal()
+        try:
+            return db.query(Task).filter(
+                Task.lesson == lesson_key,
+                Task.is_active == True
+            ).all()
+        finally:
+            db.close()
+    
     @staticmethod
-    def deactivate_task(task_id):
-        """Deactivate a task"""
-        tasks_data = TaskManager.load_tasks()
-        for task in tasks_data["tasks"]:
-            if task["id"] == task_id:
-                task["is_active"] = False
-                break
-        TaskManager.save_tasks(tasks_data)
+    def load_tasks():
+        db = SessionLocal()
+        try:
+            return db.query(Task).all()
+        finally:
+            db.close()
 
 
 
@@ -370,30 +417,19 @@ JOURNALS_DIR = Path("learning_journals")
 JOURNALS_DIR.mkdir(exist_ok=True)
 
 def save_journal_entry(user_id, lesson_key, response):
-    """Save a user's response to their journal file"""
-    journal_file = JOURNALS_DIR / f"journal_{user_id}.json"
-    
-    # Load existing journal or create new one
-    if journal_file.exists():
-        with open(journal_file) as f:
-            journal = json.load(f)
-    else:
-        journal = {
-            "user_id": user_id,
-            "entries": []
-        }
-    
-    # Add new entry
-    entry = {
-        "timestamp": datetime.now().isoformat(),
-        "lesson": lesson_key,
-        "response": response
-    }
-    journal["entries"].append(entry)
-    
-    # Save updated journal
-    with open(journal_file, 'w') as f:
-        json.dump(journal, f, indent=2)
+    db = SessionLocal()
+    try:
+        user = db.query(User).filter(User.telegram_id == user_id).first()
+        if user:
+            entry = JournalEntry(
+                user_id=user.id,
+                lesson=lesson_key,
+                response=response
+            )
+            db.add(entry)
+            db.commit()
+    finally:
+        db.close()
 
 
 
@@ -964,6 +1000,7 @@ def help_command(update: Update, context: CallbackContext):
 /start - Start or restart the learning journey
 /journal - View your learning journal
 /help - Show this help message
+/feedback - Send us feedback or questions
 
 To progress through lessons:
 1. Read the lesson content
@@ -980,7 +1017,8 @@ async def setup_commands(bot):
     commands = [
         BotCommand("start", "Start or restart the learning journey"),
         BotCommand("journal", "View your learning journal"),
-        BotCommand("help", "Show help information")
+        BotCommand("help", "Show help information"),
+        BotCommand("feedback", "Send us feedback or questions")
     ]
     await bot.set_my_commands(commands)
 
@@ -1029,20 +1067,61 @@ def list_users(update: Update, context: CallbackContext):
     update.message.reply_text(report)
 
 def view_feedback(update: Update, context: CallbackContext):
-    """Admin command to view all feedback"""
     if not is_admin(update.message.from_user.id):
         update.message.reply_text("This command is only available to admins.")
         return
 
     feedback_list = FeedbackManager.get_all_feedback()
+    if not feedback_list:
+        update.message.reply_text("No feedback available.")
+        return
+
     report = "📬 Feedback Report:\n\n"
     for feedback in feedback_list:
-        user = UserManager.get_user_info(feedback['user_id'])
-        report += f"From: {user['username'] if user else 'Unknown'}\n"
-        report += f"Time: {feedback['timestamp']}\n"
-        report += f"Message: {feedback['feedback']}\n\n"
-    
+        report += f"User ID: {feedback.user_id}\n"
+        report += f"Message: {feedback.feedback}\n"
+        report += f"Time: {feedback.timestamp}\n\n"
+
     update.message.reply_text(report)
+
+
+
+# Secure webhook endpoint
+@app.route('/webhook', methods=['POST'])
+def webhook():
+    """Handle incoming webhook updates securely"""
+    if not request.is_json:
+        return Response("Invalid content type", status=400)
+    
+    try:
+        update = Update.de_json(request.get_json(), updater.bot)
+        if update:
+            updater.dispatcher.process_update(update)
+            return jsonify({"status": "ok"})
+        return Response("Invalid update", status=400)
+    except Exception as e:
+        logger.error(f"Webhook error: {e}")
+        return Response("Internal server error", status=500)
+
+# Add security headers middleware
+@app.after_request
+def add_security_headers(response):
+    """Add security headers to all responses"""
+    response.headers['X-Content-Type-Options'] = 'nosniff'
+    response.headers['X-Frame-Options'] = 'DENY'
+    response.headers['X-XSS-Protection'] = '1; mode=block'
+    response.headers['Strict-Transport-Security'] = 'max-age=31536000; includeSubDomains'
+    response.headers['Content-Security-Policy'] = "default-src 'self'"
+    response.headers['Referrer-Policy'] = 'strict-origin-when-cross-origin'
+    response.headers['Vary'] = 'Cookie'
+    return response
+
+# Error handling for the Flask app
+@app.errorhandler(Exception)
+def handle_error(e):
+    """Global error handler"""
+    logger.error(f"Application error: {e}")
+    return jsonify({"error": "Internal server error"}), 500
 
 
 
@@ -1061,8 +1140,24 @@ def error_handler(update: Update, context: CallbackContext):
 
 # Set up the bot
 def main():
-    global updater
-    dp = updater.dispatcher
+        """Initialize and run the bot securely"""
+    # Disable Flask debugger in production
+    app.debug = False
+    
+    # Configure webhook with proper SSL
+    webhook_url = os.getenv('WEBHOOK_URL')
+    if not webhook_url:
+        raise ValueError("No webhook URL found in environment variables")
+    
+    # Create updater with environment variables
+    updater = Updater(BOT_TOKEN, use_context=True)
+    
+    # Set up webhook with proper SSL configuration
+    updater.bot.set_webhook(
+        webhook_url,
+        allowed_updates=['message', 'callback_query'],
+        max_connections=40
+    )
     
 
 
@@ -1096,16 +1191,13 @@ def main():
     ])
 
 
-    # Set the webhook URL using Render's environment variable
-    webhook_url = f"{os.getenv('RENDER_EXTERNAL_URL', 'https://gclearnbot.onrender.com')}/webhook"
-    updater.bot.delete_webhook()  # Delete any existing webhooks
-    updater.bot.set_webhook(webhook_url)
-
-
-    print(f"Bot is running and webhook is set to {webhook_url}!")
-
-    # Run Flask directly to handle webhook events
-    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
+    # Run the Flask app securely
+    port = int(os.getenv('PORT', 5000))
+    app.run(
+        host='0.0.0.0',
+        port=port,
+        ssl_context='adhoc'  # Enable HTTPS
+    )
 
 
 
