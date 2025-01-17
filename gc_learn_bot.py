@@ -1,10 +1,12 @@
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import Updater, CommandHandler, CallbackQueryHandler, MessageHandler, Filters, CallbackContext
 import os
-from flask import Flask
+from flask import Flask, jsonify
 import threading
 import sys
 from pathlib import Path
+import json
+from datetime import datetime
 
 
 
@@ -30,9 +32,64 @@ def is_already_running():
 # Create Flask app
 app = Flask(__name__)
 
+
+
+# Simple file-based storage for learning journals
+JOURNALS_DIR = Path("learning_journals")
+JOURNALS_DIR.mkdir(exist_ok=True)
+
+def save_journal_entry(user_id, lesson_key, response):
+    """Save a user's response to their journal file"""
+    journal_file = JOURNALS_DIR / f"journal_{user_id}.json"
+    
+    # Load existing journal or create new one
+    if journal_file.exists():
+        with open(journal_file) as f:
+            journal = json.load(f)
+    else:
+        journal = {
+            "user_id": user_id,
+            "entries": []
+        }
+    
+    # Add new entry
+    entry = {
+        "timestamp": datetime.now().isoformat(),
+        "lesson": lesson_key,
+        "response": response
+    }
+    journal["entries"].append(entry)
+    
+    # Save updated journal
+    with open(journal_file, 'w') as f:
+        json.dump(journal, f, indent=2)
+
+
+
 @app.route('/')
 def home():
     return "Bot is running!"
+
+
+
+# Add routes to view journals
+@app.route('/journals/<user_id>')
+def view_journal(user_id):
+    journal_file = JOURNALS_DIR / f"journal_{user_id}.json"
+    if journal_file.exists():
+        with open(journal_file) as f:
+            return jsonify(json.load(f))
+    return jsonify({"error": "Journal not found"}), 404
+
+
+
+@app.route('/journals')
+def list_journals():
+    journals = []
+    for journal_file in JOURNALS_DIR.glob("journal_*.json"):
+        with open(journal_file) as f:
+            journals.append(json.load(f))
+    return jsonify(journals)
 
 
 
@@ -466,17 +523,93 @@ def error_handler(update: Update, context: CallbackContext):
 
 
 def handle_message(update: Update, context: CallbackContext):
-    """Handle user input."""
+    """Handle user input and responses"""
     chat_id = update.message.chat_id
     current_step = user_data.get(chat_id)
+    user_response = update.message.text
 
-    if current_step == "step_1":
-        # Save user input and provide feedback
-        user_input = update.message.text
-        context.bot.send_message(chat_id, f"Thanks for your insight: {user_input}\n\nReply ✅ to continue.")
-        user_data[chat_id] = "lesson_2"
+    if current_step in lessons:
+        # Save the response to the user's journal
+        save_journal_entry(chat_id, current_step, user_response)
+        
+        # Get next step from lessons dictionary
+        next_step = lessons[current_step].get("next")
+        if next_step:
+            # Send confirmation and next lesson
+            context.bot.send_message(
+                chat_id=chat_id,
+                text="✅ Response saved! Moving to next step..."
+            )
+            send_lesson(update, context, next_step)
+        else:
+            context.bot.send_message(
+                chat_id=chat_id,
+                text="✅ Response saved! You've completed all lessons."
+            )
     else:
-        context.bot.send_message(chat_id, "Use the buttons to navigate.")
+        context.bot.send_message(
+            chat_id=chat_id,
+            text="Please use the buttons to navigate lessons."
+        )
+
+
+
+# Add command to get journal
+def get_journal(update: Update, context: CallbackContext):
+    """Send user their learning journal"""
+    chat_id = update.message.chat_id
+    journal_file = JOURNALS_DIR / f"journal_{chat_id}.json"
+    
+    if journal_file.exists():
+        with open(journal_file) as f:
+            journal = json.load(f)
+        
+        # Format journal entries as text
+        entries_text = "📚 Your Learning Journal:\n\n"
+        for entry in journal["entries"]:
+            entries_text += f"📝 {entry['lesson']}\n"
+            entries_text += f"💭 Your response: {entry['response']}\n"
+            entries_text += f"⏰ {entry['timestamp']}\n\n"
+        
+        context.bot.send_message(
+            chat_id=chat_id,
+            text=entries_text
+        )
+    else:
+        context.bot.send_message(
+            chat_id=chat_id,
+            text="No journal entries found yet. Complete some lessons first!"
+        )
+
+
+
+def help_command(update: Update, context: CallbackContext):
+    """Send a message when the command /help is issued."""
+    help_text = """
+🤖 Available commands:
+
+/start - Start or restart the learning journey
+/journal - View your learning journal
+/help - Show this help message
+
+To progress through lessons:
+1. Read the lesson content
+2. Complete the given task
+3. Send your response
+4. Click ✅ when prompted to move forward
+
+Your responses are automatically saved to your learning journal.
+    """
+    update.message.reply_text(help_text)
+
+async def setup_commands(bot):
+    """Set up the bot commands in the client."""
+    commands = [
+        BotCommand("start", "Start or restart the learning journey"),
+        BotCommand("journal", "View your learning journal"),
+        BotCommand("help", "Show help information")
+    ]
+    await bot.set_my_commands(commands)
 
 
 
@@ -496,12 +629,23 @@ def main():
     updater = Updater("7865567051:AAH0i08bEq_jM14doJuh2a88lkYszryBufM", use_context=True)
     dp = updater.dispatcher
 
+
+     # Set up command handlers
     dp.add_handler(CommandHandler("start", start))
+    dp.add_handler(CommandHandler("journal", get_journal))  # Add journal command
+    dp.add_handler(CommandHandler("help", help_command))  # Add help command
     dp.add_handler(CallbackQueryHandler(handle_response))
     dp.add_handler(MessageHandler(Filters.text & ~Filters.command, handle_message))
+    dp.add_error_handler(error_handler)  # Add error handler
 
-    # Add error handler
-    dp.add_error_handler(error_handler)
+
+# Set up commands in Telegram client
+    updater.bot.set_my_commands([
+        ("start", "Start or restart the learning journey"),
+        ("journal", "View your learning journal"),
+        ("help", "Show help information")
+    ])
+
 
     # Start Flask in a separate thread
     flask_thread = threading.Thread(target=run_flask)
