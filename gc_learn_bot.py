@@ -2,6 +2,7 @@ from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import Updater, CommandHandler, CallbackQueryHandler, MessageHandler, Filters, CallbackContext
 import os
 from flask import Flask
+import threading
 
 # Create Flask app
 app = Flask(__name__)
@@ -434,6 +435,11 @@ def handle_message(update: Update, context: CallbackContext):
     else:
         context.bot.send_message(chat_id, "Use the buttons to navigate.")
 
+#put Flask in a separate function
+def run_flask():
+    port = int(os.environ.get('PORT', 5000))
+    app.run(host='0.0.0.0', port=port)
+
 # Set up the bot
 def main():
     updater = Updater("7865567051:AAH0i08bEq_jM14doJuh2a88lkYszryBufM", use_context=True)
@@ -443,11 +449,13 @@ def main():
     dp.add_handler(CallbackQueryHandler(handle_response))
     dp.add_handler(MessageHandler(Filters.text & ~Filters.command, handle_message))
 
+    # Start Flask in a separate thread
+    flask_thread = threading.Thread(target=run_flask)
+    flask_thread.start()
+
+    # Start the bot
     updater.start_polling()
-    
-    # Run Flask app
-    port = int(os.environ.get('PORT', 5000))
-    app.run(host='0.0.0.0', port=port)
+    updater.idle()
 
 if __name__ == "__main__":
     main()
