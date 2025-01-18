@@ -1154,7 +1154,7 @@ def error_handler(update: Update, context: CallbackContext):
 
 # Set up the bot
 def main():
-        """Initialize and run the bot securely"""
+    """Initialize and run the bot securely"""
     # Disable Flask debugger in production
     app.debug = False
     
