@@ -303,34 +303,25 @@ class FeedbackManager:
             OperationFailure: If MongoDB operation fails
         """
         try:
-            # Validate inputs
-            if not isinstance(user_id, int) or not feedback_text.strip():
-                logger.error(f"Invalid feedback input - user_id: {user_id}, text: {feedback_text}")
-                return False
-
             feedback_data = {
                 "user_id": user_id,
                 "feedback": feedback_text.strip(),
-                "timestamp": datetime.now(timezone.utc).isoformat(),
-                "processed": False,
-                "category": "uncategorized"
+                "timestamp": datetime.now(timezone.utc),
+                "processed": False
             }
-
-            # Debug logging
-            logger.info(f"Attempting to save feedback: {feedback_data}")
-
-            result = db.feedback.insert_one(feedback_data)
-            success = result.acknowledged
             
+            result = await asyncio.to_thread(
+                db.feedback.insert_one,
+                feedback_data
+            )
+            
+            success = result.acknowledged
             if success:
-                logger.info(f"Feedback saved successfully for user {user_id}")
-            else:
-                logger.error(f"Failed to save feedback for user {user_id}")
-                
+                logger.info(f"Feedback saved for user {user_id}")
             return success
-
+            
         except Exception as e:
-            logger.error(f"Database error saving feedback: {e}", exc_info=True)
+            logger.error(f"Error saving feedback: {e}", exc_info=True)
             return False
         
     @staticmethod 
@@ -1346,7 +1337,7 @@ async def handle_message(update: Update, context: CallbackContext):
 
     # Check if the user is sending feedback
     if context.user_data.get('expecting_feedback'):
-        FeedbackManager.save_feedback(chat_id, user_response)
+        await FeedbackManager.save_feedback(chat_id, user_response)
         await update.message.reply_text("Thank you for your feedback! It has been sent to our team. 🙏")
         context.user_data['expecting_feedback'] = False
         return
@@ -1441,12 +1432,21 @@ async def feedback_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -
     context.user_data['expecting_feedback'] = True
 
 async def handle_feedback(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    """Handle incoming feedback"""
     if context.user_data.get('expecting_feedback'):
-        FeedbackManager.save_feedback(update.message.from_user.id, update.message.text)
-        await update.message.reply_text(
-            "Thank you for your feedback! Our team will review it. 🙏"
-        )
+        chat_id = update.message.chat_id
+        user_response = update.message.text
+        
+        success = await FeedbackManager.save_feedback(chat_id, user_response)
+        
+        if success:
+            await update.message.reply_text(
+                "Thank you for your feedback! Our team will review it. 🙏"
+            )
+        else:
+            await update.message.reply_text(
+                "Sorry, there was an error saving your feedback. Please try again later."
+            )
+            
         context.user_data['expecting_feedback'] = False
         return True
     return False
