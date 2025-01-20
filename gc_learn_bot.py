@@ -1384,6 +1384,7 @@ async def adminhelp_command(update: Update, context: CallbackContext):
 
     /users - View a list of all users
     /viewfeedback - View all feedback submitted by users
+    /processfeedback <feedback_id> - Mark feedback as processed
     /addtask <lesson_key> - Add a task to a lesson
     /listtasks - List all tasks
     /deactivatetask <task_id> - Deactivate a task
@@ -1495,6 +1496,7 @@ async def view_feedback(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
             
         report = "📬 Feedback Report:\n\n"
         for feedback in feedback_list:
+            feedback_id = feedback.get('_id', 'Unknown')  # Fetch feedback ID
             user_id = feedback.get('user_id', 'Unknown')
             
             # Add more detailed error handling for user info retrieval
@@ -1505,12 +1507,15 @@ async def view_feedback(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
                 logger.error(f"Error fetching user info for {user_id}: {e}")
                 username = f"User {user_id}"
             
-            # Add more feedback details in the report
-            report += f"From: {username} (ID: {user_id})\n"
-            report += f"Time: {feedback.get('timestamp', 'Unknown time')}\n"
-            report += f"Message: {feedback.get('feedback', 'No message content')}\n"
-            report += f"Status: {'✅ Processed' if feedback.get('processed') else '⏳ Pending'}\n"
-            report += "------------------------\n\n"
+            # Add feedback details with ID, status, and category
+            report += f"🆔 Feedback ID: {feedback_id}\n"
+            report += f"👤 From: {username} (ID: {user_id})\n"
+            report += f"📅 Time: {feedback.get('timestamp', 'Unknown time')}\n"
+            report += f"💭 Message: {feedback.get('feedback', 'No message content')}\n"
+            report += f"📌 Status: {'✅ Processed' if feedback.get('processed') else '⏳ Pending'}"
+            if feedback.get('category'):
+                report += f" (Category: {feedback['category']})"
+            report += "\n------------------------\n\n"
         
         # Split long reports into multiple messages if needed
         if len(report) > 4096:
@@ -1520,8 +1525,40 @@ async def view_feedback(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
             await update.message.reply_text(report)
             
     except Exception as e:
-        logger.error(f"Error viewing feedback: {e}", exc_info=True)  # Added exc_info for better debugging
+        logger.error(f"Error viewing feedback: {e}", exc_info=True)
         await update.message.reply_text("Error retrieving feedback. Please try again later.")
+
+
+
+
+
+async def process_feedback_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Admin command to mark feedback as processed."""
+    if not await is_admin(update.message.from_user.id):
+        await update.message.reply_text("This command is only available to admins.")
+        return
+
+    try:
+        # Extract feedback_id and category from the command arguments
+        args = context.args
+        if len(args) < 1:
+            await update.message.reply_text("Usage: /processfeedback <feedback_id> [category]")
+            return
+        
+        feedback_id = args[0]
+        category = args[1] if len(args) > 1 else None
+
+        # Mark feedback as processed
+        success = await FeedbackManager.mark_as_processed(feedback_id, category)
+        if success:
+            await update.message.reply_text(f"✅ Feedback {feedback_id} has been marked as processed.")
+        else:
+            await update.message.reply_text(f"⚠️ Could not process feedback {feedback_id}. Please check the ID.")
+
+    except Exception as e:
+        logger.error(f"Error processing feedback: {e}", exc_info=True)
+        await update.message.reply_text("An error occurred while processing the feedback. Please try again.")
+
 
 
 
@@ -1568,6 +1605,7 @@ async def main() -> Application:
             application.add_handler(CommandHandler("adminhelp", adminhelp_command))
             application.add_handler(CommandHandler("users", list_users))
             application.add_handler(CommandHandler("viewfeedback", view_feedback))
+            application.add_handler(CommandHandler("processfeedback", process_feedback_command))
             application.add_handler(CommandHandler("addtask", add_task_command))
             application.add_handler(CommandHandler("listtasks", list_tasks_command))
             application.add_handler(CommandHandler("deactivatetask", deactivate_task_command))
