@@ -1,12 +1,13 @@
 from telegram import Update, Bot, InlineKeyboardButton, InlineKeyboardMarkup, BotCommand
-from telegram.constants import ParseMode  # Updated import
+from telegram.constants import ParseMode  
 from telegram.ext import (
     Application,
     CommandHandler,
     CallbackQueryHandler,
     MessageHandler,
     filters,
-    ContextTypes
+    ContextTypes,
+    CallbackContext
 )
 from flask import Flask, jsonify, request
 import threading
@@ -1089,7 +1090,7 @@ def view_feedback(update: Update, context: CallbackContext):
 
 #put Flask in a separate function
 def run_flask():
-    port = int(os.environ.get('PORT', 5000))
+    port = int(os.getenv('PORT', 8080))  # Render prefers 8080
     app.run(host='0.0.0.0', port=port)
 
 
