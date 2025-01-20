@@ -14,6 +14,8 @@ from typing import Optional
 from dotenv import load_dotenv
 from pymongo import MongoClient
 import certifi
+import asyncio
+from asyncio import run
 
 
 
@@ -60,12 +62,11 @@ WEBHOOK_URL = os.getenv('WEBHOOK_URL')
 
 
 @app.route('/webhook', methods=['POST'])
-async def webhook():
-    """Handle incoming webhook updates from Telegram."""
+def webhook():
     try:
         if application and application.bot:
             update = Update.de_json(request.get_json(force=True), application.bot)
-            await application.process_update(update)
+            run(application.process_update(update))
             return jsonify({"status": "ok"})
         else:
             return jsonify({"status": "error", "message": "Application not initialized"}), 500
@@ -95,11 +96,9 @@ def init_mongodb(max_retries=3, retry_delay=2):
                 MONGODB_URI,
                 tlsCAFile=certifi.where(),
                 tls=True,
-                tlsAllowInvalidCertificates=True,  # Changed for troubleshooting
                 retryWrites=True,
                 serverSelectionTimeoutMS=10000,    # Increased timeout
                 connectTimeoutMS=30000,            # Increased timeout
-                ssl_cert_reqs='CERT_NONE',        # Added for SSL fix
                 maxPoolSize=1,                     # Reduced connections
                 minPoolSize=1
             )
@@ -1100,7 +1099,9 @@ async def main() -> Application:
     
     try:
         # Initialize database
+        logger.info("Attempting to connect to MongoDB...")
         db = init_mongodb()
+        logger.info("MongoDB connection established.")
         
         # Initialize bot and create application instance if not exists
         if application is None:
@@ -1151,4 +1152,7 @@ async def main() -> Application:
 
 
 if __name__ == "__main__":
-    main()
+    flask_thread = threading.Thread(target=run_flask)
+    flask_thread.start()
+
+    application = asyncio.run(main())
