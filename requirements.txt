@@ -3,3 +3,4 @@ flask==2.0.1
 Werkzeug==2.0.3
 pathlib==1.0.1
 pymongo[srv]==4.6.1
+certifi>=2023.11.17

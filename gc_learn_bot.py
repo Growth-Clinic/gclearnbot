@@ -8,6 +8,8 @@ from datetime import datetime
 from pathlib import Path
 import sys
 from pymongo import MongoClient
+import certifi
+from pymongo.errors import ServerSelectionTimeoutError
 
 
 
@@ -50,15 +52,42 @@ def webhook():
 
 
 # Create directories for storage
-MONGODB_URI = os.getenv('MONGODB_URI')
-if not MONGODB_URI:
-    raise ValueError("MONGODB_URI environment variable not set!")
+def init_mongodb():
+    """Initialize MongoDB connection with proper SSL handling"""
+    try:
+        MONGODB_URI = os.getenv('MONGODB_URI')
+        if not MONGODB_URI:
+            raise ValueError("MONGODB_URI environment variable not set!")
 
-client = MongoClient(MONGODB_URI)
-db = client['telegram_bot']
+        # Connect with SSL certificates
+        client = MongoClient(
+            MONGODB_URI,
+            tlsCAFile=certifi.where(),
+            connect=True,
+            serverSelectionTimeoutMS=5000
+        )
+        
+        # Test connection
+        client.admin.command('ping')
+        
+        db = client['telegram_bot']
+        
+        # Create indexes safely
+        try:
+            db.journals.create_index("user_id", unique=True)
+        except Exception as e:
+            logger.warning(f"Index creation warning: {e}")
+            
+        return db
+    except ServerSelectionTimeoutError as e:
+        logger.error(f"MongoDB connection timeout: {e}")
+        raise
+    except Exception as e:
+        logger.error(f"MongoDB connection error: {e}")
+        raise
 
-# Create indexes for better query performance
-db.journals.create_index("user_id", unique=True)
+# Initialize MongoDB connection
+db = init_mongodb()
 
 # Configure admin users
 ADMIN_IDS = [
