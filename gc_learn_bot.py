@@ -75,15 +75,23 @@ WEBHOOK_URL = os.getenv('WEBHOOK_URL')
 async def webhook() -> ResponseReturnValue:
     """Handle incoming webhook updates"""
     try:
-        if application and application.bot:
-            json_data = await request.get_json(force=True)
-            update = Update.de_json(json_data, application.bot)
-            await application.process_update(update)
-            return jsonify({"status": "ok"})
-        else:
+        if not application:
+            logger.error("Application not initialized")
             return jsonify({"status": "error", "message": "Application not initialized"}), 500
+            
+        if not application.bot:
+            logger.error("Bot not initialized")
+            return jsonify({"status": "error", "message": "Bot not initialized"}), 500
+            
+        json_data = await request.get_json(force=True)
+        logger.info(f"Received webhook data: {json_data}")  # Log incoming data
+        
+        update = Update.de_json(json_data, application.bot)
+        await application.process_update(update)
+        return jsonify({"status": "ok"})
+        
     except Exception as e:
-        logger.error(f"Error processing update: {e}")
+        logger.error(f"Error processing update: {e}", exc_info=True)  # Added exc_info for stack trace
         return jsonify({"status": "error", "message": str(e)}), 500
 
 
@@ -1156,7 +1164,7 @@ async def main() -> Application:
 
         # Set webhook in application
         if WEBHOOK_URL:
-            webhook_path = f"{WEBHOOK_URL}/webhook"
+            webhook_path = f"{WEBHOOK_URL}"
             await application.bot.set_webhook(webhook_path)
             logger.info(f"Webhook set to {webhook_path}")
         else:
