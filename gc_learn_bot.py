@@ -351,7 +351,15 @@ class FeedbackManager:
                 query["processed"] = processed
                 
             cursor = db.feedback.find(query).sort("timestamp", -1).limit(limit)
-            return list(cursor)
+            
+            # Convert ObjectId to string and return the list
+            feedback_list = []
+            for doc in cursor:
+                if '_id' in doc:
+                    doc['_id'] = str(doc['_id'])  # Convert ObjectId to string
+                feedback_list.append(doc)
+                
+            return feedback_list
             
         except OperationFailure as e:
             logger.error(f"Database error retrieving feedback: {e}")
@@ -512,11 +520,17 @@ class TaskManager:
             OperationFailure: If MongoDB update fails
         """
         try:
+            # Fix: Changed "id" to "task_id" in query to match our schema
             result = db.tasks.update_one(
-                {"id": task_id},
+                {"task_id": task_id},  # Changed from "id" to "task_id"
                 {"$set": {"is_active": False}}
             )
-            return result.modified_count > 0
+            success = result.modified_count > 0
+            if success:
+                logger.info(f"Task #{task_id} deactivated successfully")
+            else:
+                logger.warning(f"No task found with ID {task_id}")
+            return success
         except OperationFailure as e:
             logger.error(f"Failed to deactivate task {task_id}: {e}")
             raise
@@ -1415,12 +1429,20 @@ async def view_feedback(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
         report = "📬 Feedback Report:\n\n"
         for feedback in feedback_list:
             user_id = feedback.get('user_id', 'Unknown')
-            user = await UserManager.get_user_info(user_id)
-            username = user.get('username', 'Unknown') if user else 'Unknown'
             
-            report += f"From: {username}\n"
-            report += f"Time: {feedback['timestamp']}\n"
-            report += f"Message: {feedback['feedback']}\n"
+            # Add more detailed error handling for user info retrieval
+            try:
+                user = await UserManager.get_user_info(user_id)
+                username = user.get('username', 'Unknown') if user else f"User {user_id}"
+            except Exception as e:
+                logger.error(f"Error fetching user info for {user_id}: {e}")
+                username = f"User {user_id}"
+            
+            # Add more feedback details in the report
+            report += f"From: {username} (ID: {user_id})\n"
+            report += f"Time: {feedback.get('timestamp', 'Unknown time')}\n"
+            report += f"Message: {feedback.get('feedback', 'No message content')}\n"
+            report += f"Status: {'✅ Processed' if feedback.get('processed') else '⏳ Pending'}\n"
             report += "------------------------\n\n"
         
         # Split long reports into multiple messages if needed
@@ -1431,7 +1453,7 @@ async def view_feedback(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
             await update.message.reply_text(report)
             
     except Exception as e:
-        logger.error(f"Error viewing feedback: {e}")
+        logger.error(f"Error viewing feedback: {e}", exc_info=True)  # Added exc_info for better debugging
         await update.message.reply_text("Error retrieving feedback. Please try again later.")
 
 
