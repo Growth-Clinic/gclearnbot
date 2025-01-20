@@ -9,7 +9,8 @@ from telegram.ext import (
     ContextTypes,
     CallbackContext
 )
-from flask import Flask, jsonify, request
+from quart import Quart, request, jsonify, Response
+from quart.typing import ResponseReturnValue
 import threading
 import json
 from pathlib import Path
@@ -47,8 +48,8 @@ def is_already_running():
 
 
 
-# Create Flask app
-app = Flask(__name__)
+# Create Quart app
+app = Quart(__name__)
 
 
 
@@ -71,11 +72,13 @@ WEBHOOK_URL = os.getenv('WEBHOOK_URL')
 
 
 @app.route('/webhook', methods=['POST'])
-def webhook():
+async def webhook() -> ResponseReturnValue:
+    """Handle incoming webhook updates"""
     try:
         if application and application.bot:
-            update = Update.de_json(request.get_json(force=True), application.bot)
-            run(application.process_update(update))
+            json_data = await request.get_json(force=True)
+            update = Update.de_json(json_data, application.bot)
+            await application.process_update(update)
             return jsonify({"status": "ok"})
         else:
             return jsonify({"status": "error", "message": "Application not initialized"}), 500
@@ -1145,12 +1148,9 @@ async def main() -> Application:
 
         # Set webhook in application
         if WEBHOOK_URL:
-            await application.bot.set_webhook(
-                f"{WEBHOOK_URL}/webhook",
-                allowed_updates=['message', 'callback_query'],
-                max_connections=40
-            )
-            logger.info(f"Webhook set to {WEBHOOK_URL}/webhook")
+            webhook_path = f"{WEBHOOK_URL}/webhook" 
+            await application.bot.set_webhook(webhook_path)
+            logger.info(f"Webhook set to {webhook_path}")
 
         return application
         
