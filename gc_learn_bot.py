@@ -15,12 +15,12 @@ import threading
 import json
 from pathlib import Path
 import sys
-from pymongo.errors import ServerSelectionTimeoutError
+from pymongo.errors import ServerSelectionTimeoutError, DuplicateKeyError, OperationFailure
 import time
 import os
 from datetime import datetime, timezone
 import logging
-from typing import Optional
+from typing import Dict, List, Optional, Any
 from dotenv import load_dotenv
 from pymongo import MongoClient
 import certifi
@@ -126,6 +126,8 @@ def init_mongodb(max_retries=3, retry_delay=2):
             # Test connection with longer timeout
             client.admin.command('ping', serverSelectionTimeoutMS=10000)
             db = client['telegram_bot']
+            # Ensure an index on user_id for journals collection
+            db.journals.create_index("user_id")
             
             logger.info("MongoDB connection successful")
             return db
@@ -150,117 +152,353 @@ ADMIN_IDS = [
 
 class UserManager:
     @staticmethod
-    def save_user_info(user):
-        """Save user information when they start using the bot"""
-        user_data = {
-            "user_id": user.id,
-            "username": user.username,
-            "first_name": user.first_name,
-            "last_name": user.last_name,
-            "language_code": user.language_code,
-            "joined_date": datetime.now().isoformat(),
-            "current_lesson": "lesson_1",
-            "completed_lessons": []
-        }
+    async def save_user_info(user) -> Dict[str, Any]:
+        """
+        Save user information when they start using the bot.
         
-        db.users.update_one(
-            {"user_id": user.id},
-            {"$set": user_data},
-            upsert=True
-        )
-        return user_data
-
-    @staticmethod
-    def get_user_info(user_id):
-        """Get user information"""
-        return db.users.find_one({"user_id": user_id})
-
-    @staticmethod
-    def update_user_progress(user_id, lesson_key):
-        """Update user's progress"""
-        db.users.update_one(
-            {"user_id": user_id},
-            {
-                "$set": {"current_lesson": lesson_key},
-                "$addToSet": {"completed_lessons": lesson_key}
+        Args:
+            user: Telegram user object
+            
+        Returns:
+            Dict containing saved user data
+            
+        Raises:
+            OperationFailure: If MongoDB operation fails
+        """
+        try:
+            user_data = {
+                "user_id": user.id,
+                "username": user.username or "",
+                "first_name": user.first_name or "",
+                "last_name": user.last_name or "", 
+                "language_code": user.language_code or "en",
+                "joined_date": datetime.now(timezone.utc).isoformat(),
+                "current_lesson": "lesson_1",
+                "completed_lessons": [],
+                "last_active": datetime.now(timezone.utc).isoformat()
             }
-        )
+            
+            result = db.users.update_one(
+                {"user_id": user.id},
+                {
+                    "$set": user_data,
+                    "$setOnInsert": {"created_at": datetime.now(timezone.utc).isoformat()}
+                },
+                upsert=True
+            )
+            
+            if not result.acknowledged:
+                raise OperationFailure("Failed to save user data")
+                
+            logger.info(f"User data saved/updated for user {user.id}")
+            return user_data
+            
+        except OperationFailure as e:
+            logger.error(f"Database error saving user {user.id}: {e}")
+            raise
+
+    @staticmethod
+    async def get_user_info(user_id: int) -> Optional[Dict[str, Any]]:
+        """
+        Get user information.
+        
+        Args:
+            user_id: Telegram user ID
+            
+        Returns:
+            User data dictionary or None if not found
+            
+        Raises:
+            OperationFailure: If MongoDB query fails
+        """
+        try:
+            user = db.users.find_one({"user_id": user_id})
+            if user:
+                user.pop('_id', None)  # Remove MongoDB ID
+            return user
+            
+        except OperationFailure as e:
+            logger.error(f"Database error fetching user {user_id}: {e}")
+            raise
+
+    @staticmethod
+    async def update_user_progress(user_id: int, lesson_key: str) -> bool:
+        """
+        Update user's progress.
+        
+        Args:
+            user_id: Telegram user ID
+            lesson_key: Current lesson identifier
+            
+        Returns:
+            True if update successful, False otherwise
+            
+        Raises:
+            OperationFailure: If MongoDB update fails
+        """
+        try:
+            if not lesson_key in lessons:
+                logger.error(f"Invalid lesson key: {lesson_key}")
+                return False
+                
+            result = db.users.update_one(
+                {"user_id": user_id},
+                {
+                    "$set": {
+                        "current_lesson": lesson_key,
+                        "last_active": datetime.now(timezone.utc).isoformat()
+                    },
+                    "$addToSet": {"completed_lessons": lesson_key}
+                }
+            )
+            
+            success = result.modified_count > 0
+            if success:
+                logger.info(f"Progress updated for user {user_id}: {lesson_key}")
+            return success
+            
+        except OperationFailure as e:
+            logger.error(f"Database error updating progress for user {user_id}: {e}")
+            raise
 
 
 class FeedbackManager:
-    @staticmethod
-    def save_feedback(user_id, feedback_text):
-        """Save user feedback"""
-        feedback_data = {
-            "user_id": user_id,
-            "feedback": feedback_text,
-            "timestamp": datetime.now().isoformat()
-        }
-        db.feedback.insert_one(feedback_data)
+    """Manages feedback operations in MongoDB"""
 
     @staticmethod
-    def get_all_feedback():
-        """Get all feedback"""
-        return list(db.feedback.find())
+    async def save_feedback(user_id: int, feedback_text: str) -> bool:
+        """
+        Save user feedback with validation and error handling.
+
+        Args:
+            user_id: Telegram user ID
+            feedback_text: User's feedback message
+
+        Returns:
+            bool: True if save successful, False otherwise
+            
+        Raises:
+            OperationFailure: If MongoDB operation fails
+        """
+        try:
+            # Validate inputs
+            if not isinstance(user_id, int) or not feedback_text.strip():
+                logger.error(f"Invalid feedback input - user_id: {user_id}, text: {feedback_text}")
+                return False
+
+            feedback_data = {
+                "user_id": user_id,
+                "feedback": feedback_text.strip(),
+                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "processed": False,
+                "category": "uncategorized"
+            }
+
+            result = db.feedback.insert_one(feedback_data)
+            success = result.acknowledged
+            
+            if success:
+                logger.info(f"Feedback saved for user {user_id}")
+            else:
+                logger.error(f"Failed to save feedback for user {user_id}")
+                
+            return success
+
+        except OperationFailure as e:
+            logger.error(f"Database error saving feedback: {e}")
+            raise
+
+    @staticmethod 
+    def get_all_feedback(processed: bool = None, limit: int = 100) -> List[Dict[str, Any]]:
+        """
+        Get feedback with optional filtering and pagination.
+
+        Args:
+            processed: Filter by processed status if provided
+            limit: Maximum number of feedback items to return
+            
+        Returns:
+            List of feedback documents
+            
+        Raises:
+            OperationFailure: If MongoDB query fails
+        """
+        try:
+            query = {}
+            if processed is not None:
+                query["processed"] = processed
+                
+            cursor = db.feedback.find(query).sort("timestamp", -1).limit(limit)
+            return list(cursor)
+            
+        except OperationFailure as e:
+            logger.error(f"Database error retrieving feedback: {e}")
+            raise
+
+    @staticmethod
+    async def mark_as_processed(feedback_id: str, category: str = None) -> bool:
+        """
+        Mark feedback as processed with optional categorization.
+
+        Args:
+            feedback_id: MongoDB document ID
+            category: Optional feedback category
+            
+        Returns:
+            bool: True if update successful
+        """
+        try:
+            update = {
+                "$set": {
+                    "processed": True,
+                    "processed_at": datetime.now(timezone.utc).isoformat()
+                }
+            }
+            if category:
+                update["$set"]["category"] = category
+
+            result = db.feedback.update_one({"_id": feedback_id}, update)
+            return result.modified_count > 0
+
+        except OperationFailure as e:
+            logger.error(f"Error marking feedback as processed: {e}")
+            raise
 
 
 class TaskManager:
+    """Manages CRUD operations for tasks in MongoDB"""
+    
     @staticmethod
-    def load_tasks():
-        """Load tasks from storage"""
-        tasks = list(db.tasks.find())
-        # Remove MongoDB's _id field for compatibility
-        for task in tasks:
-            task.pop('_id', None)
-        return {"tasks": tasks}
+    def load_tasks() -> Dict[str, List[Dict[str, Any]]]:
+        """
+        Load all tasks from storage.
+        
+        Returns:
+            Dict containing list of tasks with MongoDB _id removed
+        
+        Raises:
+            OperationFailure: If MongoDB query fails
+        """
+        try:
+            tasks = list(db.tasks.find())
+            return {"tasks": [{k:v for k,v in task.items() if k != '_id'} for task in tasks]}
+        except OperationFailure as e:
+            logger.error(f"Failed to load tasks: {e}")
+            raise
 
     @staticmethod
-    def save_tasks(tasks_data):
-        """Save tasks to storage"""
-        if tasks_data.get("tasks"):
-            # Clear existing tasks and insert new ones
-            db.tasks.delete_many({})
-            db.tasks.insert_many(tasks_data["tasks"])
+    def save_tasks(tasks_data: Dict[str, List[Dict[str, Any]]]) -> None:
+        """
+        Save tasks to storage, replacing existing ones.
+        
+        Args:
+            tasks_data: Dictionary containing list of tasks to save
+            
+        Raises:
+            OperationFailure: If MongoDB operation fails
+        """
+        if not tasks_data.get("tasks"):
+            return
+            
+        try:
+            with db.client.start_session() as session:
+                with session.start_transaction():
+                    db.tasks.delete_many({}, session=session)
+                    db.tasks.insert_many(tasks_data["tasks"], session=session)
+        except OperationFailure as e:
+            logger.error(f"Failed to save tasks: {e}")
+            raise
 
     @staticmethod
-    def add_task(company, lesson_key, description, requirements=None):
-        """Add a new task"""
-        # Get the highest existing task ID
-        highest_task = db.tasks.find_one(sort=[("id", -1)])
-        new_id = (highest_task["id"] + 1) if highest_task else 1
+    def add_task(company: str, lesson_key: str, description: str, 
+                 requirements: Optional[List[str]] = None) -> Dict[str, Any]:
+        """
+        Add a new task with auto-incrementing ID.
+        
+        Args:
+            company: Company name
+            lesson_key: Lesson identifier
+            description: Task description
+            requirements: Optional list of requirements
+            
+        Returns:
+            Newly created task dictionary
+            
+        Raises:
+            OperationFailure: If MongoDB operation fails
+        """
+        try:
+            # Get highest ID with index
+            highest_task = db.tasks.find_one(sort=[("id", -1)], projection={"id": 1})
+            new_id = (highest_task["id"] + 1) if highest_task else 1
 
-        new_task = {
-            "id": new_id,
-            "company": company,
-            "lesson": lesson_key,
-            "description": description,
-            "requirements": requirements or [],
-            "created_at": datetime.now().isoformat(),
-            "is_active": True
-        }
-        db.tasks.insert_one(new_task)
-        new_task.pop('_id', None)  # Remove MongoDB's _id field
-        return new_task
+            new_task = {
+                "id": new_id,
+                "company": company,
+                "lesson": lesson_key,
+                "description": description,
+                "requirements": requirements or [],
+                "created_at": datetime.now(timezone.utc).isoformat(),
+                "is_active": True
+            }
+            
+            result = db.tasks.insert_one(new_task)
+            if not result.acknowledged:
+                raise OperationFailure("Task insertion failed")
+                
+            return {k:v for k,v in new_task.items() if k != '_id'}
+            
+        except OperationFailure as e:
+            logger.error(f"Failed to add task: {e}")
+            raise
 
     @staticmethod
-    def get_tasks_for_lesson(lesson_key):
-        """Get relevant tasks for a lesson"""
-        tasks = list(db.tasks.find({
-            "lesson": lesson_key,
-            "is_active": True
-        }))
-        # Remove MongoDB's _id field
-        for task in tasks:
-            task.pop('_id', None)
-        return tasks
+    def get_tasks_for_lesson(lesson_key: str) -> List[Dict[str, Any]]:
+        """
+        Get active tasks for a specific lesson.
+        
+        Args:
+            lesson_key: Lesson identifier
+            
+        Returns:
+            List of active tasks for the lesson
+            
+        Raises:
+            OperationFailure: If MongoDB query fails
+        """
+        try:
+            tasks = list(db.tasks.find({
+                "lesson": lesson_key,
+                "is_active": True
+            }))
+            return [{k:v for k,v in task.items() if k != '_id'} for task in tasks]
+        except OperationFailure as e:
+            logger.error(f"Failed to get tasks for lesson {lesson_key}: {e}")
+            raise
 
     @staticmethod
-    def deactivate_task(task_id):
-        """Deactivate a task"""
-        db.tasks.update_one(
-            {"id": task_id},
-            {"$set": {"is_active": False}}
-        )
+    def deactivate_task(task_id: int) -> bool:
+        """
+        Deactivate a task by ID.
+        
+        Args:
+            task_id: Task identifier
+            
+        Returns:
+            True if task was deactivated, False if not found
+            
+        Raises:
+            OperationFailure: If MongoDB update fails
+        """
+        try:
+            result = db.tasks.update_one(
+                {"id": task_id},
+                {"$set": {"is_active": False}}
+            )
+            return result.modified_count > 0
+        except OperationFailure as e:
+            logger.error(f"Failed to deactivate task {task_id}: {e}")
+            raise
 
 
 
@@ -284,10 +522,10 @@ def format_task_report(task):
 
 
 
-def add_task_command(update: Update, context: CallbackContext):
+async def add_task_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Admin command to add a new task"""
-    if not is_admin(update.message.from_user.id):
-        update.message.reply_text("This command is only available to admins.")
+    if not await is_admin(update.message.from_user.id):
+        await update.message.reply_text("This command is only available to admins.")
         return
 
     usage = (
@@ -309,7 +547,7 @@ def add_task_command(update: Update, context: CallbackContext):
     try:
         lines = update.message.text.split('\n')
         if len(lines) < 3:
-            update.message.reply_text(usage)
+            await update.message.reply_text(usage)
             return
 
         # Parse command and lesson key
@@ -317,7 +555,7 @@ def add_task_command(update: Update, context: CallbackContext):
         
         # Validate lesson key
         if lesson_key not in lessons:
-            update.message.reply_text(f"Invalid lesson key. Available lessons: {', '.join(lessons.keys())}")
+            await update.message.reply_text(f"Invalid lesson key. Available lessons: {', '.join(lessons.keys())}")
             return
 
         company = lines[1]
@@ -344,20 +582,20 @@ def add_task_command(update: Update, context: CallbackContext):
             confirmation_parts.extend(f"- {req}" for req in task['requirements'])
         
         confirmation = "\n".join(confirmation_parts)
-        update.message.reply_text(confirmation)
+        await update.message.reply_text(confirmation)
 
     except ValueError:
-        update.message.reply_text(usage)
+        await update.message.reply_text(usage)
 
-def list_tasks_command(update: Update, context: CallbackContext):
+async def list_tasks_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Admin command to list all tasks"""
-    if not is_admin(update.message.from_user.id):
-        update.message.reply_text("This command is only available to admins.")
+    if not await is_admin(update.message.from_user.id):
+        await update.message.reply_text("This command is only available to admins.")
         return
 
     tasks_data = TaskManager.load_tasks()
     if not tasks_data["tasks"]:
-        update.message.reply_text("No tasks found.")
+        await update.message.reply_text("No tasks found.")
         return
 
     report_parts = ["📋 All Tasks:\n"]
@@ -366,59 +604,21 @@ def list_tasks_command(update: Update, context: CallbackContext):
         report_parts.append("")  # Add blank line between tasks
     
     report = "\n".join(report_parts)
-    update.message.reply_text(report)
+    await update.message.reply_text(report)
 
-def deactivate_task_command(update: Update, context: CallbackContext):
+async def deactivate_task_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Admin command to deactivate a task"""
-    if not is_admin(update.message.from_user.id):
-        update.message.reply_text("This command is only available to admins.")
+    if not await is_admin(update.message.from_user.id):
+        await update.message.reply_text("This command is only available to admins.")
         return
 
     try:
         # Command format: /deactivatetask task_id
         task_id = int(context.args[0])
         TaskManager.deactivate_task(task_id)
-        update.message.reply_text(f"Task #{task_id} has been deactivated.")
+        await update.message.reply_text(f"Task #{task_id} has been deactivated.")
     except (IndexError, ValueError):
-        update.message.reply_text("Please provide a valid task ID: /deactivatetask <task_id>")
-
-# Modified send_lesson function to include real-world tasks
-def send_lesson(update: Update, context: CallbackContext, lesson_key: str):
-    """Send the lesson content with available real-world tasks"""
-    # Get chat_id from either message or callback query
-    if update.message:
-        chat_id = update.message.chat_id
-    else:
-        chat_id = update.callback_query.message.chat_id
-        
-    lesson = lessons.get(lesson_key)
-    if lesson:
-        # Get real-world tasks for this lesson
-        available_tasks = TaskManager.get_tasks_for_lesson(lesson_key)
-        
-        # Prepare the message
-        message = lesson["text"]
-        
-        # Add available tasks if any
-        if available_tasks:
-            message += "\n\n🌟 Real World Tasks Available!\n"
-            for task in available_tasks:
-                message += f"\n🏢 From {task['company']}:\n"
-                message += f"📝 {task['description']}\n"
-                if task["requirements"]:
-                    message += "Requirements:\n"
-                    for req in task["requirements"]:
-                        message += f"- {req}\n"
-        
-        # Send the message with next step button if available
-        context.bot.send_message(
-            chat_id=chat_id,
-            text=message,
-            parse_mode=ParseMode.MARKDOWN,
-            reply_markup=InlineKeyboardMarkup([
-                [InlineKeyboardButton("✅", callback_data=lesson["next"])]
-            ]) if lesson.get("next") else None
-        )
+        await update.message.reply_text("Please provide a valid task ID: /deactivatetask <task_id>")
 
 
 
@@ -483,7 +683,17 @@ def list_journals():
 
 
 
-def get_journal(update: Update, context: CallbackContext):
+async def get_journal(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """
+    Send the user's learning journal.
+
+    Args:
+        update (Update): Incoming update from Telegram.
+        context (ContextTypes.DEFAULT_TYPE): Context object containing bot data.
+
+    Returns:
+        None
+    """
     """Send user their learning journal"""
     chat_id = update.message.chat_id
     
@@ -498,12 +708,12 @@ def get_journal(update: Update, context: CallbackContext):
             entries_text += f"💭 Your response: {entry['response']}\n"
             entries_text += f"⏰ {entry['timestamp']}\n\n"
         
-        context.bot.send_message(
+        await context.bot.send_message(
             chat_id=chat_id,
             text=entries_text
         )
     else:
-        context.bot.send_message(
+        await context.bot.send_message(
             chat_id=chat_id,
             text="No journal entries found yet. Complete some lessons first!"
         )
@@ -888,7 +1098,7 @@ Reply 📝 with your answers to close the sprint.
 # Track user progress
 user_data = {}
 
-def start(update: Update, context: CallbackContext):
+async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Start command handler"""
     user = update.message.from_user
     UserManager.save_user_info(user)
@@ -904,52 +1114,80 @@ Available commands:
 
 Type /start to begin your learning journey!
     """
-    update.message.reply_text(welcome_text)
-    send_lesson(update, context, "lesson_1")
+    await update.message.reply_text(welcome_text)
+    await send_lesson(update, context, "lesson_1")
 
 
 
-def send_lesson(update: Update, context: CallbackContext, lesson_key: str):
-    """Send the lesson content."""
-    # Get chat_id from either message or callback query
-    if update.message:
-        chat_id = update.message.chat_id
-    else:
-        chat_id = update.callback_query.message.chat_id
+async def send_lesson(update: Update, context: ContextTypes.DEFAULT_TYPE, lesson_key: str) -> None:
+    """Send lesson content with available tasks"""
+    try:
+        # Get chat_id from either message or callback query
+        chat_id = update.message.chat_id if update.message else update.callback_query.message.chat_id
         
-    lesson = lessons.get(lesson_key)
-    if lesson:
-        context.bot.send_message(
-            chat_id=chat_id,
-            text=lesson["text"],
-            reply_markup=InlineKeyboardMarkup([
-                [InlineKeyboardButton("✅", callback_data=lesson["next"])]
-            ]) if lesson["next"] else None
-        )
+        lesson = lessons.get(lesson_key)
+        if lesson:
+            # Get real-world tasks for this lesson
+            available_tasks = TaskManager.get_tasks_for_lesson(lesson_key)
+            
+            # Prepare the message
+            message = lesson["text"]
+            
+            # Add available tasks if any
+            if available_tasks:
+                message += "\n\n🌟 Real World Tasks Available!\n"
+                for task in available_tasks:
+                    message += f"\n🏢 From {task['company']}:\n"
+                    message += f"📝 {task['description']}\n"
+                    if task.get("requirements"):
+                        message += "Requirements:\n"
+                        for req in task["requirements"]:
+                            message += f"- {req}\n"
+            
+            # Send message with next step button if available
+            await context.bot.send_message(
+                chat_id=chat_id,
+                text=message,
+                parse_mode=ParseMode.MARKDOWN,
+                reply_markup=InlineKeyboardMarkup([
+                    [InlineKeyboardButton("✅", callback_data=lesson["next"])]
+                ]) if lesson.get("next") else None
+            )
+            
+    except Exception as e:
+        logger.error(f"Error sending lesson: {str(e)}")
+        raise
 
 
 
-def handle_response(update: Update, context: CallbackContext):
+async def handle_response(update: Update, context: CallbackContext):
     """Handle button responses."""
     query = update.callback_query
-    query.answer()  # Acknowledge the button press to remove loading state
+    await query.answer()  # Acknowledge the button press to remove loading state
 
     next_step = query.data
     if next_step and next_step in lessons:  # Check if next_step exists in lessons
         user_data[query.message.chat_id] = next_step
-        send_lesson(update, context, next_step)
+        await send_lesson(update, context, next_step)
     else:
-        query.edit_message_text(text="Please reply with your input to proceed.")
+        await query.edit_message_text(text="Please reply with your input to proceed.")
 
 
 
-def error_handler(update: Update, context: CallbackContext):
+async def error_handler(update: Update, context: CallbackContext):
     """Log Errors caused by Updates."""
-    print(f'Update "{update}" caused error "{context.error}"')
+    logger.error(f'Update "{update}" caused error "{context.error}"', exc_info=context.error)
+    try:
+        if update and update.effective_message:
+            await update.effective_message.reply_text(
+                "Sorry, something went wrong. Please try again later or contact support."
+            )
+    except Exception as e:
+        logger.error(f"Error in error handler: {e}", exc_info=True)
 
 
 
-def handle_message(update: Update, context: CallbackContext):
+async def handle_message(update: Update, context: CallbackContext):
     """Handle user input and responses"""
     chat_id = update.message.chat_id
     user_response = update.message.text
@@ -957,9 +1195,9 @@ def handle_message(update: Update, context: CallbackContext):
     # Check if the user is sending feedback
     if context.user_data.get('expecting_feedback'):
         FeedbackManager.save_feedback(chat_id, user_response)
-        update.message.reply_text("Thank you for your feedback! It has been sent to our team. 🙏")
+        await update.message.reply_text("Thank you for your feedback! It has been sent to our team. 🙏")
         context.user_data['expecting_feedback'] = False
-        return  # Do not process this message further
+        return
 
     # Default: Process as a lesson response
     current_step = user_data.get(chat_id)
@@ -974,28 +1212,28 @@ def handle_message(update: Update, context: CallbackContext):
             user_data[chat_id] = next_step
 
             # Send confirmation and next lesson
-            context.bot.send_message(
+            await context.bot.send_message(
                 chat_id=chat_id,
                 text="✅ Response saved! Moving to next step..."
             )
-            send_lesson(update, context, next_step)
+            await send_lesson(update, context, next_step)
         else:
-            context.bot.send_message(
+            await context.bot.send_message(
                 chat_id=chat_id,
                 text="✅ Response saved! You've completed all lessons."
             )
     else:
-        context.bot.send_message(
+        await context.bot.send_message(
             chat_id=chat_id,
             text="Please use the buttons to navigate lessons."
         )
 
 
 
-def adminhelp_command(update: Update, context: CallbackContext):
+async def adminhelp_command(update: Update, context: CallbackContext):
     """Send a list of admin commands with descriptions."""
     if not is_admin(update.message.from_user.id):
-        update.message.reply_text("This command is only available to admins.")
+        await update.message.reply_text("This command is only available to admins.")
         return
 
     help_text = """
@@ -1008,11 +1246,9 @@ def adminhelp_command(update: Update, context: CallbackContext):
     /deactivatetask <task_id> - Deactivate a task
     /adminhelp - Show this help message
     """
-    update.message.reply_text(help_text)
+    await update.message.reply_text(help_text)
 
-
-
-def help_command(update: Update, context: CallbackContext):
+async def help_command(update: Update, context: CallbackContext):
     """Send a message when the command /help is issued."""
     help_text = """
 🤖 Available commands:
@@ -1029,7 +1265,7 @@ To progress through lessons:
 
 Your responses are automatically saved to your learning journal.
     """
-    update.message.reply_text(help_text)
+    await update.message.reply_text(help_text)
 
 async def setup_commands(bot):
     """Set up the bot commands in the client."""
@@ -1042,18 +1278,18 @@ async def setup_commands(bot):
 
 
 
-def feedback_command(update: Update, context: CallbackContext):
+async def feedback_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Handle feedback command"""
-    update.message.reply_text(
+    await update.message.reply_text(
         "Please share your feedback or questions. Your message will be sent to our team."
     )
     context.user_data['expecting_feedback'] = True
 
-def handle_feedback(update: Update, context: CallbackContext):
+async def handle_feedback(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Handle incoming feedback"""
     if context.user_data.get('expecting_feedback'):
         FeedbackManager.save_feedback(update.message.from_user.id, update.message.text)
-        update.message.reply_text(
+        await update.message.reply_text(
             "Thank you for your feedback! Our team will review it. 🙏"
         )
         context.user_data['expecting_feedback'] = False
@@ -1061,14 +1297,14 @@ def handle_feedback(update: Update, context: CallbackContext):
     return False
 
 # Admin Commands
-def is_admin(user_id):
+async def is_admin(user_id):
     """Check if user is an admin"""
     return user_id in ADMIN_IDS
 
-def list_users(update: Update, context: CallbackContext):
+async def list_users(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Admin command to list all users"""
     if not is_admin(update.message.from_user.id):
-        update.message.reply_text("This command is only available to admins.")
+        await update.message.reply_text("This command is only available to admins.")
         return
 
     users_list = list(db.users.find())
@@ -1079,12 +1315,12 @@ def list_users(update: Update, context: CallbackContext):
         report += f"📝 Current Lesson: {user.get('current_lesson')}\n"
         report += f"✅ Completed: {len(user.get('completed_lessons', []))} lessons\n\n"
     
-    update.message.reply_text(report)
+    await update.message.reply_text(report)
 
-def view_feedback(update: Update, context: CallbackContext):
+async def view_feedback(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Admin command to view all feedback"""
     if not is_admin(update.message.from_user.id):
-        update.message.reply_text("This command is only available to admins.")
+        await update.message.reply_text("This command is only available to admins.")
         return
 
     feedback_list = FeedbackManager.get_all_feedback()
@@ -1095,7 +1331,7 @@ def view_feedback(update: Update, context: CallbackContext):
         report += f"Time: {feedback['timestamp']}\n"
         report += f"Message: {feedback['feedback']}\n\n"
     
-    update.message.reply_text(report)
+    await update.message.reply_text(report)
 
 
 
@@ -1103,12 +1339,6 @@ def view_feedback(update: Update, context: CallbackContext):
 def run_flask():
     port = int(os.getenv('PORT', 8080))  # Render prefers 8080
     app.run(host='0.0.0.0', port=port)
-
-
-
-def error_handler(update: Update, context: CallbackContext):
-    """Log Errors caused by Updates."""
-    print(f'Update "{update}" caused error "{context.error}"')
 
 
 
@@ -1154,6 +1384,9 @@ async def main() -> Application:
             application.add_handler(CallbackQueryHandler(handle_response))
             application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
             application.add_error_handler(error_handler)
+
+            # Initialize the application
+            await application.initialize()
 
             # Set commands
             await application.bot.set_my_commands([
