@@ -1,7 +1,6 @@
-python-telegram-bot==13.7
-flask==2.0.1
-Werkzeug==2.0.3
-pathlib==1.0.1
-pymongo[srv]==4.6.1
-python-dotenv>=1.0.0
-certifi>=2023.11.17
+python-telegram-bot>=20.0  # Ensure compatibility with your async code
+flask==2.0.1               # Flask version for your bot
+Werkzeug==2.0.3            # Compatible Werkzeug version
+pymongo[srv]==4.6.1        # MongoDB support with SRV
+python-dotenv>=1.0.0       # For environment variable management
+certifi>=2023.11.17        # For SSL/TLS support
