@@ -1,17 +1,19 @@
-from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, BotCommand, ParseMode
-from telegram.ext import Updater, CommandHandler, CallbackQueryHandler, MessageHandler, Filters, CallbackContext
-import os
+from telegram import Update, Bot, InlineKeyboardButton, InlineKeyboardMarkup, BotCommand, ParseMode
+from telegram.ext import Application, Updater, CommandHandler, CallbackQueryHandler, MessageHandler, filters, CallbackContext, ContextTypes
 from flask import Flask, jsonify, request
 import threading
 import json
-from datetime import datetime
 from pathlib import Path
 import sys
-import logging
-import certifi
 from pymongo.errors import ServerSelectionTimeoutError
-from pymongo import MongoClient
 import time
+import os
+from datetime import datetime, timezone
+import logging
+from typing import Optional
+from dotenv import load_dotenv
+from pymongo import MongoClient
+import certifi
 
 
 
@@ -39,18 +41,37 @@ app = Flask(__name__)
 
 
 
-# Global updater instance
-updater = Updater("7865567051:AAH0i08bEq_jM14doJuh2a88lkYszryBufM", use_context=True)
+# Global application instance
+application: Optional[Application] = None
+
+
+
+# Load environment variables
+load_dotenv()
+
+# Initialize bot with environment variable
+BOT_TOKEN = os.getenv('TELEGRAM_BOT_TOKEN')
+if not BOT_TOKEN:
+    raise ValueError("TELEGRAM_BOT_TOKEN environment variable not set!")
+
+# Get webhook URL from environment
+WEBHOOK_URL = os.getenv('WEBHOOK_URL')
 
 
 
 @app.route('/webhook', methods=['POST'])
-def webhook():
+async def webhook():
     """Handle incoming webhook updates from Telegram."""
-    update = Update.de_json(request.get_json(force=True), updater.bot)
-    updater.dispatcher.process_update(update)
-    return jsonify({"status": "ok"})
-
+    try:
+        if application and application.bot:
+            update = Update.de_json(request.get_json(force=True), application.bot)
+            await application.process_update(update)
+            return jsonify({"status": "ok"})
+        else:
+            return jsonify({"status": "error", "message": "Application not initialized"}), 500
+    except Exception as e:
+        logger.error(f"Error processing update: {e}")
+        return jsonify({"status": "error", "message": str(e)}), 500
 
 
 # Setup logging
@@ -74,21 +95,20 @@ def init_mongodb(max_retries=3, retry_delay=2):
                 MONGODB_URI,
                 tlsCAFile=certifi.where(),
                 tls=True,
-                tlsAllowInvalidCertificates=False,
+                tlsAllowInvalidCertificates=True,  # Changed for troubleshooting
                 retryWrites=True,
-                serverSelectionTimeoutMS=5000,
-                connectTimeoutMS=20000
+                serverSelectionTimeoutMS=10000,    # Increased timeout
+                connectTimeoutMS=30000,            # Increased timeout
+                ssl_cert_reqs='CERT_NONE',        # Added for SSL fix
+                maxPoolSize=1,                     # Reduced connections
+                minPoolSize=1
             )
             
-            # Test connection
-            client.admin.command('ping')
+            # Test connection with longer timeout
+            client.admin.command('ping', serverSelectionTimeoutMS=10000)
             db = client['telegram_bot']
             
-            try:
-                db.journals.create_index("user_id", unique=True)
-            except Exception as e:
-                logger.warning(f"Index creation warning: {e}")
-                
+            logger.info("MongoDB connection successful")
             return db
             
         except ServerSelectionTimeoutError as e:
@@ -447,12 +467,11 @@ def list_journals():
 def get_journal(update: Update, context: CallbackContext):
     """Send user their learning journal"""
     chat_id = update.message.chat_id
-    journal_file = JOURNALS_DIR / f"journal_{chat_id}.json"
     
-    if journal_file.exists():
-        with open(journal_file) as f:
-            journal = json.load(f)
-        
+    # Fetch journal from MongoDB
+    journal = db.journals.find_one({"user_id": chat_id})
+    
+    if journal and journal.get("entries"):
         # Format journal entries as text
         entries_text = "📚 Your Learning Journal:\n\n"
         for entry in journal["entries"]:
@@ -1075,52 +1094,59 @@ def error_handler(update: Update, context: CallbackContext):
 
 
 # Set up the bot
-def main():
-    global updater
-    dp = updater.dispatcher
+async def main() -> Application:
+    """Initialize and return the bot application"""
+    global application
     
+    try:
+        # Initialize database
+        db = init_mongodb()
+        
+        # Initialize bot and create application instance if not exists
+        if application is None:
+            application = Application.builder().token(BOT_TOKEN).build()
 
+        # Add command handlers
+        application.add_handler(CommandHandler("start", start))
+        application.add_handler(CommandHandler("journal", get_journal))
+        application.add_handler(CommandHandler("feedback", feedback_command))
+        application.add_handler(CommandHandler("help", help_command))
+        
+        # Admin handlers
+        application.add_handler(CommandHandler("adminhelp", adminhelp_command))
+        application.add_handler(CommandHandler("users", list_users))
+        application.add_handler(CommandHandler("viewfeedback", view_feedback))
+        application.add_handler(CommandHandler("addtask", add_task_command))
+        application.add_handler(CommandHandler("listtasks", list_tasks_command))
+        application.add_handler(CommandHandler("deactivatetask", deactivate_task_command))
 
-    # Regular user commands
-    dp.add_handler(CommandHandler("start", start))
-    dp.add_handler(CommandHandler("journal", get_journal))
-    dp.add_handler(CommandHandler("feedback", feedback_command))
-    dp.add_handler(CommandHandler("help", help_command))
+        # Message handlers
+        application.add_handler(CallbackQueryHandler(handle_response))
+        application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
+        application.add_error_handler(error_handler)
 
+        # Set commands
+        await application.bot.set_my_commands([
+            BotCommand("start", "Start or restart the learning journey"),
+            BotCommand("journal", "View your learning journal"),
+            BotCommand("feedback", "Send feedback or questions"),
+            BotCommand("help", "Show help information")
+        ])
 
-    # Admin commands
-    dp.add_handler(CommandHandler("adminhelp", adminhelp_command))
-    dp.add_handler(CommandHandler("users", list_users))
-    dp.add_handler(CommandHandler("viewfeedback", view_feedback))
-    dp.add_handler(CommandHandler("addtask", add_task_command))
-    dp.add_handler(CommandHandler("listtasks", list_tasks_command))
-    dp.add_handler(CommandHandler("deactivatetask", deactivate_task_command))
+        # Set webhook in application
+        if WEBHOOK_URL:
+            await application.bot.set_webhook(
+                f"{WEBHOOK_URL}/webhook",
+                allowed_updates=['message', 'callback_query'],
+                max_connections=40
+            )
+            logger.info(f"Webhook set to {WEBHOOK_URL}/webhook")
 
-
-    # Message handlers
-    dp.add_handler(CallbackQueryHandler(handle_response))
-    dp.add_handler(MessageHandler(Filters.text & ~Filters.command, handle_message))
-
-
-    # Set up commands in Telegram client
-    updater.bot.set_my_commands([
-        ("start", "Start or restart the learning journey"),
-        ("journal", "View your learning journal"),
-        ("feedback", "Send feedback or questions"),
-        ("help", "Show help information")
-    ])
-
-
-    # Set the webhook URL using Render's environment variable
-    webhook_url = f"{os.getenv('RENDER_EXTERNAL_URL', 'https://gclearnbot.onrender.com')}/webhook"
-    updater.bot.delete_webhook()  # Delete any existing webhooks
-    updater.bot.set_webhook(webhook_url)
-
-
-    print(f"Bot is running and webhook is set to {webhook_url}!")
-
-    # Run Flask directly to handle webhook events
-    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
+        return application
+        
+    except Exception as e:
+        logger.error(f"Failed to start bot: {e}")
+        raise
 
 
 
