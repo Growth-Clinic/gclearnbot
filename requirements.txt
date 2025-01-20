@@ -1,6 +1,6 @@
 python-telegram-bot>=20.7  # Ensure compatibility with your async code
 quart>=0.18.4              # Quart version for your bot
-Werkzeug==2.0.3            # Compatible Werkzeug version
 pymongo[srv]==4.6.1        # MongoDB support with SRV
 python-dotenv>=1.0.0       # For environment variable management
 certifi>=2023.11.17        # For SSL/TLS support
+dnspython>=2.4.2
