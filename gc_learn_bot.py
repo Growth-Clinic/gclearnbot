@@ -1229,7 +1229,7 @@ async def my_feedback_command(update: Update, context: ContextTypes.DEFAULT_TYPE
             
         report = "📋 Your Feedback History:\n\n"
         for feedback in feedback_list:
-            timestamp = datetime.fromisoformat(feedback['timestamp']).strftime("%Y-%m-%d %H:%M:%S")
+            timestamp = feedback['timestamp'].strftime("%Y-%m-%d %H:%M:%S")
             report += f"📅 {timestamp}\n"
             report += f"💭 {feedback['feedback']}\n"
             report += "------------------------\n\n"
