@@ -7,6 +7,7 @@ import json
 from datetime import datetime
 from pathlib import Path
 import sys
+from pymongo import MongoClient
 
 
 
@@ -49,17 +50,15 @@ def webhook():
 
 
 # Create directories for storage
-DATA_DIR = Path("bot_data")
-DATA_DIR.mkdir(exist_ok=True)
+MONGODB_URI = os.getenv('MONGODB_URI')
+if not MONGODB_URI:
+    raise ValueError("MONGODB_URI environment variable not set!")
 
-JOURNALS_DIR = DATA_DIR / "learning_journals"
-JOURNALS_DIR.mkdir(exist_ok=True)
+client = MongoClient(MONGODB_URI)
+db = client['telegram_bot']
 
-USERS_DIR = DATA_DIR / "users"
-USERS_DIR.mkdir(exist_ok=True)
-
-FEEDBACK_DIR = DATA_DIR / "feedback"
-FEEDBACK_DIR.mkdir(exist_ok=True)
+# Create indexes for better query performance
+db.journals.create_index("user_id", unique=True)
 
 # Configure admin users
 ADMIN_IDS = [
@@ -70,7 +69,6 @@ class UserManager:
     @staticmethod
     def save_user_info(user):
         """Save user information when they start using the bot"""
-        user_file = USERS_DIR / f"user_{user.id}.json"
         user_data = {
             "user_id": user.id,
             "username": user.username,
@@ -82,101 +80,74 @@ class UserManager:
             "completed_lessons": []
         }
         
-        with open(user_file, 'w') as f:
-            json.dump(user_data, f, indent=2)
+        db.users.update_one(
+            {"user_id": user.id},
+            {"$set": user_data},
+            upsert=True
+        )
         return user_data
 
     @staticmethod
     def get_user_info(user_id):
         """Get user information"""
-        user_file = USERS_DIR / f"user_{user_id}.json"
-        if user_file.exists():
-            with open(user_file) as f:
-                return json.load(f)
-        return None
+        return db.users.find_one({"user_id": user_id})
 
     @staticmethod
     def update_user_progress(user_id, lesson_key):
         """Update user's progress"""
-        user_file = USERS_DIR / f"user_{user_id}.json"
-        if user_file.exists():
-            with open(user_file) as f:
-                user_data = json.load(f)
-            
-            user_data["current_lesson"] = lesson_key
-            if lesson_key not in user_data["completed_lessons"]:
-                user_data["completed_lessons"].append(lesson_key)
-            
-            with open(user_file, 'w') as f:
-                json.dump(user_data, f, indent=2)
+        db.users.update_one(
+            {"user_id": user_id},
+            {
+                "$set": {"current_lesson": lesson_key},
+                "$addToSet": {"completed_lessons": lesson_key}
+            }
+        )
+
 
 class FeedbackManager:
     @staticmethod
     def save_feedback(user_id, feedback_text):
         """Save user feedback"""
-        feedback_file = FEEDBACK_DIR / f"feedback_{datetime.now().strftime('%Y%m%d_%H%M%S')}_{user_id}.json"
         feedback_data = {
             "user_id": user_id,
             "feedback": feedback_text,
             "timestamp": datetime.now().isoformat()
         }
-        
-        with open(feedback_file, 'w') as f:
-            json.dump(feedback_data, f, indent=2)
+        db.feedback.insert_one(feedback_data)
 
     @staticmethod
     def get_all_feedback():
         """Get all feedback"""
-        feedback_list = []
-        for feedback_file in FEEDBACK_DIR.glob("feedback_*.json"):
-            with open(feedback_file) as f:
-                feedback_list.append(json.load(f))
-        return feedback_list
-
-# Task Manager using local JSON storage (could be replaced with Google Sheets integration)
-class TaskManager:
-    TASKS_FILE = DATA_DIR / "tasks.json"
-    
-    @staticmethod
-    def load_tasks():
-        """Load tasks from storage"""
-        if TaskManager.TASKS_FILE.exists():
-            with open(TaskManager.TASKS_FILE) as f:
-                return json.load(f)
-        return {"tasks": []}
-
-    @staticmethod
-    def get_tasks_for_lesson(lesson_key):
-        """Get relevant tasks for a lesson"""
-        tasks = TaskManager.load_tasks()
-        return [task for task in tasks["tasks"] 
-                if task["lesson"] == lesson_key and task["is_active"]]
-    
+        return list(db.feedback.find())
 
 
 class TaskManager:
-    TASKS_FILE = DATA_DIR / "tasks.json"
-    
     @staticmethod
     def load_tasks():
         """Load tasks from storage"""
-        if TaskManager.TASKS_FILE.exists():
-            with open(TaskManager.TASKS_FILE) as f:
-                return json.load(f)
-        return {"tasks": []}
+        tasks = list(db.tasks.find())
+        # Remove MongoDB's _id field for compatibility
+        for task in tasks:
+            task.pop('_id', None)
+        return {"tasks": tasks}
 
     @staticmethod
     def save_tasks(tasks_data):
         """Save tasks to storage"""
-        with open(TaskManager.TASKS_FILE, 'w') as f:
-            json.dump(tasks_data, f, indent=2)
+        if tasks_data.get("tasks"):
+            # Clear existing tasks and insert new ones
+            db.tasks.delete_many({})
+            db.tasks.insert_many(tasks_data["tasks"])
 
     @staticmethod
     def add_task(company, lesson_key, description, requirements=None):
         """Add a new task"""
-        tasks_data = TaskManager.load_tasks()
+        # Get the highest existing task ID
+        highest_task = db.tasks.find_one(sort=[("id", -1)])
+        new_id = (highest_task["id"] + 1) if highest_task else 1
+
         new_task = {
-            "id": len(tasks_data["tasks"]) + 1,
+            "id": new_id,
             "company": company,
             "lesson": lesson_key,
             "description": description,
@@ -184,26 +155,29 @@ class TaskManager:
             "created_at": datetime.now().isoformat(),
             "is_active": True
         }
-        tasks_data["tasks"].append(new_task)
-        TaskManager.save_tasks(tasks_data)
+        db.tasks.insert_one(new_task)
+        new_task.pop('_id', None)  # Remove MongoDB's _id field
         return new_task
 
     @staticmethod
     def get_tasks_for_lesson(lesson_key):
         """Get relevant tasks for a lesson"""
-        tasks = TaskManager.load_tasks()
-        return [task for task in tasks["tasks"] 
-                if task["lesson"] == lesson_key and task["is_active"]]
+        tasks = list(db.tasks.find({
+            "lesson": lesson_key,
+            "is_active": True
+        }))
+        # Remove MongoDB's _id field
+        for task in tasks:
+            task.pop('_id', None)
+        return tasks
 
     @staticmethod
     def deactivate_task(task_id):
         """Deactivate a task"""
-        tasks_data = TaskManager.load_tasks()
-        for task in tasks_data["tasks"]:
-            if task["id"] == task_id:
-                task["is_active"] = False
-                break
-        TaskManager.save_tasks(tasks_data)
+        db.tasks.update_one(
+            {"id": task_id},
+            {"$set": {"is_active": False}}
+        )
 
 
 
@@ -365,63 +339,92 @@ def send_lesson(update: Update, context: CallbackContext, lesson_key: str):
 
 
 
-# Simple file-based storage for learning journals
-JOURNALS_DIR = Path("learning_journals")
-JOURNALS_DIR.mkdir(exist_ok=True)
-
 def save_journal_entry(user_id, lesson_key, response):
-    """Save a user's response to their journal file"""
-    journal_file = JOURNALS_DIR / f"journal_{user_id}.json"
+    """Save a user's response to their journal"""
+    # First check if user has an existing journal document
+    journal = db.journals.find_one({"user_id": user_id})
     
-    # Load existing journal or create new one
-    if journal_file.exists():
-        with open(journal_file) as f:
-            journal = json.load(f)
+    if journal:
+        # Add new entry to existing journal
+        db.journals.update_one(
+            {"user_id": user_id},
+            {
+                "$push": {
+                    "entries": {
+                        "timestamp": datetime.now().isoformat(),
+                        "lesson": lesson_key,
+                        "response": response
+                    }
+                }
+            }
+        )
     else:
+        # Create new journal document
         journal = {
             "user_id": user_id,
-            "entries": []
+            "entries": [{
+                "timestamp": datetime.now().isoformat(),
+                "lesson": lesson_key,
+                "response": response
+            }]
         }
-    
-    # Add new entry
-    entry = {
-        "timestamp": datetime.now().isoformat(),
-        "lesson": lesson_key,
-        "response": response
-    }
-    journal["entries"].append(entry)
-    
-    # Save updated journal
-    with open(journal_file, 'w') as f:
-        json.dump(journal, f, indent=2)
+        db.journals.insert_one(journal)
 
-
-
+# Flask routes for viewing journals
 @app.route('/')
 def home():
     return "Bot is running!"
 
-
-
-# Add routes to view journals
 @app.route('/journals/<user_id>')
 def view_journal(user_id):
-    journal_file = JOURNALS_DIR / f"journal_{user_id}.json"
-    if journal_file.exists():
-        with open(journal_file) as f:
-            return jsonify(json.load(f))
+    # Convert user_id to int since it comes as string from URL
+    try:
+        user_id = int(user_id)
+    except ValueError:
+        return jsonify({"error": "Invalid user ID"}), 400
+        
+    journal = db.journals.find_one({"user_id": user_id})
+    if journal:
+        # Remove MongoDB's _id field before returning
+        journal.pop('_id', None)
+        return jsonify(journal)
     return jsonify({"error": "Journal not found"}), 404
-
-
 
 @app.route('/journals')
 def list_journals():
-    journals = []
-    for journal_file in JOURNALS_DIR.glob("journal_*.json"):
-        with open(journal_file) as f:
-            journals.append(json.load(f))
+    journals = list(db.journals.find())
+    # Remove MongoDB's _id field from each journal
+    for journal in journals:
+        journal.pop('_id', None)
     return jsonify(journals)
 
+
+
+def get_journal(update: Update, context: CallbackContext):
+    """Send user their learning journal"""
+    chat_id = update.message.chat_id
+    journal_file = JOURNALS_DIR / f"journal_{chat_id}.json"
+    
+    if journal_file.exists():
+        with open(journal_file) as f:
+            journal = json.load(f)
+        
+        # Format journal entries as text
+        entries_text = "📚 Your Learning Journal:\n\n"
+        for entry in journal["entries"]:
+            entries_text += f"📝 {entry['lesson']}\n"
+            entries_text += f"💭 Your response: {entry['response']}\n"
+            entries_text += f"⏰ {entry['timestamp']}\n\n"
+        
+        context.bot.send_message(
+            chat_id=chat_id,
+            text=entries_text
+        )
+    else:
+        context.bot.send_message(
+            chat_id=chat_id,
+            text="No journal entries found yet. Complete some lessons first!"
+        )
 
 
 # Define the lessons and steps
@@ -907,35 +910,6 @@ def handle_message(update: Update, context: CallbackContext):
 
 
 
-# Add command to get journal
-def get_journal(update: Update, context: CallbackContext):
-    """Send user their learning journal"""
-    chat_id = update.message.chat_id
-    journal_file = JOURNALS_DIR / f"journal_{chat_id}.json"
-    
-    if journal_file.exists():
-        with open(journal_file) as f:
-            journal = json.load(f)
-        
-        # Format journal entries as text
-        entries_text = "📚 Your Learning Journal:\n\n"
-        for entry in journal["entries"]:
-            entries_text += f"📝 {entry['lesson']}\n"
-            entries_text += f"💭 Your response: {entry['response']}\n"
-            entries_text += f"⏰ {entry['timestamp']}\n\n"
-        
-        context.bot.send_message(
-            chat_id=chat_id,
-            text=entries_text
-        )
-    else:
-        context.bot.send_message(
-            chat_id=chat_id,
-            text="No journal entries found yet. Complete some lessons first!"
-        )
-
-
-
 def adminhelp_command(update: Update, context: CallbackContext):
     """Send a list of admin commands with descriptions."""
     if not is_admin(update.message.from_user.id):
@@ -1015,16 +989,13 @@ def list_users(update: Update, context: CallbackContext):
         update.message.reply_text("This command is only available to admins.")
         return
 
-    users_list = []
-    for user_file in USERS_DIR.glob("user_*.json"):
-        with open(user_file) as f:
-            users_list.append(json.load(f))
+    users_list = list(db.users.find())
     
     report = "📊 Users Report:\n\n"
     for user in users_list:
-        report += f"👤 User: {user['username'] or user['first_name']}\n"
-        report += f"📝 Current Lesson: {user['current_lesson']}\n"
-        report += f"✅ Completed: {len(user['completed_lessons'])} lessons\n\n"
+        report += f"👤 User: {user.get('username') or user.get('first_name')}\n"
+        report += f"📝 Current Lesson: {user.get('current_lesson')}\n"
+        report += f"✅ Completed: {len(user.get('completed_lessons', []))} lessons\n\n"
     
     update.message.reply_text(report)
 
