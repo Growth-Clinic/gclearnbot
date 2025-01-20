@@ -566,17 +566,22 @@ async def add_task_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -
     )
 
     try:
-        if update.message and update.message.text:
-            lines = update.message.text.split('\n')
-        else:
-            await update.message.reply_text("Invalid input. Please provide the task details in the correct format.")
+        if not update.message or not update.message.text:
+            await update.message.reply_text(usage)
             return
+            
+        lines = update.message.text.split('\n')
         if len(lines) < 3:
             await update.message.reply_text(usage)
             return
 
         # Parse command and lesson key
-        _, lesson_key = lines[0].split()
+        cmd_parts = lines[0].split()
+        if len(cmd_parts) != 2:
+            await update.message.reply_text(usage)
+            return
+            
+        lesson_key = cmd_parts[1]
         
         # Validate lesson key
         if lesson_key not in lessons:
@@ -588,11 +593,10 @@ async def add_task_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -
         requirements = lines[3:] if len(lines) > 3 else []
 
         # Add the task
-        task = await asyncio.to_thread(TaskManager.add_task, company, lesson_key, description, requirements)
-
-        # Log task creation
-        # Enhanced confirmation message with Task ID
-        confirmation = f"""
+        task = TaskManager.add_task(company, lesson_key, description, requirements)
+        
+        if task:
+            confirmation = f"""
 ✅ Task #{task['task_id']} added successfully!
 
 📝 Task Details:
@@ -600,14 +604,16 @@ Lesson: {task['lesson']}
 Company: {task['company']}
 Description: {task['description']}
 """
-        if task['requirements']:
-            confirmation += "\nRequirements:\n" + "\n".join(f"- {req}" for req in task['requirements'])
-        
-        await update.message.reply_text(confirmation)
+            if task['requirements']:
+                confirmation += "\nRequirements:\n" + "\n".join(f"- {req}" for req in task['requirements'])
+            
+            await update.message.reply_text(confirmation)
+        else:
+            await update.message.reply_text("Failed to create task. Please try again.")
 
     except Exception as e:
         logger.error(f"Error adding task: {e}")
-        await update.message.reply_text("Error creating task. Please try again.")
+        await update.message.reply_text("Error creating task. Please check the format and try again.")
 
 
 
@@ -1298,7 +1304,7 @@ async def handle_message(update: Update, context: CallbackContext):
 
 async def adminhelp_command(update: Update, context: CallbackContext):
     """Send a list of admin commands with descriptions."""
-    if not is_admin(update.message.from_user.id):
+    if not await is_admin(update.message.from_user.id):
         await update.message.reply_text("This command is only available to admins.")
         return
 
@@ -1364,14 +1370,18 @@ async def handle_feedback(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
         return True
     return False
 
+
+
 # Admin Commands
-def is_admin(user_id):
+async def is_admin(user_id: int) -> bool:
     """Check if user is an admin"""
     return user_id in ADMIN_IDS
 
+
+
 async def list_users(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Admin command to list all users"""
-    if not is_admin(update.message.from_user.id):
+    if not await is_admin(update.message.from_user.id):
         await update.message.reply_text("This command is only available to admins.")
         return
 
@@ -1379,27 +1389,50 @@ async def list_users(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None
     
     report = "📊 Users Report:\n\n"
     for user in users_list:
+        # Only count main lessons (not steps)
+        completed_main_lessons = len([lesson for lesson in user.get('completed_lessons', []) 
+                                      if lesson.count('_') == 1])  # Only counts lesson_X format
         report += f"👤 User: {user.get('username') or user.get('first_name')}\n"
         report += f"📝 Current Lesson: {user.get('current_lesson')}\n"
         report += f"✅ Completed: {len(user.get('completed_lessons', []))} lessons\n\n"
     
     await update.message.reply_text(report)
 
+
+
 async def view_feedback(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Admin command to view all feedback"""
-    if not is_admin(update.message.from_user.id):
+    if not await is_admin(update.message.from_user.id):
         await update.message.reply_text("This command is only available to admins.")
         return
 
-    feedback_list = FeedbackManager.get_all_feedback()
-    report = "📬 Feedback Report:\n\n"
-    for feedback in feedback_list:
-        user = UserManager.get_user_info(feedback['user_id'])
-        report += f"From: {user['username'] if user else 'Unknown'}\n"
-        report += f"Time: {feedback['timestamp']}\n"
-        report += f"Message: {feedback['feedback']}\n\n"
-    
-    await update.message.reply_text(report)
+    try:
+        feedback_list = FeedbackManager.get_all_feedback()
+        if not feedback_list:
+            await update.message.reply_text("No feedback found.")
+            return
+            
+        report = "📬 Feedback Report:\n\n"
+        for feedback in feedback_list:
+            user_id = feedback.get('user_id', 'Unknown')
+            user = await UserManager.get_user_info(user_id)
+            username = user.get('username', 'Unknown') if user else 'Unknown'
+            
+            report += f"From: {username}\n"
+            report += f"Time: {feedback['timestamp']}\n"
+            report += f"Message: {feedback['feedback']}\n"
+            report += "------------------------\n\n"
+        
+        # Split long reports into multiple messages if needed
+        if len(report) > 4096:
+            for i in range(0, len(report), 4096):
+                await update.message.reply_text(report[i:i+4096])
+        else:
+            await update.message.reply_text(report)
+            
+    except Exception as e:
+        logger.error(f"Error viewing feedback: {e}")
+        await update.message.reply_text("Error retrieving feedback. Please try again later.")
 
 
 
