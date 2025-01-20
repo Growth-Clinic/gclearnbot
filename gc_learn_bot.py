@@ -1,5 +1,13 @@
-from telegram import Update, Bot, InlineKeyboardButton, InlineKeyboardMarkup, BotCommand, ParseMode
-from telegram.ext import Application, Updater, CommandHandler, CallbackQueryHandler, MessageHandler, filters, CallbackContext, ContextTypes
+from telegram import Update, Bot, InlineKeyboardButton, InlineKeyboardMarkup, BotCommand
+from telegram.constants import ParseMode  # Updated import
+from telegram.ext import (
+    Application,
+    CommandHandler,
+    CallbackQueryHandler,
+    MessageHandler,
+    filters,
+    ContextTypes
+)
 from flask import Flask, jsonify, request
 import threading
 import json
