@@ -152,6 +152,28 @@ ADMIN_IDS = [
 
 class UserManager:
     @staticmethod
+    def update_progress(user_id: int, lesson_key: str) -> None:
+        """Update user's lesson progress"""
+        try:
+            db.users.update_one(
+                {"user_id": user_id},
+                {
+                    "$set": {
+                        "current_lesson": lesson_key,
+                        "last_activity": datetime.now(timezone.utc)
+                    },
+                    "$addToSet": {
+                        "completed_lessons": lesson_key
+                    }
+                },
+                upsert=True
+            )
+            logger.info(f"Progress updated for user {user_id}: {lesson_key}")
+        except Exception as e:
+            logger.error(f"Error updating progress: {e}")
+
+
+    @staticmethod
     async def save_user_info(user) -> Dict[str, Any]:
         """
         Save user information when they start using the bot.
@@ -410,8 +432,7 @@ class TaskManager:
             raise
 
     @staticmethod
-    def add_task(company: str, lesson_key: str, description: str, 
-                 requirements: Optional[List[str]] = None) -> Dict[str, Any]:
+    def add_task(company: str, lesson_key: str, description: str, requirements: list) -> dict:
         """
         Add a new task with auto-incrementing ID.
         
@@ -428,28 +449,28 @@ class TaskManager:
             OperationFailure: If MongoDB operation fails
         """
         try:
-            # Get highest ID with index
-            highest_task = db.tasks.find_one(sort=[("id", -1)], projection={"id": 1})
-            new_id = (highest_task["id"] + 1) if highest_task else 1
-
-            new_task = {
-                "id": new_id,
+            # Get highest existing task ID
+            last_task = db.tasks.find_one(sort=[("task_id", -1)])
+            next_id = (last_task["task_id"] + 1) if last_task else 1
+            
+            task = {
+                "task_id": next_id,
                 "company": company,
                 "lesson": lesson_key,
                 "description": description,
-                "requirements": requirements or [],
-                "created_at": datetime.now(timezone.utc).isoformat(),
-                "is_active": True
+                "requirements": requirements,
+                "is_active": True,
+                "created_at": datetime.now(timezone.utc)
             }
             
-            result = db.tasks.insert_one(new_task)
-            if not result.acknowledged:
-                raise OperationFailure("Task insertion failed")
-                
-            return {k:v for k,v in new_task.items() if k != '_id'}
+            result = db.tasks.insert_one(task)
+            if result.acknowledged:
+                logger.info(f"Task #{next_id} created for lesson {lesson_key}")
+                return task
+            return None
             
         except OperationFailure as e:
-            logger.error(f"Failed to add task: {e}")
+            logger.error(f"Failed to create task: {e}")
             raise
 
     @staticmethod
@@ -545,7 +566,11 @@ async def add_task_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -
     )
 
     try:
-        lines = update.message.text.split('\n')
+        if update.message and update.message.text:
+            lines = update.message.text.split('\n')
+        else:
+            await update.message.reply_text("Invalid input. Please provide the task details in the correct format.")
+            return
         if len(lines) < 3:
             await update.message.reply_text(usage)
             return
@@ -563,48 +588,57 @@ async def add_task_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -
         requirements = lines[3:] if len(lines) > 3 else []
 
         # Add the task
-        task = TaskManager.add_task(company, lesson_key, description, requirements)
+        task = await asyncio.to_thread(TaskManager.add_task, company, lesson_key, description, requirements)
 
         # Log task creation
-        print(f"Task added: {task}")
-        
-        # Format confirmation message
-        confirmation_parts = [
-            "✅ Task added successfully!\n",
-            "📝 Task Details:",
-            f"Company: {task['company']}",
-            f"Lesson: {task['lesson']}",
-            f"Description: {task['description']}"
-        ]
-        
+        # Enhanced confirmation message with Task ID
+        confirmation = f"""
+✅ Task #{task['task_id']} added successfully!
+
+📝 Task Details:
+Lesson: {task['lesson']}
+Company: {task['company']}
+Description: {task['description']}
+"""
         if task['requirements']:
-            confirmation_parts.append("Requirements:")
-            confirmation_parts.extend(f"- {req}" for req in task['requirements'])
+            confirmation += "\nRequirements:\n" + "\n".join(f"- {req}" for req in task['requirements'])
         
-        confirmation = "\n".join(confirmation_parts)
         await update.message.reply_text(confirmation)
 
-    except ValueError:
-        await update.message.reply_text(usage)
+    except Exception as e:
+        logger.error(f"Error adding task: {e}")
+        await update.message.reply_text("Error creating task. Please try again.")
+
+
 
 async def list_tasks_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    """Admin command to list all tasks"""
+    """Admin command to list all tasks with IDs"""
     if not await is_admin(update.message.from_user.id):
         await update.message.reply_text("This command is only available to admins.")
         return
 
-    tasks_data = TaskManager.load_tasks()
-    if not tasks_data["tasks"]:
-        await update.message.reply_text("No tasks found.")
-        return
+    try:
+        tasks = list(db.tasks.find())
+        if not tasks:
+            await update.message.reply_text("No tasks found.")
+            return
 
-    report_parts = ["📋 All Tasks:\n"]
-    for task in tasks_data["tasks"]:
-        report_parts.append(format_task_report(task))
-        report_parts.append("")  # Add blank line between tasks
-    
-    report = "\n".join(report_parts)
-    await update.message.reply_text(report)
+        report = "📋 All Tasks:\n\n"
+        for task in tasks:
+            status = "🟢 Active" if task["is_active"] else "🔴 Inactive"
+            report += f"Task #{task['task_id']} ({status})\n"
+            report += f"Lesson: {task['lesson']}\n"
+            report += f"Company: {task['company']}\n"
+            report += f"Description: {task['description']}\n"
+            if task["requirements"]:
+                report += "Requirements:\n" + "\n".join(f"- {req}" for req in task["requirements"])
+            report += "\n\n"
+
+        await update.message.reply_text(report)
+
+    except Exception as e:
+        logger.error(f"Error listing tasks: {e}")
+        await update.message.reply_text("Error retrieving tasks. Please try again.")
 
 async def deactivate_task_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Admin command to deactivate a task"""
@@ -1108,47 +1142,78 @@ Welcome to the Learning Bot! 🎓
 
 Available commands:
 /start - Start or restart the learning journey
+/resume - Continue from your last lesson
 /journal - View your learning journal
 /feedback - Send feedback or questions to us
 /help - Show this help message
 
 Type /start to begin your learning journey!
-    """
+"""
     await update.message.reply_text(welcome_text)
     await send_lesson(update, context, "lesson_1")
 
 
+async def resume_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Resume from last lesson"""
+    try:
+        user_id = update.message.from_user.id
+        user_data = db.users.find_one({"user_id": user_id})
+        
+        if user_data and user_data.get("current_lesson"):
+            await update.message.reply_text("📚 Resuming your last lesson...")
+            await send_lesson(update, context, user_data["current_lesson"])
+        else:
+            await update.message.reply_text("No previous progress found. Use /start to begin!")
+    except Exception as e:
+        logger.error(f"Error resuming: {e}")
+        await update.message.reply_text("Error resuming progress. Please try again.")
+
+
 
 async def send_lesson(update: Update, context: ContextTypes.DEFAULT_TYPE, lesson_key: str) -> None:
-    """Send lesson content with available tasks"""
+    """Send lesson content with progress info and tasks"""
     try:
-        # Get chat_id from either message or callback query
         chat_id = update.message.chat_id if update.message else update.callback_query.message.chat_id
+        
+        # Update progress
+        UserManager.update_progress(chat_id, lesson_key)
         
         lesson = lessons.get(lesson_key)
         if lesson:
-            # Get real-world tasks for this lesson
+            # Format progress header
+            parts = lesson_key.split('_')
+            lesson_num = parts[1] if len(parts) > 1 else '1'
+            step_num = parts[3] if len(parts) > 3 and 'step' in parts else None
+            
+            # Create progress header
+            header = f"<b>📚 Lesson {lesson_num} of 6</b>"
+            if step_num:
+                header += f"\n<i>Step {step_num}</i>"
+            header += "\n\n"
+            
+            # Prepare message with header
+            message = header + lesson["text"].replace('[', '<').replace(']', '>')
+            
+            # Format URLs and tasks
+            message = message.replace('(http', '<a href="http')
+            message = message.replace(')', '">link</a>')
+            
+            # Add available tasks
             available_tasks = TaskManager.get_tasks_for_lesson(lesson_key)
-            
-            # Prepare the message
-            message = lesson["text"]
-            
-            # Add available tasks if any
             if available_tasks:
-                message += "\n\n🌟 Real World Tasks Available!\n"
+                message += "\n\n<b>🌟 Real World Tasks Available!</b>\n"
                 for task in available_tasks:
-                    message += f"\n🏢 From {task['company']}:\n"
+                    message += f"\n🏢 From <b>{task['company']}</b>:\n"
                     message += f"📝 {task['description']}\n"
                     if task.get("requirements"):
-                        message += "Requirements:\n"
+                        message += "<b>Requirements:</b>\n"
                         for req in task["requirements"]:
                             message += f"- {req}\n"
             
-            # Send message with next step button if available
             await context.bot.send_message(
                 chat_id=chat_id,
                 text=message,
-                parse_mode=ParseMode.MARKDOWN,
+                parse_mode=ParseMode.HTML,
                 reply_markup=InlineKeyboardMarkup([
                     [InlineKeyboardButton("✅", callback_data=lesson["next"])]
                 ]) if lesson.get("next") else None
@@ -1156,7 +1221,12 @@ async def send_lesson(update: Update, context: ContextTypes.DEFAULT_TYPE, lesson
             
     except Exception as e:
         logger.error(f"Error sending lesson: {str(e)}")
-        raise
+        # Send simplified message on parsing error
+        await context.bot.send_message(
+            chat_id=chat_id,
+            text="Sorry, there was an error displaying this lesson. Please try /start to restart.",
+            parse_mode=None
+        )
 
 
 
@@ -1254,7 +1324,9 @@ async def help_command(update: Update, context: CallbackContext):
 🤖 Available commands:
 
 /start - Start or restart the learning journey
-/journal - View your learning journal
+/resume - Continue from your last lesson
+/journal - View your learning journal 
+/feedback - Send feedback or questions
 /help - Show this help message
 
 To progress through lessons:
@@ -1368,6 +1440,7 @@ async def main() -> Application:
             await application.initialize()
             # Add command handlers
             application.add_handler(CommandHandler("start", start))
+            application.add_handler(CommandHandler("resume", resume_command))
             application.add_handler(CommandHandler("journal", get_journal))
             application.add_handler(CommandHandler("feedback", feedback_command))
             application.add_handler(CommandHandler("help", help_command))
@@ -1391,6 +1464,7 @@ async def main() -> Application:
             # Set commands
             await application.bot.set_my_commands([
                 BotCommand("start", "Start or restart the learning journey"),
+                BotCommand("resume", "Continue from your last lesson"),
                 BotCommand("journal", "View your learning journal"),
                 BotCommand("feedback", "Send feedback or questions"),
                 BotCommand("help", "Show help information")
