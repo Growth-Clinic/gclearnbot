@@ -1194,10 +1194,6 @@ async def send_lesson(update: Update, context: ContextTypes.DEFAULT_TYPE, lesson
             # Prepare message with header
             message = header + lesson["text"].replace('[', '<').replace(']', '>')
             
-            # Format URLs and tasks
-            message = message.replace('(http', '<a href="http')
-            message = message.replace(')', '">link</a>')
-            
             # Add available tasks
             available_tasks = TaskManager.get_tasks_for_lesson(lesson_key)
             if available_tasks:
@@ -1213,7 +1209,7 @@ async def send_lesson(update: Update, context: ContextTypes.DEFAULT_TYPE, lesson
             await context.bot.send_message(
                 chat_id=chat_id,
                 text=message,
-                parse_mode=ParseMode.HTML,
+                disable_web_page_preview=True,
                 reply_markup=InlineKeyboardMarkup([
                     [InlineKeyboardButton("✅", callback_data=lesson["next"])]
                 ]) if lesson.get("next") else None
@@ -1369,7 +1365,7 @@ async def handle_feedback(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
     return False
 
 # Admin Commands
-async def is_admin(user_id):
+def is_admin(user_id):
     """Check if user is an admin"""
     return user_id in ADMIN_IDS
 
