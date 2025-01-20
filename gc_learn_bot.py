@@ -1135,6 +1135,7 @@ async def main() -> Application:
         # Initialize bot and create application instance if not exists
         if application is None:
             application = Application.builder().token(BOT_TOKEN).build()
+            await application.initialize()
             # Add command handlers
             application.add_handler(CommandHandler("start", start))
             application.add_handler(CommandHandler("journal", get_journal))
@@ -1182,6 +1183,7 @@ async def create_app():
     
     # Initialize bot
     application = await main()
+    await application.start()
     return app
 
 async def start_app():
