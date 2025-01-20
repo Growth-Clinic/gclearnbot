@@ -316,19 +316,55 @@ class FeedbackManager:
                 "category": "uncategorized"
             }
 
+            # Debug logging
+            logger.info(f"Attempting to save feedback: {feedback_data}")
+
             result = db.feedback.insert_one(feedback_data)
             success = result.acknowledged
             
             if success:
-                logger.info(f"Feedback saved for user {user_id}")
+                logger.info(f"Feedback saved successfully for user {user_id}")
             else:
                 logger.error(f"Failed to save feedback for user {user_id}")
                 
             return success
 
-        except OperationFailure as e:
-            logger.error(f"Database error saving feedback: {e}")
-            raise
+        except Exception as e:
+            logger.error(f"Database error saving feedback: {e}", exc_info=True)
+            return False
+        
+    @staticmethod 
+    async def get_user_feedback(user_id: int, limit: int = 10) -> List[Dict[str, Any]]:
+        """
+        Get feedback history for a specific user.
+        
+        Args:
+            user_id: Telegram user ID
+            limit: Maximum number of feedback items to return
+            
+        Returns:
+            List of feedback documents
+        """
+        try:
+            # Debug logging
+            logger.info(f"Fetching feedback for user {user_id}")
+            
+            cursor = db.feedback.find(
+                {"user_id": user_id}
+            ).sort("timestamp", -1).limit(limit)
+            
+            feedback_list = []
+            for doc in cursor:
+                if '_id' in doc:
+                    doc['_id'] = str(doc['_id'])
+                feedback_list.append(doc)
+            
+            logger.info(f"Found {len(feedback_list)} feedback items for user {user_id}")
+            return feedback_list
+            
+        except Exception as e:
+            logger.error(f"Error retrieving user feedback: {e}", exc_info=True)
+            return []
 
     @staticmethod 
     def get_all_feedback(processed: bool = None, limit: int = 100) -> List[Dict[str, Any]]:
@@ -1190,6 +1226,36 @@ async def resume_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
 
 
 
+async def my_feedback_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Command to let users view their own feedback history"""
+    try:
+        user_id = update.message.from_user.id
+        feedback_list = await FeedbackManager.get_user_feedback(user_id)
+        
+        if not feedback_list:
+            await update.message.reply_text("You haven't submitted any feedback yet.")
+            return
+            
+        report = "📋 Your Feedback History:\n\n"
+        for feedback in feedback_list:
+            timestamp = datetime.fromisoformat(feedback['timestamp']).strftime("%Y-%m-%d %H:%M:%S")
+            report += f"📅 {timestamp}\n"
+            report += f"💭 {feedback['feedback']}\n"
+            report += "------------------------\n\n"
+        
+        # Split long reports into multiple messages if needed
+        if len(report) > 4096:
+            for i in range(0, len(report), 4096):
+                await update.message.reply_text(report[i:i+4096])
+        else:
+            await update.message.reply_text(report)
+            
+    except Exception as e:
+        logger.error(f"Error viewing user feedback: {e}", exc_info=True)
+        await update.message.reply_text("Error retrieving your feedback. Please try again later.")
+
+
+
 async def send_lesson(update: Update, context: ContextTypes.DEFAULT_TYPE, lesson_key: str) -> None:
     """Send lesson content with progress info and tasks"""
     try:
@@ -1343,6 +1409,7 @@ async def help_command(update: Update, context: CallbackContext):
 /resume - Continue from your last lesson
 /journal - View your learning journal 
 /feedback - Send feedback or questions
+/myfeedback - View your feedback history
 /help - Show this help message
 
 To progress through lessons:
@@ -1494,6 +1561,7 @@ async def main() -> Application:
             application.add_handler(CommandHandler("resume", resume_command))
             application.add_handler(CommandHandler("journal", get_journal))
             application.add_handler(CommandHandler("feedback", feedback_command))
+            application.add_handler(CommandHandler("myfeedback", my_feedback_command))
             application.add_handler(CommandHandler("help", help_command))
             
             # Admin handlers
@@ -1518,6 +1586,7 @@ async def main() -> Application:
                 BotCommand("resume", "Continue from your last lesson"),
                 BotCommand("journal", "View your learning journal"),
                 BotCommand("feedback", "Send feedback or questions"),
+                BotCommand("myfeedback", "View your feedback history"),
                 BotCommand("help", "Show help information")
             ])
 
