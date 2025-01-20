@@ -7,9 +7,11 @@ import json
 from datetime import datetime
 from pathlib import Path
 import sys
-from pymongo import MongoClient
+import logging
 import certifi
 from pymongo.errors import ServerSelectionTimeoutError
+from pymongo import MongoClient
+import time
 
 
 
@@ -51,40 +53,53 @@ def webhook():
 
 
 
-# Create directories for storage
-def init_mongodb():
-    """Initialize MongoDB connection with proper SSL handling"""
-    try:
-        MONGODB_URI = os.getenv('MONGODB_URI')
-        if not MONGODB_URI:
-            raise ValueError("MONGODB_URI environment variable not set!")
+# Setup logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+logger = logging.getLogger(__name__)
 
-        # Connect with SSL certificates
-        client = MongoClient(
-            MONGODB_URI,
-            tlsCAFile=certifi.where(),
-            connect=True,
-            serverSelectionTimeoutMS=5000
-        )
-        
-        # Test connection
-        client.admin.command('ping')
-        
-        db = client['telegram_bot']
-        
-        # Create indexes safely
+
+# Create directories for storage
+def init_mongodb(max_retries=3, retry_delay=2):
+    """Initialize MongoDB connection with retry mechanism"""
+    for attempt in range(max_retries):
         try:
-            db.journals.create_index("user_id", unique=True)
-        except Exception as e:
-            logger.warning(f"Index creation warning: {e}")
+            MONGODB_URI = os.getenv('MONGODB_URI')
+            if not MONGODB_URI:
+                raise ValueError("MONGODB_URI environment variable not set!")
+
+            client = MongoClient(
+                MONGODB_URI,
+                tlsCAFile=certifi.where(),
+                tls=True,
+                tlsAllowInvalidCertificates=False,
+                retryWrites=True,
+                serverSelectionTimeoutMS=5000,
+                connectTimeoutMS=20000
+            )
             
-        return db
-    except ServerSelectionTimeoutError as e:
-        logger.error(f"MongoDB connection timeout: {e}")
-        raise
-    except Exception as e:
-        logger.error(f"MongoDB connection error: {e}")
-        raise
+            # Test connection
+            client.admin.command('ping')
+            db = client['telegram_bot']
+            
+            try:
+                db.journals.create_index("user_id", unique=True)
+            except Exception as e:
+                logger.warning(f"Index creation warning: {e}")
+                
+            return db
+            
+        except ServerSelectionTimeoutError as e:
+            if attempt == max_retries - 1:
+                logger.error(f"MongoDB connection timeout after {max_retries} attempts: {e}")
+                raise
+            logger.warning(f"Attempt {attempt + 1} failed, retrying in {retry_delay}s...")
+            time.sleep(retry_delay)
+        except Exception as e:
+            logger.error(f"MongoDB connection error: {e}")
+            raise
 
 # Initialize MongoDB connection
 db = init_mongodb()
