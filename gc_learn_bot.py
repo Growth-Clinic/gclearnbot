@@ -1106,52 +1106,61 @@ def error_handler(update: Update, context: CallbackContext):
 
 # Set up the bot
 async def main() -> Application:
-    """Initialize and return the bot application"""
+    """
+    Initialize and return the bot application.
+
+    This function sets up the bot application by initializing the MongoDB connection,
+    creating the bot instance, adding command and message handlers, setting bot commands,
+    and configuring the webhook if a webhook URL is provided.
+
+    Returns:
+        Application: The initialized bot application.
+    """
     global application
     
     try:
         # Initialize database
         logger.info("Attempting to connect to MongoDB...")
-        db = init_mongodb()
-        logger.info("MongoDB connection established.")
+        global db
+        logger.info("Using existing MongoDB connection.")
         
         # Initialize bot and create application instance if not exists
         if application is None:
             application = Application.builder().token(BOT_TOKEN).build()
+            # Add command handlers
+            application.add_handler(CommandHandler("start", start))
+            application.add_handler(CommandHandler("journal", get_journal))
+            application.add_handler(CommandHandler("feedback", feedback_command))
+            application.add_handler(CommandHandler("help", help_command))
+            
+            # Admin handlers
+            application.add_handler(CommandHandler("adminhelp", adminhelp_command))
+            application.add_handler(CommandHandler("users", list_users))
+            application.add_handler(CommandHandler("viewfeedback", view_feedback))
+            application.add_handler(CommandHandler("addtask", add_task_command))
+            application.add_handler(CommandHandler("listtasks", list_tasks_command))
+            application.add_handler(CommandHandler("deactivatetask", deactivate_task_command))
 
-        # Add command handlers
-        application.add_handler(CommandHandler("start", start))
-        application.add_handler(CommandHandler("journal", get_journal))
-        application.add_handler(CommandHandler("feedback", feedback_command))
-        application.add_handler(CommandHandler("help", help_command))
-        
-        # Admin handlers
-        application.add_handler(CommandHandler("adminhelp", adminhelp_command))
-        application.add_handler(CommandHandler("users", list_users))
-        application.add_handler(CommandHandler("viewfeedback", view_feedback))
-        application.add_handler(CommandHandler("addtask", add_task_command))
-        application.add_handler(CommandHandler("listtasks", list_tasks_command))
-        application.add_handler(CommandHandler("deactivatetask", deactivate_task_command))
+            # Message handlers
+            application.add_handler(CallbackQueryHandler(handle_response))
+            application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
+            application.add_error_handler(error_handler)
 
-        # Message handlers
-        application.add_handler(CallbackQueryHandler(handle_response))
-        application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
-        application.add_error_handler(error_handler)
-
-        # Set commands
-        await application.bot.set_my_commands([
-            BotCommand("start", "Start or restart the learning journey"),
-            BotCommand("journal", "View your learning journal"),
-            BotCommand("feedback", "Send feedback or questions"),
-            BotCommand("help", "Show help information")
-        ])
+            # Set commands
+            await application.bot.set_my_commands([
+                BotCommand("start", "Start or restart the learning journey"),
+                BotCommand("journal", "View your learning journal"),
+                BotCommand("feedback", "Send feedback or questions"),
+                BotCommand("help", "Show help information")
+            ])
 
         # Set webhook in application
         if WEBHOOK_URL:
-            webhook_path = f"{WEBHOOK_URL}/webhook" 
+            webhook_path = f"{WEBHOOK_URL}/webhook"
             await application.bot.set_webhook(webhook_path)
             logger.info(f"Webhook set to {webhook_path}")
-
+        else:
+            logger.warning("WEBHOOK_URL environment variable not set. Webhook not configured.")
         return application
         
     except Exception as e:
@@ -1159,9 +1168,24 @@ async def main() -> Application:
         raise
 
 
+async def create_app():
+    """Initialize the application"""
+    global application
+    
+    # Initialize bot
+    application = await main()
+    return app
+
+async def start_app():
+    """Start the Quart application"""
+    port = int(os.getenv('PORT', 8080))
+    await app.run_task(host='0.0.0.0', port=port)
 
 if __name__ == "__main__":
-    flask_thread = threading.Thread(target=run_flask)
-    flask_thread.start()
-
-    application = asyncio.run(main())
+    import asyncio
+    
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+    
+    app = loop.run_until_complete(create_app())
+    loop.run_until_complete(start_app())
