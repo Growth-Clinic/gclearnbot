@@ -771,6 +771,12 @@ def list_journals():
 
 
 
+@app.route('/health', methods=['GET'])
+def health_check():
+    return jsonify({"status": "ok"}), 200
+
+
+
 async def get_journal(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """
     Send the user's learning journal.
