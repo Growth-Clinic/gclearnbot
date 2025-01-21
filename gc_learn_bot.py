@@ -303,7 +303,14 @@ class FeedbackManager:
             OperationFailure: If MongoDB operation fails
         """
         try:
+            # Get the current max ID and increment it
+            current_max_id = await asyncio.to_thread(
+                lambda: db.feedback.find_one(sort=[("id", -1)]) or {}
+            )
+            new_id = (current_max_id.get("id", 0) + 1)
+
             feedback_data = {
+                "id": new_id,  # New numeric ID
                 "user_id": user_id,
                 "feedback": feedback_text.strip(),
                 "timestamp": datetime.now(timezone.utc),
@@ -317,7 +324,7 @@ class FeedbackManager:
             
             success = result.acknowledged
             if success:
-                logger.info(f"Feedback saved for user {user_id}")
+                logger.info(f"Feedback saved for user {user_id} with ID {new_id}")
             return success
             
         except Exception as e:
@@ -414,12 +421,12 @@ class FeedbackManager:
             if category:
                 update["$set"]["category"] = category
 
-            result = db.feedback.update_one({"_id": feedback_id}, update)
+            result = db.feedback.update_one({"id": feedback_id}, update)
             return result.modified_count > 0
 
-        except OperationFailure as e:
+        except Exception as e:
             logger.error(f"Error marking feedback as processed: {e}")
-            raise
+            return False
 
 
 class TaskManager:
@@ -1287,6 +1294,7 @@ async def send_lesson(update: Update, context: ContextTypes.DEFAULT_TYPE, lesson
                 chat_id=chat_id,
                 text=message,
                 disable_web_page_preview=True,
+                parse_mode='HTML',
                 reply_markup=InlineKeyboardMarkup([
                     [InlineKeyboardButton("✅", callback_data=lesson["next"])]
                 ]) if lesson.get("next") else None
@@ -1496,7 +1504,7 @@ async def view_feedback(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
             
         report = "📬 Feedback Report:\n\n"
         for feedback in feedback_list:
-            feedback_id = feedback.get('_id', 'Unknown')  # Fetch feedback ID
+            feedback_id = feedback.get('id', 'Unknown')  # Fetch feedback ID
             user_id = feedback.get('user_id', 'Unknown')
             
             # Add more detailed error handling for user info retrieval
