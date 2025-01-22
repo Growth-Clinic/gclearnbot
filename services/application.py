@@ -135,8 +135,7 @@ async def create_app() -> Quart:
     return app
 
 
-async def start_app():
+async def start_app(app):
     """Start the Quart application"""
-    app = create_app()
     port = int(os.getenv('PORT', 8080))
     await app.run_task(host='0.0.0.0', port=port)
