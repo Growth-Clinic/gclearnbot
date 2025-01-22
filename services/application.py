@@ -80,7 +80,7 @@ async def initialize_application() -> Application:
             BotCommand("start", "Start or restart the learning journey"),
             BotCommand("resume", "Continue from your last lesson"),
             BotCommand("journal", "View your learning journal"),
-            BotCommand("feedback", "Send feedback or questions"),
+            BotCommand("feedback", "Send feedback"),
             BotCommand("myfeedback", "View your feedback history"),
             BotCommand("help", "Show help information")
         ])
