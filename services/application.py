@@ -18,34 +18,6 @@ application = None  # Initialize at module level
 db = None
 logger = logging.getLogger(__name__)
 
-def create_app() -> Quart:
-    """Initialize and configure the Quart application"""
-    app = Quart(__name__)
-    
-    # Initialize services
-    init_mongodb()
-    
-    # Setup routes
-    setup_routes(app)
-    
-    # Setup scheduler
-    scheduler = AsyncIOScheduler()
-    scheduler.start()
-    
-    # Add cleanup
-    @app.while_serving
-    async def lifespan():
-        """
-        Lifespan function to manage the application's lifecycle.
-
-        This function ensures that the scheduler is properly shut down
-        when the application stops serving.
-        """
-        yield
-        scheduler.shutdown()
-    
-    return app
-
 
 # Set up the bot
 async def main() -> Application:
@@ -128,6 +100,35 @@ async def initialize_application() -> Application:
     except Exception as e:
         logger.error(f"Failed to start bot: {e}")
         raise
+
+
+def create_app() -> Quart:
+    """Initialize and configure the Quart application"""
+    app = Quart(__name__)
+    
+    # Initialize services
+    init_mongodb()
+    
+    # Setup routes
+    setup_routes(app, application)
+    
+    # Setup scheduler
+    scheduler = AsyncIOScheduler()
+    scheduler.start()
+    
+    # Add cleanup
+    @app.while_serving
+    async def lifespan():
+        """
+        Lifespan function to manage the application's lifecycle.
+
+        This function ensures that the scheduler is properly shut down
+        when the application stops serving.
+        """
+        yield
+        scheduler.shutdown()
+    
+    return app
 
 
 async def start_app():
