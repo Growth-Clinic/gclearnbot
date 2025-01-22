@@ -14,7 +14,7 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-def main():
+async def async_main():
     try:
         with LockManager() as lock:
             if not lock.lock_acquired:
@@ -32,27 +32,20 @@ def main():
                 logger.error(f"Service initialization failed: {e}")
                 return 1
 
-            # Create event loop
-            loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
+            # Initialize the Telegram bot application
+            application = await initialize_application()
             
-            try:
-                # Initialize the Telegram bot application
-                application = loop.run_until_complete(initialize_application())
-                
-                # Create and start the Quart app
-                app = create_app()
-                loop.run_until_complete(start_app())
-                return 0
-            except Exception as e:
-                logger.error(f"Application runtime error: {e}")
-                return 1
-            finally:
-                loop.close()
+            # Create and start the Quart app
+            app = create_app()
+            await start_app()
+            return 0
                 
     except Exception as e:
         logger.error(f"Unexpected error: {e}")
         return 1
+
+def main():
+    asyncio.run(async_main())
 
 if __name__ == "__main__":
     exit(main())
