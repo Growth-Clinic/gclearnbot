@@ -1,5 +1,5 @@
 from telegram import Update
-from telegram.ext import ContextTypes, CallbackContext
+from telegram.ext import ContextTypes
 from services.database import TaskManager, FeedbackManager, UserManager, init_mongodb
 from services.lesson_loader import load_lessons
 from config.settings import Config
@@ -19,7 +19,7 @@ async def is_admin(user_id: int) -> bool:
     return user_id in ADMIN_IDS
 
 
-async def adminhelp_command(update: Update, context: CallbackContext):
+async def adminhelp_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Send a list of admin commands with descriptions."""
     if not await is_admin(update.message.from_user.id):
         await update.message.reply_text("This command is only available to admins.")

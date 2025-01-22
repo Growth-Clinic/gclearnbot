@@ -1,4 +1,4 @@
-from telegram import Update, CallbackContext
+from telegram import Update
 from telegram.ext import ContextTypes
 from services.database import UserManager, FeedbackManager
 from services.lesson_manager import send_lesson
@@ -83,7 +83,7 @@ async def my_feedback_command(update: Update, context: ContextTypes.DEFAULT_TYPE
         await update.message.reply_text("Error retrieving your feedback. Please try again later.")
 
 
-async def help_command(update: Update, context: CallbackContext):
+async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Send a message when the command /help is issued."""
     help_text = """
 🤖 Available commands:
@@ -185,7 +185,7 @@ def save_journal_entry(user_id, lesson_key, response):
         db.journals.insert_one(journal)
 
 
-async def handle_message(update: Update, context: CallbackContext):
+async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Handle user input and responses"""
     chat_id = update.message.chat_id
     user_response = update.message.text
@@ -228,7 +228,7 @@ async def handle_message(update: Update, context: CallbackContext):
 
 
 
-async def handle_response(update: Update, context: CallbackContext):
+async def handle_response(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Handle button responses."""
     query = update.callback_query
     await query.answer()  # Acknowledge the button press to remove loading state
