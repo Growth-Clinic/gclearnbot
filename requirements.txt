@@ -2,7 +2,7 @@ python-telegram-bot>=20.7  # Ensure compatibility with your async code
 quart>=0.18.4              # Quart version for your bot
 hypercorn>=0.14.3          # ASGI server for Quart
 pymongo[srv]==4.6.1        # MongoDB support with SRV
-python-dotenv>=1.0.0       # For environment variable management
+python-dotenv>=1.0.0       # For environment variable management and JSON handling
 certifi>=2023.11.17        # For SSL/TLS support
 dnspython>=2.4.2           # For DNS SRV support
 apscheduler>=3.8.0         # For scheduling tasks
