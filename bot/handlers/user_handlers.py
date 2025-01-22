@@ -1,7 +1,7 @@
 from telegram import Update
 from telegram.ext import ContextTypes
 from services.database import UserManager, FeedbackManager
-from services.lesson_manager import send_lesson
+from services.lesson_manager import LessonService
 from config.settings import db
 from services.lesson_loader import load_lessons
 import logging
@@ -12,8 +12,11 @@ lessons = load_lessons() # Load lessons from JSON file
 user_data = {} # In-memory storage for user progress
 
 
-
-
+lesson_service = LessonService(
+    lessons=load_lessons(),
+    task_manager=TaskManager(),
+    user_manager=UserManager()
+)
 
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
