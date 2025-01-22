@@ -4,7 +4,9 @@ from services.database import init_mongodb
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from telegram.ext import Application, CommandHandler, MessageHandler, CallbackQueryHandler, filters
 from telegram import BotCommand
-from bot.handlers.user_handlers import start, resume_command, get_journal, feedback_command, my_feedback_command, help_command, adminhelp_command, list_users, view_feedback, process_feedback_command, add_task_command, list_tasks_command, deactivate_task_command, handle_response, handle_message, error_handler
+from bot.handlers.user_handlers import start, resume_command, get_journal, feedback_command, my_feedback_command, help_command, handle_response, handle_message
+from bot.handlers.admin_handlers import adminhelp_command, list_users, view_feedback, process_feedback_command, add_task_command, list_tasks_command, deactivate_task_command   
+from services.error_handler import error_handler
 import logging
 import validators
 import os
