@@ -1,8 +1,7 @@
 from telegram import Update
 from telegram.ext import ContextTypes
-from services.database import UserManager, FeedbackManager
+from services.database import UserManager, FeedbackManager, TaskManager, db
 from services.lesson_manager import LessonService
-from config.settings import db
 from services.lesson_loader import load_lessons
 import logging
 from datetime import datetime
@@ -37,7 +36,7 @@ Available commands:
 Type /start to begin your learning journey!
 """
     await update.message.reply_text(welcome_text)
-    await send_lesson(update, context, "lesson_1")
+    await lesson_service.send_lesson(update, context, "lesson_1")
 
 
 async def resume_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -48,7 +47,7 @@ async def resume_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
         
         if user_data and user_data.get("current_lesson"):
             await update.message.reply_text("📚 Resuming your last lesson...")
-            await send_lesson(update, context, user_data["current_lesson"])
+            await lesson_service.send_lesson(update, context, user_data["current_lesson"])
         else:
             await update.message.reply_text("No previous progress found. Use /start to begin!")
     except Exception as e:
@@ -217,7 +216,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 chat_id=chat_id,
                 text="✅ Response saved! Moving to next step..."
             )
-            await send_lesson(update, context, next_step)
+            await lesson_service.send_lesson(update, context, next_step)
         else:
             await context.bot.send_message(
                 chat_id=chat_id,
@@ -239,7 +238,7 @@ async def handle_response(update: Update, context: ContextTypes.DEFAULT_TYPE):
     next_step = query.data
     if next_step and next_step in lessons:  # Check if next_step exists in lessons
         user_data[query.message.chat_id] = next_step
-        await send_lesson(update, context, next_step)
+        await lesson_service.send_lesson(update, context, next_step)
     else:
         await query.edit_message_text(text="Please reply with your input to proceed.")
 
