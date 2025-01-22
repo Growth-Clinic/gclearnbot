@@ -2,7 +2,7 @@ import logging
 import asyncio
 from config.settings import Config
 from services.lock_manager import LockManager
-from services.application import create_app, start_app, initialize_application
+from services.application import create_app, start_app
 from services.lesson_manager import LessonService
 from services.lesson_loader import load_lessons
 from services.database import TaskManager, UserManager
@@ -32,11 +32,8 @@ async def async_main():
                 logger.error(f"Service initialization failed: {e}")
                 return 1
 
-            # Initialize the Telegram bot application
-            application = await initialize_application()
-            
             # Create and start the Quart app
-            app = create_app()
+            app = await create_app()
             await start_app()
             return 0
                 
