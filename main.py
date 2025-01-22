@@ -34,7 +34,7 @@ async def async_main():
 
             # Create and start the Quart app
             app = await create_app()
-            await start_app()
+            await start_app(app)  # Pass the app object to start_app
             return 0
                 
     except Exception as e:
