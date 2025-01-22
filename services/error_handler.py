@@ -1,12 +1,12 @@
 from telegram import Update
-from telegram.ext import CallbackContext
+from telegram.ext import ContextTypes
 import logging
 
 
 logger = logging.getLogger(__name__)
 
 
-async def error_handler(update: Update, context: CallbackContext):
+async def error_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Log Errors caused by Updates."""
     logger.error(f'Update "{update}" caused error "{context.error}"', exc_info=context.error)
     try:
