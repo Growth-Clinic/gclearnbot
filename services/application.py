@@ -102,15 +102,19 @@ async def initialize_application() -> Application:
         raise
 
 
-def create_app() -> Quart:
+async def create_app() -> Quart:
     """Initialize and configure the Quart application"""
     app = Quart(__name__)
     
     # Initialize services
     init_mongodb()
     
+    # Initialize the Telegram bot application
+    global application
+    application = await initialize_application()
+    
     # Setup routes
-    setup_routes(app, application)
+    setup_routes(app, application)  # Pass the application object here
     
     # Setup scheduler
     scheduler = AsyncIOScheduler()
