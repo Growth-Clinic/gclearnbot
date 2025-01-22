@@ -11,7 +11,14 @@ import time
 import asyncio
 
 
-logger = logging.getLogger(__name__)
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+)
+logger = logging.getLogger(__name__) # Get logger instance
+
+
 lessons = load_lessons()
 
 
@@ -53,7 +60,6 @@ def init_mongodb(max_retries=3, retry_delay=2):
         except Exception as e:
             logger.error(f"MongoDB connection error: {e}")
             raise
-
 
 
 # Initialize MongoDB connection
@@ -156,19 +162,7 @@ class UserManager:
 
     @staticmethod
     async def update_user_progress(user_id: int, lesson_key: str) -> bool:
-        """
-        Update user's progress.
-        
-        Args:
-            user_id: Telegram user ID
-            lesson_key: Current lesson identifier
-            
-        Returns:
-            True if update successful, False otherwise
-            
-        Raises:
-            OperationFailure: If MongoDB update fails
-        """
+        """Update user's progress."""
         try:
             if not lesson_key in lessons:
                 logger.error(f"Invalid lesson key: {lesson_key}")
@@ -188,11 +182,13 @@ class UserManager:
             success = result.modified_count > 0
             if success:
                 logger.info(f"Progress updated for user {user_id}: {lesson_key}")
+            else:
+                logger.warning(f"No progress updated for user {user_id}")
             return success
             
-        except OperationFailure as e:
-            logger.error(f"Database error updating progress for user {user_id}: {e}")
-            raise
+        except Exception as e:
+            logger.error(f"Error updating progress for user {user_id}: {e}", exc_info=True)
+            return False
 
 
 class FeedbackManager:
@@ -200,19 +196,7 @@ class FeedbackManager:
 
     @staticmethod
     async def save_feedback(user_id: int, feedback_text: str) -> bool:
-        """
-        Save user feedback with validation and error handling.
-
-        Args:
-            user_id: Telegram user ID
-            feedback_text: User's feedback message
-
-        Returns:
-            bool: True if save successful, False otherwise
-            
-        Raises:
-            OperationFailure: If MongoDB operation fails
-        """
+        """Save user feedback with validation and error handling."""
         try:
             # Get the current max ID and increment it
             current_max_id = await asyncio.to_thread(
@@ -236,10 +220,12 @@ class FeedbackManager:
             success = result.acknowledged
             if success:
                 logger.info(f"Feedback saved for user {user_id} with ID {new_id}")
+            else:
+                logger.warning(f"Feedback not saved for user {user_id}")
             return success
             
         except Exception as e:
-            logger.error(f"Error saving feedback: {e}", exc_info=True)
+            logger.error(f"Error saving feedback for user {user_id}: {e}", exc_info=True)
             return False
         
     @staticmethod 
@@ -338,6 +324,47 @@ class FeedbackManager:
         except Exception as e:
             logger.error(f"Error marking feedback as processed: {e}")
             return False
+
+
+class FeedbackAnalyticsManager:
+    """Manages feedback analytics and ratings in MongoDB."""
+
+    @staticmethod
+    def save_feedback_analytics(user_id: int, lesson_id: str, feedback_results: dict) -> None:
+        """Store feedback data for continuous improvement."""
+        try:
+            db.feedback_analytics.update_one(
+                {"user_id": user_id},
+                {"$push": {
+                    "lessons": {
+                        "lesson_id": lesson_id,
+                        "keywords_found": feedback_results.get("matches", []),
+                        "feedback_given": feedback_results.get("feedback", []),
+                        "timestamp": datetime.now(timezone.utc)
+                    }
+                }},
+                upsert=True
+            )
+            logger.info(f"Feedback analytics saved for user {user_id} and lesson {lesson_id}")
+        
+        except Exception as e:
+            logger.error(f"Error saving feedback analytics for user {user_id}: {e}", exc_info=True)
+            raise
+
+    @staticmethod
+    def track_feedback_rating(user_id: int, rating: str) -> None:
+        """Track feedback ratings for improvement."""
+        try:
+            db.feedback_ratings.update_one(
+                {"user_id": user_id},
+                {"$push": {"ratings": rating}},
+                upsert=True
+            )
+            logger.info(f"Feedback rating tracked for user {user_id}: {rating}")
+        
+        except Exception as e:
+            logger.error(f"Error tracking feedback rating for user {user_id}: {e}", exc_info=True)
+            raise
 
 
 class TaskManager:
