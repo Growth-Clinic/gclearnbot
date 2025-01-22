@@ -5,3 +5,4 @@ pymongo[srv]==4.6.1        # MongoDB support with SRV
 python-dotenv>=1.0.0       # For environment variable management
 certifi>=2023.11.17        # For SSL/TLS support
 dnspython>=2.4.2           # For DNS SRV support
+apscheduler>=3.8.0         # For scheduling tasks

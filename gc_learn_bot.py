@@ -50,6 +50,7 @@ def is_already_running():
 
 # Create Quart app
 app = Quart(__name__)
+scheduler = AsyncIOScheduler()
 
 
 
@@ -771,9 +772,32 @@ def list_journals():
 
 
 
-@app.route('/health', methods=['GET'])
-def health_check():
-    return jsonify({"status": "ok"}), 200
+@app.route('/health')
+async def health_check():
+    """Health check endpoint"""
+    try:
+        # Test DB connection
+        await asyncio.to_thread(db.users.find_one)
+        return {
+            "status": "healthy",
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "db": "connected"
+        }, 200
+    except Exception as e:
+        return {
+            "status": "unhealthy",
+            "error": str(e)
+        }, 500
+
+
+
+async def keep_warm():
+    """Periodic warm-up check"""
+    try:
+        await asyncio.to_thread(db.users.find_one)
+        logger.debug("Warm-up successful")
+    except Exception as e:
+        logger.error(f"Warm-up failed: {e}")
 
 
 
@@ -1663,6 +1687,11 @@ async def create_app():
     # Initialize bot
     application = await main()
     await application.start()
+
+    # Setup warm-up job
+    scheduler.add_job(keep_warm, 'interval', minutes=10)
+    scheduler.start()
+
     return app
 
 async def start_app():
