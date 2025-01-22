@@ -12,7 +12,7 @@ else
 fi
 
 # Run the bot
-python gc_learn_bot.py || {
+python main.py || {
     echo "Error: Failed to start bot!"
     exit 1
 }
