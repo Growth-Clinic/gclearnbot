@@ -2,7 +2,7 @@ import logging
 import asyncio
 from config.settings import Config
 from services.lock_manager import LockManager
-from services.application import create_app, start_app
+from services.application import create_app, start_app, initialize_application
 from services.lesson_manager import LessonService
 from services.lesson_loader import load_lessons
 from services.database import TaskManager, UserManager
@@ -37,7 +37,11 @@ def main():
             asyncio.set_event_loop(loop)
             
             try:
-                app = loop.run_until_complete(create_app())
+                # Initialize the Telegram bot application
+                application = loop.run_until_complete(initialize_application())
+                
+                # Create and start the Quart app
+                app = create_app()
                 loop.run_until_complete(start_app())
                 return 0
             except Exception as e:
