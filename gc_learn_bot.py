@@ -840,375 +840,638 @@ async def get_journal(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
 # Define the lessons and steps
 lessons = {
     "lesson_1": {
-        "text": (
-            "👋 Hello and welcome!\n\n"
-            "We're excited to help you learn how to build and grow products by leveraging communities. Here's how this will work:\n\n"
-            "✨ You'll complete a series of tasks designed to teach mental models for building your own processes. These mental models include:\n\n"
-            "- 🧠 Design Thinking\n"
-            "- 📊 Business Model Thinking\n"
-            "- 🌍 Market Thinking\n"
-            "- 👤 User Thinking\n"
-            "- 🏗️ Agile Project Thinking\n\n"
-            "Let's start with Design Thinking! Ready? Reply ✅ to continue."
-        ),
+        "text": """🌟 Lesson 1 - Welcome
+
+Hello and welcome! 👋
+
+We're excited to help you learn how to build and grow products by leveraging communities. Here's how this will work:
+
+You'll complete a series of tasks designed to teach mental models for building your own processes. These mental models include:
+
+- Design Thinking 🎨
+- Business Model Thinking 💼
+- Market Thinking 📈
+- User Thinking 👤
+- Agile Project Thinking 🚀
+
+✅ As you go through this:
+- Think about other challenges you'd like to tackle.
+- How can you apply these mental models to other areas of your life or work?
+
+Let's start with Design Thinking! Ready? Click to continue. 📝""",
         "next": "lesson_2"
     },
     "lesson_2": {
-        "text": """🧠 Lesson 2: Design Thinking
+        "text": """🎨 Lesson 2 - Design Thinking
 
-👋 Welcome to Design Thinking! This lesson helps you learn and apply the 5-step process for understanding and solving user problems. Here's the breakdown:
+Welcome to Design Thinking! 🎉
 
-1️⃣ Empathise: Understand your user's perspective and feelings
-2️⃣ Define: Identify the core problem or challenge
-3️⃣ Ideate: Brainstorm creative solutions
-4️⃣ Prototype: Develop an initial version of your solution
-5️⃣ Test: Get user feedback and refine your ideas
+In this lesson, we'll work on improving the gift-giving experience for someone. You’ll learn how to understand their needs, define the problem, and come up with creative solutions.
 
-🌟 Exercise Focus: Redesign the experience of gift-giving for someone close to you (not the gift itself). Ready? Reply ✅ to begin.""",
+✅ Why This Matters:
+- You can use this process to improve any experience—not just gift-giving.
+- It’s a powerful way to solve real-world problems by focusing on the user’s perspective.
+
+Here's the 5-step breakdown:
+1. Empathise: Understand your user's perspective and feelings. 🤝
+2. Define: Identify the core problem or challenge. 🎯
+3. Ideate: Brainstorm creative solutions. 💡
+4. Prototype: Develop an initial version of your solution. 🛠️
+5. Test: Get user feedback and refine your ideas. 🔄
+
+Ready to dive in? Tap to begin! 📝""",
         "next": "lesson_2_step_1"
     },
     "lesson_2_step_1": {
-        "text": """🔍 Understanding your user is key! To start, find someone you can interview. This could be a friend, sibling, or colleague. They will be your "user" throughout this exercise.
+        "text": """🤝 Step 1: Empathise
+
+Understanding your user is key! To start, find someone you can interview. This could be a friend, sibling, or colleague. They will be your "user" throughout this exercise.
 
 ✅ Prep Task:
+We are going to be working on improving the gift-giving experience for someone, that is to help them come up with better ways to give gifts. You can use this in any other situation or experience you want to improve.
+
 1. Get a notebook or voice recorder to capture their responses.
 2. Ask about their last gift-giving experience:
    - "What happened?"
    - "How did you choose the gift?"
    - "What was hard or easy about the process?"
 
-📝 Note interesting points. Share one insight you found surprising!""",
+Note interesting points. Share one insight you found surprising! 📝""",
         "next": "lesson_2_step_2"
     },
     "lesson_2_step_2": {
-        "text": """💬 Follow up and dig deeper! Ask more questions about responses you found interesting. Use open-ended questions like "Why was that challenging?" or "How did that make you feel?"
+        "text": """🔍 Step 2: Research Some More
 
-🔥 Tip: Ask "Why?" multiple times until you uncover deeper feelings or emotions.
+Follow up and dig deeper! Ask more questions about responses you found interesting. Use open-ended questions like "Why was that challenging?" or "How did that make you feel?"
 
-📚 Resource: Read this article on the 5 Whys (https://en.wikipedia.org/wiki/5_Whys) to understand why asking "Why" is so powerful in design.
+✅ Task:
+- Ask more questions about responses you found interesting.
 
-Reply 📝 with one new insight you gained during this follow-up.""",
+Extra Resource: The 5 Whys
+The 5 Whys is a simple tool to uncover the root cause of a problem. Ask "Why?" five times to dig deeper.
+
+Example:
+1. Why is gift-giving stressful? – I don’t know what to buy.
+2. Why don’t you know? – I don’t know what they like.
+3. Why don’t you know their interests? – We don’t talk much.
+4. Why don’t you talk? – We’re always busy.
+5. Why are you busy? – We don’t prioritize time together.
+
+Root Cause: Lack of quality time.
+
+Use this to uncover deeper insights!
+
+Reply with one new insight you gained during this follow-up 📝""",
         "next": "lesson_2_step_3"
     },
     "lesson_2_step_3": {
-        "text": """📌 Let's clarify the problem. Using your notes, create a concise problem statement. Here's how:
+        "text": """🎯 Step 3: Define
+
+Let’s clarify the problem. Using your notes, create a concise problem statement.
 
 ✅ Tasks:
 1. Write a Needs List: What was your user trying to accomplish?
-   - What were they trying to do by going through that experience. What does gift giving do for them. Needs should be verbs.
+   - What were they trying to do by going through that experience? What does gift giving do for them? Needs should be verbs.
 2. Write an Insights List: What stood out to you during the interview?
    - These are the things you noticed would be helpful in improving that experience for your user.
 3. Combine items in both the Needs List and the Insights List to craft a Problem Statement:
-   - Example: "Ali needs a way to make the most of his time (Need), but he struggles with managing it effectively (Insight)."
+   - Example: "All needs a way to make the most of his time (Need), but he struggles with managing it effectively (Insight)."
 
-Here's a template you can use by filling in the blanks/[ text ]:
+Here’s a template you can use by filling in the blanks:
 - [UserName] needs/wants a way to [user need], surprisingly // because // but [insight].
 
-Reply ✏️ with your problem statement for feedback!""",
+Reply with your problem statement for feedback 📝""",
         "next": "lesson_2_step_4"
     },
     "lesson_2_step_4": {
-        "text": """💡 Time to get creative! Brainstorm possible solutions to the problem you defined.
+        "text": """💡 Step 4: Ideate
+
+Time to get creative! Brainstorm possible solutions to the problem you defined.
 
 ✅ Tasks:
 1. Write down at least 3 possible solutions (apps, services, or creative approaches).
-2. Need inspiration? Check out these resources:
-   - How to Build Creative Confidence: https://youtu.be/16p9YRF0l-g
-   - How to Generate Ideas: https://youtu.be/L1kbrlZRDvU
-   - Develop an Eye for Design: https://medium.com/@kathleen_warner/how-to-develop-an-eye-for-design-c5a4c64bb26c
-   - Stealing Your Way to Original Designs: https://danmall.com/posts/stealing-your-way-to-original-designs/
 
-Reply 💡 with your list of ideas.""",
+Here are quick ideation techniques to spark creativity:
+1. Steal Like an Artist
+   - Look at successful products/services and adapt their ideas
+   - Combine features from different sources
+   - Add your unique twist
+2. Generate Ideas Like a Pro
+   - Observe how people solve similar problems
+   - Try quick prototypes
+   - Test and refine based on feedback
+
+Reply with your list of ideas 📝""",
         "next": "lesson_2_step_5"
     },
     "lesson_2_step_5": {
-        "text": """🛠️ Bring your idea to life! Use your top solution to create a simple prototype. Sketch it out on paper or use a free tool like MarvelApp (https://marvelapp.com/) to create an interactive wireframe.
+        "text": """🛠️ Step 5: Prototype
+
+Bring your idea to life! Create a simple prototype of your solution. You can use:
+- Paper sketch
+- Digital wireframe
+- Physical mockup
 
 ✅ Tasks:
-- Share a brief description or photo of your prototype.
-- Need help? Check out this guide on UX Sketching: https://www.toptal.com/designers/ux/guide-to-ux-sketching
+- Share a brief description of your prototype.
 
-Reply 📷 with your prototype or its description.""",
+Quick prototyping tips:
+- Start rough, it doesn't have to look good yet, focus on core features
+- Label the key parts clearly
+- Show how users would interact with it
+- Keep it simple and easy to test
+
+Reply with a description of your prototype 📝""",
         "next": "lesson_2_step_6"
     },
     "lesson_2_step_6": {
-        "text": """🔄 Refine your idea with feedback! This is an ongoing process.
+        "text": """🔄 Step 6: Test and Improve
+
+Refine your idea with feedback! This is an ongoing process.
 
 1. Show your prototype to your user.
 2. Ask:
    - "What works well for you?"
-   - "What doesn't work or feels unclear?"
+   - "What doesn’t work or feels unclear?"
 
 ✅ Task: Use their feedback to refine your prototype.
 
-Repeat this process as needed, but don't aim for perfection---focus on real-world feedback! You are not looking to validate your solution, you just want feedback.
+Repeat this process as needed, but don’t aim for perfection—focus on real-world feedback! You are not looking to validate your solution, you just want feedback.
 
-Reply 📝 with one key improvement you made based on testing.
+Reply with one key improvement you made based on testing 📝""",
+        "next": "lesson_2_congratulations"
+    },
+    "lesson_2_congratulations": {
+        "text": """🎉 Congratulations!
 
-🌟 Congratulations! You've completed the Design Thinking process! Remember, it's a cycle: Empathise, Define, Ideate, Prototype, and Test repeatedly to create great solutions.
+You’ve completed the Design Thinking process! Remember, it’s a cycle: Empathise, Define, Ideate, Prototype, and Test repeatedly to create great solutions.
 
-Are you ready to move to Lesson 3 on Business Modelling? Reply ✅ to proceed!""",
+✅ Where Else Can You Use This?
+- Think about other experiences you’d like to improve.
+- Where else could you apply this research and design process?
+
+Next Step: Lesson 3 - Business Modelling. Ready? Tap to proceed! 📝""",
         "next": "lesson_3"
     },
     "lesson_3": {
-        "text": """📊 Lesson 3: Business Modelling
+        "text": """💼 Lesson 3 - Business Modelling
 
-👋 Welcome to Business Modelling! This lesson introduces the Business Model Canvas, a strategic tool for creating and documenting business models. You'll apply this to the idea you worked on in the Design Thinking lesson.
+Welcome to Business Modelling! 🎉
 
-🎥 Videos to Watch:
-1. Quick Overview of the Business Model Canvas: https://www.youtube.com/watch?v=QoAOzMTLP5s
-2. Getting From Business Idea to Business Model: https://www.youtube.com/watch?v=wwShFsSFb-Y
-3. Visualising Your Business Model: https://www.youtube.com/watch?v=wlKP-BaC0jA
-4. Prototyping Business Models: https://www.youtube.com/watch?v=iA5MVUNkSkM
-5. Navigating Your Environment: https://www.youtube.com/watch?v=7O36YBn9x_4
-6. Proving It: Testing Business Models: https://www.youtube.com/watch?v=-2gd_vhNYT4
-7. Telling Your Story: https://www.youtube.com/watch?v=SshglHDKQCc
+This lesson helps you transform your idea into a sustainable business by learning how to create, deliver, and capture value using the Business Model Canvas.
 
-✅ Task: Watch the videos in order. Reply ✅ once done.""",
+✅ Step 1: What is a Business Model?
+A business model explains how your idea will create, deliver, and capture value. Think of it as the story of your business that answers:
+1. Who are you serving?
+2. What value do you offer them?
+3. How do you deliver and sustain that value profitably?
+
+Task: Write down your initial answers to these three questions for your idea. This will act as your starting point.
+
+Reply with your answers 📝""",
+        "next": "lesson_3_step_1"
+    },
+    "lesson_3_step_1": {
+        "text": """📊 Step 1: What is a Business Model?
+
+A business model explains how your idea will create, deliver, and capture value. Think of it as the story of your business that answers:
+1. Who are you serving?
+2. What value do you offer them?
+3. How do you deliver and sustain that value profitably?
+
+✅ Task: Write down your initial answers to these three questions for your idea. This will act as your starting point.
+
+Reply with your answers 📝""",
         "next": "lesson_3_step_2"
     },
     "lesson_3_step_2": {
-        "text": """📖 The Business Model Canvas includes 9 key components:
+        "text": """📝 Step 2: Introduction to the Business Model Canvas
 
-- Value Proposition
-- Customer Segments
-- Revenue Streams
-- Channels
-- Cost Structure
-- Key Activities
-- Key Resources
-- Key Partnerships
-- Customer Relationships
+The Business Model Canvas is a visual tool to design, iterate, and test your business model. It has 9 building blocks:
 
-✍️ Task: Take the idea you worked on during the Design Thinking lesson and begin filling in the Business Model Canvas. Focus on:
-1️⃣ Value Proposition: What problem does your product solve?
-2️⃣ Customer Segments: Who are you solving this problem for?
+- Customer Segments: Who are your customers? Define them clearly (e.g., demographics, behaviours).
+- Value Proposition: What problem are you solving, and what makes your solution unique?
+- Channels: How will you reach your customers (e.g., online platforms, retail stores)?
+- Customer Relationships: How will you interact with and retain customers (e.g., personalised support)?
+- Revenue Streams: How will your business make money (e.g., subscription, one-time sales)?
+- Key Resources: What assets are critical for delivering your value (e.g., technology, talent)?
+- Key Activities: What actions are essential to run your business (e.g., marketing, product development)?
+- Key Partnerships: Who can help you achieve your goals (e.g., suppliers, collaborators)?
+- Cost Structure: What are your major costs (e.g., production, marketing)?
 
-Reply 📝 with your notes for these two components.""",
+✅ Task: Map out these 9 blocks for your idea using sticky notes or a digital tool. Don’t worry about perfection—just start brainstorming!
+
+Reply with your initial canvas 📝""",
         "next": "lesson_3_step_3"
     },
     "lesson_3_step_3": {
-        "text": """🔄 A business model should evolve based on feedback and testing.
+        "text": """🛠️ Step 3: Prototyping Your Business Model
 
-✅ Tasks:
-1. Map your business's environment: Consider competitors, trends, and external factors that affect your model.
-2. Test assumptions for each component of the Canvas. For example:
-   - Are your target customers willing to pay for this solution?
-   - Are the chosen channels effective for reaching them?
+Prototyping isn’t just for products! Use the Business Model Canvas to test different ways your idea can become a business. For example:
+- Experiment with Revenue Streams: Could you charge a subscription fee instead of a one-time purchase?
+- Reimagine Channels: Would a mobile app or social media be more effective than traditional advertising?
 
-Reply 📝 with one insight or change you made based on your tests.""",
+💡 Tip: Think creatively! Some successful businesses use unexpected models, like offering free services to drive demand for paid add-ons (e.g., freemium models).
+
+✅ Task: Create 2-3 variations of your Business Model Canvas to explore different approaches. Reply with your top variation for feedback! 📝""",
         "next": "lesson_3_step_4"
     },
     "lesson_3_step_4": {
-        "text": """📜 The final step is crafting a compelling narrative. Your story should explain:
-- What your product does.
-- Why it's needed.
-- How it creates value.
+        "text": """🔍 Step 4: Testing Your Model
 
-✅ Task: Use your notes from the Canvas to write a 3-sentence pitch for your product.
+Once you have a prototype, it’s time to test your assumptions. Focus on key questions like:
+1. Do customers care about your value proposition?
+2. Are they willing to pay for your solution?
+3. Are your chosen channels effective?
 
-Reply 📜 with your pitch.
+💡 Tip: Use real-world feedback. Talk to potential customers, test marketing campaigns, or run small-scale pilots.
 
-🌟 Congratulations! You've completed Lesson 3: Business Modelling. You now know how to create, refine, and present a business model.
+✅ Task: Share one key insight you gained from testing and any changes you made to your business model. 📝""",
+        "next": "lesson_3_step_5"
+    },
+    "lesson_3_step_5": {
+        "text": """🌍 Step 5: Navigating the Business Environment
 
-🚀 Next Step: Lesson 4 - Market Thinking. Ready? Reply ✅ to continue!""",
+Your business doesn’t exist in isolation. Use these steps to map your environment:
+- Market Forces: Who are your competitors? What are the trends?
+- Key Trends: Are there emerging technologies or regulations that could impact you?
+- Industry Forces: How is your industry evolving? What partnerships can you leverage?
+- Macroeconomic Forces: What global factors (e.g., economic shifts) might affect your model?
+
+✅ Task: Write down one opportunity and one threat from your environment. How can your business model adapt to address them? 📝""",
+        "next": "lesson_3_step_6"
+    },
+    "lesson_3_step_6": {
+        "text": """📖 Step 6: Telling Your Story
+
+A great business model deserves a compelling story. Present your model clearly by:
+1. Starting with your customer and their problem.
+2. Showing how your value proposition solves their problem.
+3. Explaining how your business captures and sustains value.
+
+💡 Tip: Use examples and data to make your story relatable and credible.
+
+✅ Task: Create a short pitch (3-5 sentences) based on your Business Model Canvas. Reply with your pitch for feedback! 📝""",
+        "next": "lesson_3_congratulations"
+    },
+    "lesson_3_congratulations": {
+        "text": """🎉 Congratulations!
+
+You’ve learned how to turn your idea into a sustainable business model.
+
+✅ Where Else Can You Use This?
+- Think about other ideas or projects you’d like to model.
+- How can you apply the Business Model Canvas to other ventures?
+
+Next Step: Lesson 4 - Market Thinking. Ready? Tap to continue! 📝""",
         "next": "lesson_4"
     },
     "lesson_4": {
-        "text": """🌍 Lesson 4: Market Thinking
+        "text": """📈 Lesson 4 - Market Thinking
 
-👋 Welcome to Market Thinking! Understanding your market is critical for aligning your product with user needs and growth channels. This lesson will guide you through Brian Balfour's Four Fit Framework, a powerful approach to structuring your business for sustainable growth.
+Welcome to Market Thinking! 🌟
 
-💡 Explore the Four Fit Framework:
-1️⃣ Product-Market Fit: Does your product solve a key problem for your target users?
-2️⃣ Market-Channel Fit: Are your chosen channels effective for reaching your market?
-3️⃣ Channel-Model Fit: Do your channels align with your revenue model?
-4️⃣ Model-Market Fit: Does your revenue model work well within your target market?
+This lesson is all about helping you understand how your product fits into the broader market and scales to millions (or billions) in revenue. We’ll explore Brian Balfour’s Four Fit Framework in detail to ensure your product thrives.
 
-📚 Start with these essays:
-- Why Product-Market Fit Isn't Enough: https://brianbalfour.com/essays/product-market-fit-isnt-enough
-- Market-Product Fit: The Road to a $100M Company Doesn't Start with Product: https://brianbalfour.com/essays/market-product-fit
-- Product-Channel Fit Will Make or Break Your Growth Strategy: https://brianbalfour.com/essays/product-channel-fit-for-growth
-- Channel-Model Fit: Get Out of the ARPU-CAC Danger Zone: https://brianbalfour.com/essays/channel-model-fit-for-user-acquisition
-- Model-Market Fit Threshold for Growth: https://brianbalfour.com/essays/model-market-fit-threshold-for-growth
-- How The Four Fits Work Together: https://brianbalfour.com/essays/key-lessons-for-100m-growth
-- HubSpot Growth Framework Case Study: https://brianbalfour.com/essays/hubspot-growth-framework-100m
+✅ Step 1: Build on Your Product-Market Fit
+In Lesson 2, you focused on deeply understanding your user’s problem. Now, take what you’ve learned and connect it to your product’s market.
 
-🎥 Prefer videos? Watch summaries embedded in the essays for a quick overview. Reply ✅ when you've completed the first essay.""",
+Quick Recap: Product-Market Fit means solving a pressing problem for a specific group of people. Signs of strong fit include enthusiastic feedback, repeated usage, and word-of-mouth referrals.
+
+Example: Dropbox achieved Product-Market Fit by solving the universal problem of file sharing with a simple, user-friendly solution.
+
+Task: Write down the specific group of users your product is designed for and how your solution addresses their core pain points. Reply with your notes 📝""",
+        "next": "lesson_4_step_1"
+    },
+    "lesson_4_step_1": {
+        "text": """🎯 Step 1: Build on Your Product-Market Fit
+
+In Lesson 2, you focused on deeply understanding your user’s problem. Now, take what you’ve learned and connect it to your product’s market.
+
+Quick Recap: Product-Market Fit means solving a pressing problem for a specific group of people. Signs of strong fit include enthusiastic feedback, repeated usage, and word-of-mouth referrals.
+
+Example: Dropbox achieved Product-Market Fit by solving the universal problem of file sharing with a simple, user-friendly solution.
+
+✅ Task: Write down the specific group of users your product is designed for and how your solution addresses their core pain points. Reply with your notes 📝""",
         "next": "lesson_4_step_2"
     },
     "lesson_4_step_2": {
-        "text": """🔄 Task: Using the product idea from your Design Thinking lesson, answer these:
+        "text": """📡 Step 2: Market-Channel Fit
 
-1️⃣ Who are your target users? Define their demographics, behaviour, and pain points.
-2️⃣ What channels will you use to reach them? Consider online, offline, and hybrid channels.
+Your product needs the right channels to reach its market effectively. Channels can include:
+- IM-based platforms: Bots or tools integrated into messaging apps.
+- Social media integrations: Like how Shopify connects with Instagram and YouTube to showcase products.
 
-📝 Reply with your answers for feedback.""",
+💡 Tip: The best channels align with how your target users already behave.
+
+Example: Facebook grew by tapping into college campuses initially—targeting a concentrated, accessible audience.
+
+✅ Task: List 3-5 channels your target users are most active on. Think creatively about where they interact (e.g., social media, apps, physical spaces). Reply with your list 📝""",
         "next": "lesson_4_step_3"
     },
     "lesson_4_step_3": {
-        "text": """📌 Task: Reflect on your answers and evaluate:
+        "text": """💰 Step 3: Channel-Model Fit
 
-- Does your product align well with your market's needs?
-- Are the chosen channels scalable and effective?
-- Does your revenue model work seamlessly within this framework?
+Your chosen channels must be profitable and align with your revenue model.
 
-Reply 📝 with one insight or adjustment you've made to improve your fit.
+Example: Shopify’s partnerships with influencers work well because they drive traffic to stores, supporting Shopify’s subscription-based revenue model.
 
-🌟 Congratulations! You've completed Lesson 4: Market Thinking. You now have the tools to align your product with its market, channels, and revenue model for maximum growth.
+✅ Tasks:
+1. Calculate your Customer Acquisition Cost (CAC). How much does it cost to acquire one customer via each channel?
+2. Compare CAC with your Average Revenue Per User (ARPU). Is this channel profitable?
 
-🚀 Next Step: Lesson 5 - User Thinking. Ready? Reply ✅ to continue!""",
+💡 Tip: If CAC is too high, focus on organic channels like referrals or SEO.
+
+Reply with your calculations and insights 📝""",
+        "next": "lesson_4_step_4"
+    },
+    "lesson_4_step_4": {
+        "text": """💳 Step 4: Model-Market Fit
+
+Your revenue model must fit your market's behaviour and spending habits.
+
+Example: Netflix succeeds because its subscription model aligns with consumer habits of binge-watching and predictable monthly budgets.
+
+✅ Tasks:
+1. Research your market's spending habits. Are they price-sensitive or willing to pay for convenience?
+2. Test pricing models. For example, experiment with free trials or tiered pricing.
+
+💡 Tip: Use feedback from early adopters to refine your pricing strategy.
+
+Reply with your findings 📝""",
+        "next": "lesson_4_step_5"
+    },
+    "lesson_4_step_5": {
+        "text": """🚀 Step 5: Putting It All Together
+
+Your Growth Plan: With insights from each fit, craft a clear growth strategy:
+1. Who are your customers?
+2. What channels will you use to reach them?
+3. How will you generate revenue and scale sustainably?
+
+✅ Task: Create a 5-sentence summary of your fits and growth plan. Reply with your summary 📝""",
+        "next": "lesson_4_congratulations"
+    },
+    "lesson_4_congratulations": {
+        "text": """🎉 Congratulations!
+
+You've learned how to align your product with its market and channels for scalable growth.
+
+✅ Where Else Can You Use This?
+- Think about other products or services you'd like to scale.
+- How can you apply the Four Fit Framework to other markets?
+
+Next Step: Lesson 5 - User Thinking. Ready? Tap to continue! 📝""",
         "next": "lesson_5"
     },
     "lesson_5": {
-        "text": """👤 Lesson 5: User Thinking
+        "text": """👤 Lesson 5 - User Thinking
 
-👋 Welcome to User Thinking! Understanding why people do what they do and how they think is essential to building products they love. This lesson introduces user psychology and behaviour, equipping you with tools to create innovative, user-centred solutions.
+Welcome to User Thinking! 🧠
 
-🔍 What You’ll Learn:
-1️⃣ How emotions influence actions and decisions.
-2️⃣ How to use the Hooked Model to design habit-forming products.
+Understanding why people do what they do and how they think is essential to building products they love. This lesson introduces user psychology and behavior, equipping you with tools to create innovative, user-centered solutions.
 
-🌟 Ready to dive in? Reply ✅ to start!""",
+✅ What You’ll Learn:
+- How emotions influence actions and decisions.
+- How to use the Hooked Model to design habit-forming products.
+
+Ready to dive in? Let’s get started! 📝""",
         "next": "lesson_5_step_1"
     },
     "lesson_5_step_1": {
-        "text": """💡 Emotions drive decisions. Learning how emotions influence behaviour is key to designing better experiences.
+        "text": """😊 Step 1: Understanding Emotions
 
-✅ Tasks:
-1. Watch these videos:
-   - How emotions are an integral part of thinking and decision making: https://youtu.be/weuLejJdUu0
-   - How emotions define people’s decisions: https://youtu.be/1wup_K2WN0I
-   - Why good design makes us happy: https://www.youtube.com/watch?v=RlQEoJaLQRA
+Emotions drive decisions. Learning how emotions influence behavior is key to designing better experiences.
 
-Write down one insight from each video.
+Key Insights from Research:
+1. Emotions and Decision-Making:
+   - Emotions are integral to rational thinking. Studies show that people with damage to the amygdala (the part of the brain that regulates emotions) struggle to make even basic decisions. This highlights that decisions are not purely logical but are deeply influenced by emotions.
+   - Emotional Intelligence (EI) is the ability to perceive, understand, and manage emotions. It helps us prioritize what truly matters and build healthy relationships.
 
-📝 Reply with your three insights to proceed.""",
+2. Emotions in Action:
+   - Negative emotions like loneliness, boredom, or dissatisfaction often trigger specific behaviors. For example, people check social media when they feel lonely or Google when they feel uncertain.
+   - Positive emotions, like happiness, can make people more social and creative, while anxiety can help focus attention on immediate tasks.
+
+✅ Task: Reflect on how emotions influence your own decisions. Write down one example of a decision you made recently that was driven by an emotion (e.g., buying something because it made you happy or avoiding a task because it caused anxiety).
+
+Reply with your example 📝""",
         "next": "lesson_5_step_2"
     },
     "lesson_5_step_2": {
-        "text": """🧠 Create habit-forming products. The Hooked Model combines triggers, actions, rewards, and investment to build user engagement.
+        "text": """🎣 Step 2: Introducing the Hooked Model
 
-✅ Tasks:
-1. Watch this 30-minute summary: How to Build Habit-Forming Products Using The Hook Model and BJ Fogg’s Behaviour Model: https://www.youtube.com/watch?v=RR9PnPr529k
-2. Download and complete exercises in this workbook: https://drive.google.com/file/d/0B27e0z0T2hi2NmI5S0tqdWIwWHk2RlNNTWFMUVBxWEdsN1VF/view?usp=sharing
+The Hooked Model is a framework for creating habit-forming products. It consists of four phases: Trigger, Action, Reward, and Investment.
 
-📝 Reply with one key takeaway from the video and workbook.""",
+Key Concepts:
+1. Triggers:
+   - External Triggers: These are cues in the environment, like notifications or ads, that prompt users to take action.
+   - Internal Triggers: These are emotions or situations that drive users to seek a solution. For example, feeling bored might trigger someone to open a social media app.
+
+2. Action:
+   - The simplest behavior done in anticipation of a reward. For example, scrolling through a feed or clicking a button.
+   - According to BJ Fogg’s Behavior Model, for an action to occur, users need sufficient motivation, ability, and a trigger.
+
+3. Variable Reward:
+   - Rewards that are unpredictable keep users engaged. There are three types of variable rewards:
+     - Rewards of the Tribe: Social rewards, like likes or comments on social media.
+     - Rewards of the Hunt: The search for resources or information, like scrolling through a news feed.
+     - Rewards of the Self: Intrinsic rewards, like the satisfaction of completing a task or leveling up in a game.
+
+4. Investment:
+   - Users invest time, data, or effort into a product, which increases the likelihood of them returning. For example, building a profile or saving content creates value that keeps users coming back.
+
+✅ Task:
+Think of a product you use habitually (e.g., a social media app or a game). Identify one internal trigger, one action, and one variable reward that keeps you engaged.
+
+Reply with your observations 📝""",
         "next": "lesson_5_step_3"
     },
     "lesson_5_step_3": {
-        "text": """📖 Learn from Alexa’s success. Behaviour design can influence user habits significantly.
+        "text": """🛠️ Step 3: Applying the Hooked Model
+
+Let’s apply the Hooked Model to your product idea.
 
 ✅ Tasks:
-1. Read this case study: How Amazon’s Alexa design changes our behaviour: https://medium.com/behavior-design/the-secret-behind-alexas-success-3188d473199c
-2. Identify one tactic Alexa uses that you could apply to your own product.
+1. Identify the Internal Trigger:
+   - What emotion or situation will prompt users to use your product? (e.g., boredom, loneliness, stress).
 
-📝 Reply with your observation.""",
+2. Define the Action:
+   - What is the simplest behavior users will take to get a reward? (e.g., clicking a button, scrolling, or typing).
+
+3. Design the Reward:
+   - What variable reward will users receive? (e.g., social validation, new information, or a sense of accomplishment).
+
+4. Encourage Investment:
+   - How can users invest in your product to increase its value? (e.g., saving content, building a profile, or earning points).
+
+Reply with your ideas 📝""",
         "next": "lesson_5_step_4"
     },
     "lesson_5_step_4": {
-        "text": """📚 Master persuasive design. Use behaviour models to influence how users interact with your product.
+        "text": """🟢 Step 4: Case Study - Amazon’s Alexa
 
-✅ Tasks:
-1. Read this paper: A Behaviour Model for Persuasive Design: https://drive.google.com/file/d/1jHrV9Ur8YrG-i3VDA8_rw6NCMtCB97LO/view?usp=sharing
-2. Reflect on how you can apply these principles to your product.
+Let’s learn from a real-world example. Amazon’s Alexa uses behavior design to influence user habits.
 
-📝 Reply with one application idea for your product.
+Key Tactics:
+1. Triggers: Alexa uses both external triggers (e.g., voice commands) and internal triggers (e.g., the desire for convenience or entertainment).
+2. Actions: The simplest action is speaking a command, which requires minimal effort.
+3. Rewards: Alexa provides variable rewards, such as playing music, answering questions, or controlling smart home devices.
+4. Investment: Users invest in Alexa by setting up routines, adding skills, and connecting devices, which increases the product's value over time.
 
-🌟 Congratulations! You've completed Lesson 5: User Thinking. You now understand user psychology and behaviour, giving you tools to create solutions that resonate deeply with your audience.
+✅ Task:
+Identify one tactic Alexa uses that you could apply to your own product.
 
-🚀 Next Step: Lesson 6 - Agile Project Thinking. Ready? Reply ✅ to continue!""",
+Reply with your observation 📝""",
+        "next": "lesson_5_step_5"
+    },
+    "lesson_5_step_5": {
+        "text": """🧠 Step 5: A Deeper Dive into Behavior Models
+
+To master persuasive design, let’s explore BJ Fogg’s Behavior Model in more detail.
+
+Key Concepts:
+1. Behavior = Motivation + Ability + Trigger:
+   - For a behavior to occur, users must have sufficient motivation, the ability to perform the action, and a trigger to prompt them.
+
+2. Motivation:
+   - Users are motivated by seeking pleasure, avoiding pain, seeking hope, avoiding fear, and seeking social acceptance.
+
+3. Ability:
+   - To increase the likelihood of a behavior, make it easier to do. This can involve reducing the time, cost, or effort required.
+
+4. Triggers:
+   - Triggers must be well-timed and relevant to the user’s current state of motivation and ability.
+
+✅ Task:
+Reflect on your product. What is one way you can increase users’ motivation or ability to take the desired action?
+
+Reply with your idea 📝""",
+        "next": "lesson_5_congratulations"
+    },
+    "lesson_5_congratulations": {
+        "text": """🎉 Congratulations!
+
+You now understand how emotions and behavior models influence user decisions, giving you tools to create products that resonate deeply with your audience.
+
+✅ Where Else Can You Use This?
+- Think about other user behaviors you’d like to understand.
+- How can you apply the Hooked Model or BJ Fogg’s Behavior Model to other products?
+
+Next Step: Lesson 6 - Agile Project Thinking. Ready? Tap to continue! 📝""",
         "next": "lesson_6"
     },
     "lesson_6": {
-        "text": """🏗️ Lesson 6: Project Thinking
+        "text": """🚀 Lesson 6 - Project Thinking
 
-👋 Welcome to Project Thinking! This lesson combines principles from Agile and traditional project management to help you execute your business ideas efficiently and effectively.
+Welcome to Project Thinking! 🛠️
 
-🔍 What You’ll Learn:
-1️⃣ How to scope and plan your work.
-2️⃣ How to use milestones and tasks to track progress.
-3️⃣ How to prioritise, batch, and review work for continuous improvement.
+This lesson combines principles from Agile and traditional project management to help you execute your business ideas efficiently and effectively.
 
-🌟 Ready to start? Reply ✅ to dive in!""",
+✅ What You’ll Learn:
+- How to scope and plan your work.
+- How to use milestones and tasks to track progress.
+- How to prioritise, batch, and review work for continuous improvement.
+
+Ready to start? Tap to dive in! 📝""",
         "next": "lesson_6_step_1"
     },
     "lesson_6_step_1": {
-        "text": """📜 Agile methodologies were born from the Manifesto for Agile Software Development (https://agilemanifesto.org/). They emphasise:
+        "text": """📜 Step 1: Agile Methodologies Overview
 
+Agile methodologies were born from the Manifesto for Agile Software Development (https://agilemanifesto.org/). They emphasise:
 - Individuals and interactions over processes and tools.
 - Working software over comprehensive documentation.
 - Customer collaboration over contract negotiation.
 - Responding to change over following a plan.
 
-✅ Task: Reflect on how these values apply to your project or work. Reply 📝 with one Agile value you want to implement.""",
+✅ Task: Reflect on how these values apply to your project or work. Reply with one Agile value you want to implement 📝""",
         "next": "lesson_6_step_2"
     },
     "lesson_6_step_2": {
-        "text": """📌 Understand your work package. Scoping defines what needs to be delivered and why.
+        "text": """📋 Step 2: Scope Your Work
+
+Understand your work package. Scoping defines what needs to be delivered and why.
 
 ✅ Task: Answer these questions:
 1. What is to be created and delivered by completing this work?
 2. What is the purpose of the work?
 
-Reply 📝 with your answers to move forward.""",
+Reply with your answers to move forward 📝""",
         "next": "lesson_6_step_3"
     },
     "lesson_6_step_3": {
-        "text": """🎯 Break your work into smaller, manageable parts. Milestones are clear checkpoints that show progress.
+        "text": """📅 Step 3: Create Milestones
+
+Break your work into smaller, manageable parts. Milestones are clear checkpoints that show progress.
 
 ✅ Task:
 1. What are the parts of the project or activities that will make it complete?
 2. List them in the order they need to be done.
 
-Reply 📝 with your milestones.""",
+Reply with your milestones 📝""",
         "next": "lesson_6_step_4"
     },
     "lesson_6_step_4": {
-        "text": """🛠️ Break milestones into actionable steps. Tasks should be specific and achievable.
+        "text": """📝 Step 4: Define Tasks
+
+Break milestones into actionable steps. Tasks should be specific and achievable.
 
 ✅ Task:
 1. What specific tasks need to be done to achieve each milestone?
 2. What resources or skills will you need to complete these tasks?
 
-Reply 📝 with a list of tasks for your first milestone.""",
+Reply with a list of tasks for your first milestone 📝""",
         "next": "lesson_6_step_5"
     },
     "lesson_6_step_5": {
-        "text": """📋 Focus on what matters most. Task prioritisation ensures efficient progress.
+        "text": """📊 Step 5: Prioritise Tasks
+
+Focus on what matters most. Task prioritisation ensures efficient progress.
 
 ✅ Task: Arrange your tasks in order of dependency:
 1. Which tasks must be completed first?
 2. Which tasks can be done simultaneously?
 
-Reply 📝 with your prioritised task list.""",
-    "next": "lesson_6_step_6"
+Reply with your prioritised task list 📝""",
+        "next": "lesson_6_step_6"
     },
     "lesson_6_step_6": {
-        "text": """⏳ Batch tasks into weekly sprints. Sprints help you focus on delivering results incrementally.
+        "text": """📆 Step 6: Create Sprints
+
+Batch tasks into weekly sprints. Sprints help you focus on delivering results incrementally.
 
 ✅ Task:
 1. Assign each task a completion time.
 2. Group tasks into weekly sprints based on priority and available time.
 
-Reply 📝 with your sprint plan for the first week.""",
+Reply with your sprint plan for the first week 📝""",
         "next": "lesson_6_step_7"
     },
     "lesson_6_step_7": {
-        "text": """🔄 Continuous improvement is key. At the end of each week, review your progress and plan for the next.
+        "text": """🔄 Step 7: Review and Reflect
+
+Continuous improvement is key. At the end of each week, review your progress and plan for the next.
 
 ✅ Task: Reflect on these questions:
 1. What did I complete this week?
 2. What challenges or blockers did I face?
 3. What can I improve next week?
 
-Reply 📝 with your answers to close the sprint.
+Reply with your answers to close the sprint 📝""",
+        "next": "lesson_6_congratulations"
+    },
+    "lesson_6_congratulations": {
+        "text": """🎉 Congratulations!
 
-🌟 Congratulations! You’ve completed Lesson 6: Project Thinking. You now have a systematic way to scope, plan, and execute your work efficiently.
+You’ve learned how to scope, plan, and execute your work efficiently using Agile principles.
 
-🚀 This concludes the course! Ready to apply what you’ve learned? Reply ✅ to share your next steps!,"""
+✅ Where Else Can You Use This?
+- Think about other projects or tasks you’d like to manage more effectively.
+- How can you apply Agile methodologies to other areas of your life or work?
+
+This concludes the course! Ready to apply what you’ve learned? Reply to share your next steps! 📝""",
+        "next": None
     }
-
 }
 
 
