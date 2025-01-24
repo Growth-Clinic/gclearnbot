@@ -103,26 +103,76 @@
       },
       "task_11": {
         "task_id": "task_11",
-        "title": "Map Emotional Triggers",
-        "description": "Identify how emotions (e.g., FOMO, trust) influence user behavior for your product.",
+        "title": "Achieve Product-Market Fit",
+        "description": "Conduct user interviews, build an MVP, and test it with users to validate Product-Market Fit.",
         "industry": "general",
-        "guides": ["guide_15"],
+        "guides": ["guide_11"],
         "examples": [
-          "Example: A farming app uses progress bars (motivation) and community leaderboards (FOMO)."
+          "Example: Interview 5 users about their pain points, build a simple app prototype, and test it with 10 users."
         ]
       },
       "task_12": {
         "task_id": "task_12",
-        "title": "Apply the Hooked Model",
-        "description": "Design triggers, actions, rewards, and investments for your product.",
+        "title": "Align Your Product with the Right Channels",
+        "description": "Research user behavior and test different channels to achieve Market-Channel Fit.",
         "industry": "general",
-        "guides": ["guide_16"],
+        "guides": ["guide_12"],
         "examples": [
-          "Example: Trigger: Anxiety about savings. Action: Logging expenses. Reward: Financial health insights. Investment: Custom budgets."
+          "Example: Test social media ads, email campaigns, and partnerships to see which channel drives the most engagement."
         ]
       },
       "task_13": {
         "task_id": "task_13",
+        "title": "Ensure Channel-Model Fit",
+        "description": "Calculate CAC and ARPU for each channel to ensure profitability and alignment with your revenue model.",
+        "industry": "general",
+        "guides": ["guide_13"],
+        "examples": [
+          "Example: Compare the cost of acquiring users via Facebook ads with the revenue they generate."
+        ]
+      },
+      "task_14": {
+        "task_id": "task_14",
+        "title": "Align Your Revenue Model with Market Behavior",
+        "description": "Test pricing models and gather feedback to achieve Model-Market Fit.",
+        "industry": "general",
+        "guides": ["guide_14"],
+        "examples": [
+          "Example: Offer a free trial and tiered pricing to see which model resonates with your market."
+        ]
+      },
+      "task_15": {
+        "task_id": "task_15",
+        "title": "Craft a Growth Strategy",
+        "description": "Summarize your Product-Market Fit, Market-Channel Fit, Channel-Model Fit, and Model-Market Fit into a clear growth strategy.",
+        "industry": "general",
+        "guides": ["guide_15"],
+        "examples": [
+          "Example: Define your target users, choose the most effective channels, and align your pricing model with market behavior."
+        ]
+      },
+      "task_16": {
+        "task_id": "task_16",
+        "title": "Map Emotional Triggers",
+        "description": "Identify how emotions (e.g., FOMO, trust) influence user behavior for your product.",
+        "industry": "general",
+        "guides": ["guide_16"],
+        "examples": [
+          "Example: A farming app uses progress bars (motivation) and community leaderboards (FOMO)."
+        ]
+      },
+      "task_17": {
+        "task_id": "task_17",
+        "title": "Apply the Hooked Model",
+        "description": "Design triggers, actions, rewards, and investments for your product.",
+        "industry": "general",
+        "guides": ["guide_17"],
+        "examples": [
+          "Example: Trigger: Anxiety about savings. Action: Logging expenses. Reward: Financial health insights. Investment: Custom budgets."
+        ]
+      },
+      "task_18": {
+        "task_id": "task_18",
         "title": "Analyze User Ability/Motivation",
         "description": "Use BJ Fogg’s model to simplify user actions (e.g., one-click signup) or boost motivation (e.g., progress bars).",
         "industry": "general",
@@ -131,8 +181,8 @@
           "Example: Reduce effort for a recycling app by adding barcode scanning for waste categories."
         ]
       },
-      "task_14": {
-        "task_id": "task_14",
+      "task_19": {
+        "task_id": "task_19",
         "title": "Scope a Work Package",
         "description": "Define deliverables and purpose for a project (e.g., 'Develop a carpooling app prototype to reduce commute costs').",
         "industry": "general",
@@ -141,8 +191,8 @@
           "Example: Deliverables: App wireframe, user manual. Purpose: Cut commute expenses by 40% for urban workers."
         ]
       },
-      "task_15": {
-        "task_id": "task_15",
+      "task_20": {
+        "task_id": "task_20",
         "title": "Create Milestones",
         "description": "Break your project into 4 weekly milestones (e.g., Week 1: Research, Week 2: Design).",
         "industry": "general",
@@ -151,8 +201,8 @@
           "Example: Week 1: User interviews → Week 2: Prototype v1 → Week 3: Test with users → Week 4: Iterate & launch."
         ]
       },
-      "task_16": {
-        "task_id": "task_16",
+      "task_21": {
+        "task_id": "task_21",
         "title": "Define Actionable Tasks",
         "description": "Break milestones into specific tasks (e.g., 'Sketch 3 app screens').",
         "industry": "general",
@@ -161,28 +211,18 @@
           "Example: Task 1: Survey 10 users → Task 2: Sketch app screens → Task 3: Build WhatsApp prototype."
         ]
       },
-      "task_17": {
-        "task_id": "task_17",
-        "title": "Learn from Amazon’s Alexa",
-        "description": "Identify one habit-forming tactic Alexa uses that you can apply to your product.",
-        "industry": "general",
-        "guides": ["guide_17"],
-        "examples": [
-          "Example: Alexa’s variable rewards (e.g., playing music, answering questions) keep users engaged."
-        ]
-      },
-      "task_18": {
-        "task_id": "task_18",
-        "title": "Prioritize Tasks with the Eisenhower Matrix",
-        "description": "Categorize tasks into Urgent/Important, Important/Not Urgent, etc.",
+      "task_22": {
+        "task_id": "task_22",
+        "title": "Prioritize Tasks",
+        "description": "Focus on what matters most. Use frameworks like the Eisenhower Matrix to categorize tasks based on urgency and importance.",
         "industry": "general",
         "guides": ["guide_22"],
         "examples": [
           "Example: Fix login errors (Urgent/Important) vs. Design new icons (Not Urgent/Not Important)."
         ]
       },
-      "task_19": {
-        "task_id": "task_19",
+      "task_23": {
+        "task_id": "task_23",
         "title": "Create Weekly Sprints",
         "description": "Plan tasks into weekly sprints (e.g., Monday: User interviews, Tuesday: Prototype edits).",
         "industry": "general",
@@ -191,8 +231,8 @@
           "Example: Monday: User interviews (2hrs) → Tuesday: Prototype edits (1hr) → Wednesday: Feedback session (1hr)."
         ]
       },
-      "task_20": {
-        "task_id": "task_20",
+      "task_24": {
+        "task_id": "task_24",
         "title": "Review and Reflect",
         "description": "At the end of each week, reflect on progress, challenges, and improvements.",
         "industry": "general",
