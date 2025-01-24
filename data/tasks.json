@@ -1,0 +1,205 @@
+{
+    "tasks": {
+      "task_1": {
+        "task_id": "task_1",
+        "title": "Conduct User Interviews",
+        "description": "Interview 3 users to understand their pain points around a specific experience (e.g., commuting, recycling, childcare).",
+        "industry": "general",
+        "guides": ["guide_1"],
+        "examples": [
+          "Example 1: Ask commuters about their daily transportation frustrations.",
+          "Example 2: Interview gig workers about challenges accessing affordable workspaces."
+        ]
+      },
+      "task_2": {
+        "task_id": "task_2",
+        "title": "Root Cause Analysis with the 5 Whys",
+        "description": "Use the 5 Whys technique to uncover the root cause of a problem identified in interviews.",
+        "industry": "general",
+        "guides": ["guide_2"],
+        "examples": [
+          "Example: Why do users avoid public transport? → Overcrowding → Why? → Limited buses → Why? → Budget constraints."
+        ]
+      },
+      "task_3": {
+        "task_id": "task_3",
+        "title": "Craft a Problem Statement",
+        "description": "Synthesize interview insights into a clear problem statement using the [User] needs a way to [need], but [insight] template.",
+        "industry": "general",
+        "guides": ["guide_3"],
+        "examples": [
+          "Example: Parents need a way to find affordable childcare in urban areas, but options are scarce and unregulated."
+        ]
+      },
+      "task_4": {
+        "task_id": "task_4",
+        "title": "Brainstorm Creative Solutions",
+        "description": "Generate 3-5 solutions for the problem statement. Focus on quantity over quality.",
+        "industry": "general",
+        "guides": ["guide_4"],
+        "examples": [
+          "Example: A community-based childcare co-op for gig workers."
+        ]
+      },
+      "task_5": {
+        "task_id": "task_5",
+        "title": "Build a Low-Fidelity Prototype",
+        "description": "Create a simple prototype (e.g., paper sketch, role-play, digital wireframe) of your top solution.",
+        "industry": "general",
+        "guides": ["guide_5"],
+        "examples": [
+          "Example: Simulate a carpooling service using WhatsApp groups."
+        ]
+      },
+      "task_6": {
+        "task_id": "task_6",
+        "title": "Test Prototype with Users",
+        "description": "Gather feedback on your prototype by asking: 'What works?' and 'What doesn’t?'",
+        "industry": "general",
+        "guides": ["guide_6"],
+        "examples": [
+          "Example: Users say your recycling app needs a reward system → Add a points feature."
+        ]
+      },
+      "task_7": {
+        "task_id": "task_7",
+        "title": "Map a Business Model Canvas",
+        "description": "Sketch a Business Model Canvas for your idea, covering 9 components: Customer Segments, Value Proposition, Channels, etc.",
+        "industry": "general",
+        "guides": ["guide_7"],
+        "examples": [
+          "Example: A subscription model for motorcycle taxis in high-demand areas."
+        ]
+      },
+      "task_8": {
+        "task_id": "task_8",
+        "title": "Test Pricing Assumptions",
+        "description": "Run a small experiment (e.g., free trial, A/B test) to validate if users will pay for your solution.",
+        "industry": "general",
+        "guides": ["guide_8"],
+        "examples": [
+          "Example: Offer a 7-day free trial of your app and track conversion rates."
+        ]
+      },
+      "task_9": {
+        "task_id": "task_9",
+        "title": "Identify Market Opportunities/Threats",
+        "description": "List one opportunity (e.g., rising demand for solar products) and one threat (e.g., new import tariffs) for your business.",
+        "industry": "general",
+        "guides": ["guide_9"],
+        "examples": [
+          "Example: Opportunity: Growing interest in eco-friendly packaging. Threat: Cheap plastic alternatives flooding the market."
+        ]
+      },
+      "task_10": {
+        "task_id": "task_10",
+        "title": "Craft a Business Pitch",
+        "description": "Write a 3-sentence pitch using the Before-After-Bridge framework.",
+        "industry": "general",
+        "guides": ["guide_10"],
+        "examples": [
+          "Example: Before: Workers waste hours commuting. After: Affordable shared vans save time. Bridge: Our app connects riders with verified drivers."
+        ]
+      },
+      "task_11": {
+        "task_id": "task_11",
+        "title": "Map Emotional Triggers",
+        "description": "Identify how emotions (e.g., FOMO, trust) influence user behavior for your product.",
+        "industry": "general",
+        "guides": ["guide_15"],
+        "examples": [
+          "Example: A farming app uses progress bars (motivation) and community leaderboards (FOMO)."
+        ]
+      },
+      "task_12": {
+        "task_id": "task_12",
+        "title": "Apply the Hooked Model",
+        "description": "Design triggers, actions, rewards, and investments for your product.",
+        "industry": "general",
+        "guides": ["guide_16"],
+        "examples": [
+          "Example: Trigger: Anxiety about savings. Action: Logging expenses. Reward: Financial health insights. Investment: Custom budgets."
+        ]
+      },
+      "task_13": {
+        "task_id": "task_13",
+        "title": "Analyze User Ability/Motivation",
+        "description": "Use BJ Fogg’s model to simplify user actions (e.g., one-click signup) or boost motivation (e.g., progress bars).",
+        "industry": "general",
+        "guides": ["guide_18"],
+        "examples": [
+          "Example: Reduce effort for a recycling app by adding barcode scanning for waste categories."
+        ]
+      },
+      "task_14": {
+        "task_id": "task_14",
+        "title": "Scope a Work Package",
+        "description": "Define deliverables and purpose for a project (e.g., 'Develop a carpooling app prototype to reduce commute costs').",
+        "industry": "general",
+        "guides": ["guide_19"],
+        "examples": [
+          "Example: Deliverables: App wireframe, user manual. Purpose: Cut commute expenses by 40% for urban workers."
+        ]
+      },
+      "task_15": {
+        "task_id": "task_15",
+        "title": "Create Milestones",
+        "description": "Break your project into 4 weekly milestones (e.g., Week 1: Research, Week 2: Design).",
+        "industry": "general",
+        "guides": ["guide_20"],
+        "examples": [
+          "Example: Week 1: User interviews → Week 2: Prototype v1 → Week 3: Test with users → Week 4: Iterate & launch."
+        ]
+      },
+      "task_16": {
+        "task_id": "task_16",
+        "title": "Define Actionable Tasks",
+        "description": "Break milestones into specific tasks (e.g., 'Sketch 3 app screens').",
+        "industry": "general",
+        "guides": ["guide_21"],
+        "examples": [
+          "Example: Task 1: Survey 10 users → Task 2: Sketch app screens → Task 3: Build WhatsApp prototype."
+        ]
+      },
+      "task_17": {
+        "task_id": "task_17",
+        "title": "Learn from Amazon’s Alexa",
+        "description": "Identify one habit-forming tactic Alexa uses that you can apply to your product.",
+        "industry": "general",
+        "guides": ["guide_17"],
+        "examples": [
+          "Example: Alexa’s variable rewards (e.g., playing music, answering questions) keep users engaged."
+        ]
+      },
+      "task_18": {
+        "task_id": "task_18",
+        "title": "Prioritize Tasks with the Eisenhower Matrix",
+        "description": "Categorize tasks into Urgent/Important, Important/Not Urgent, etc.",
+        "industry": "general",
+        "guides": ["guide_22"],
+        "examples": [
+          "Example: Fix login errors (Urgent/Important) vs. Design new icons (Not Urgent/Not Important)."
+        ]
+      },
+      "task_19": {
+        "task_id": "task_19",
+        "title": "Create Weekly Sprints",
+        "description": "Plan tasks into weekly sprints (e.g., Monday: User interviews, Tuesday: Prototype edits).",
+        "industry": "general",
+        "guides": ["guide_23"],
+        "examples": [
+          "Example: Monday: User interviews (2hrs) → Tuesday: Prototype edits (1hr) → Wednesday: Feedback session (1hr)."
+        ]
+      },
+      "task_20": {
+        "task_id": "task_20",
+        "title": "Review and Reflect",
+        "description": "At the end of each week, reflect on progress, challenges, and improvements.",
+        "industry": "general",
+        "guides": ["guide_24"],
+        "examples": [
+          "Example: Completed: Interviewed 3 users. Challenges: Recruiting testers. Improvements: Partner with a local community."
+        ]
+      }
+    }
+  }
