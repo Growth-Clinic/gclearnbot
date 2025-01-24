@@ -2,34 +2,42 @@
     "pathways": {
       "pathway_1": {
         "pathway_id": "pathway_1",
-        "pathway_tag": "user_thinking",
-        "title": "User Thinking Pathway",
-        "description": "Master empathy-driven research to deeply understand user needs and emotions.",
-        "tasks_order": ["task_1", "task_2", "task_3", "task_11", "task_12", "task_13", "task_17"],
-        "guides": ["guide_1", "guide_2", "guide_3", "guide_15", "guide_16", "guide_17", "guide_18"]
-      },
-      "pathway_2": {
-        "pathway_id": "pathway_2",
         "pathway_tag": "design_thinking",
         "title": "Design Thinking Pathway",
         "description": "Prototype and iterate solutions grounded in user insights.",
-        "tasks_order": ["task_4", "task_5", "task_6"],
-        "guides": ["guide_4", "guide_5", "guide_6"]
+        "tasks_order": ["task_1", "task_2", "task_3", "task_4", "task_5", "task_6"],
+        "guides": ["guide_1", "guide_2", "guide_3", "guide_4", "guide_5", "guide_6"]
       },
-      "pathway_3": {
-        "pathway_id": "pathway_3",
+      "pathway_2": {
+        "pathway_id": "pathway_2",
         "pathway_tag": "business_modeling",
         "title": "Business Modeling Pathway",
         "description": "Test assumptions and design sustainable revenue models.",
         "tasks_order": ["task_7", "task_8", "task_9", "task_10"],
         "guides": ["guide_7", "guide_8", "guide_9", "guide_10"]
       },
+      "pathway_3": {
+        "pathway_id": "pathway_3",
+        "pathway_tag": "market_thinking",
+        "title": "Market Thinking Pathway",
+        "description": "Align your product with the market and channels for scalable growth.",
+        "tasks_order": ["task_11", "task_12", "task_13", "task_14", "task_15"],
+        "guides": ["guide_11", "guide_12", "guide_13", "guide_14", "guide_15"]
+      },
       "pathway_4": {
         "pathway_id": "pathway_4",
+        "pathway_tag": "user_thinking",
+        "title": "User Thinking Pathway",
+        "description": "Master empathy-driven research to deeply understand user needs and emotions.",
+        "tasks_order": ["task_16", "task_17", "task_18", "task_19"],
+        "guides": ["guide_16", "guide_17", "guide_18"]
+      },
+      "pathway_5": {
+        "pathway_id": "pathway_5",
         "pathway_tag": "agile_thinking",
         "title": "Agile Project Thinking Pathway",
         "description": "Scope, prioritize, and execute projects iteratively.",
-        "tasks_order": ["task_14", "task_15", "task_16", "task_18", "task_19", "task_20", "task_21"],
+        "tasks_order": ["task_20", "task_21", "task_22", "task_23", "task_24", "task_25"],
         "guides": ["guide_19", "guide_20", "guide_21", "guide_22", "guide_23", "guide_24"]
       }
     }
