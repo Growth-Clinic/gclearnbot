@@ -9,7 +9,6 @@ from typing import Dict, Optional, Any, List
 from services.lesson_loader import load_lessons
 import time
 import asyncio
-from bot.handlers.user_handlers import extract_keywords_from_response
 
 
 # Configure logging
@@ -393,6 +392,9 @@ class JournalManager:
         Returns:
             bool: True if save successful, False otherwise
         """
+
+        from bot.handlers.user_handlers import extract_keywords_from_response
+
         try:
             # Validate inputs
             if not response or not response.strip():
