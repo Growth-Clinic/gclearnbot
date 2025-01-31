@@ -8,6 +8,7 @@ from datetime import datetime, timezone, timedelta
 from typing import Dict, Optional, Any, List
 from services.lesson_loader import load_lessons
 from services.utils import extract_keywords_from_response
+from services.lesson_helpers import get_lesson_structure, is_actual_lesson, get_total_lesson_steps
 import time
 import asyncio
 
@@ -349,41 +350,74 @@ class UserManager:
         except Exception as e:
             logger.error(f"Error retrieving user info: {e}", exc_info=True)
             return None
+        
+    @staticmethod
+    def get_lesson_structure():
+        """Helper method to understand lesson hierarchy"""
+        lesson_structure = {}
+        for key in lessons.keys():
+            if "_step_" in key:
+                main_lesson = key.split("_step_")[0]
+                if main_lesson not in lesson_structure:
+                    lesson_structure[main_lesson] = []
+                lesson_structure[main_lesson].append(key)
+        return lesson_structure
 
     @staticmethod
     async def update_user_progress(user_id: int, lesson_key: str) -> bool:
-        """Update user's progress with enhanced metrics."""
+        """
+        Update user's progress with enhanced metrics.
+        
+        Args:
+            user_id: The user's Telegram ID
+            lesson_key: Current lesson identifier
+            
+        Returns:
+            bool: True if update was successful, False otherwise
+        """
         try:
             if lesson_key not in lessons:
                 logger.error(f"Invalid lesson key: {lesson_key}")
                 return False
-                
-            current_date = datetime.now(timezone.utc).date().isoformat()
-                
-            update_data = {
-                "current_lesson": lesson_key,
-                "last_active": datetime.now(timezone.utc).isoformat(),
-                "progress_metrics.last_lesson_date": current_date,
-                "$addToSet": {
-                    "completed_lessons": lesson_key
-                },
-                "$inc": {
-                    "progress_metrics.total_responses": 1
-                }
-            }
+
+            current_date = datetime.now(timezone.utc).isoformat()
             
-            # Update completion rate
-            total_lessons = len(lessons)
-            completed_count = len(set(db.users.find_one(
-                {"user_id": user_id}
-            ).get('completed_lessons', [])))
-            
-            completion_rate = (completed_count / total_lessons) * 100
-            update_data["progress_metrics.completion_rate"] = completion_rate
-            
-            result = db.users.update_one(
+            # First update to add to completed lessons
+            await asyncio.to_thread(
+                db.users.update_one,
                 {"user_id": user_id},
-                {"$set": update_data}
+                {"$addToSet": {"completed_lessons": lesson_key}}
+            )
+            
+            # Get updated user data
+            user_data = await asyncio.to_thread(
+                db.users.find_one,
+                {"user_id": user_id}
+            )
+            
+            if not user_data:
+                logger.error(f"User {user_id} not found")
+                return False
+                
+            # Calculate completion metrics
+            completed_lessons = user_data.get('completed_lessons', [])
+            completed_steps = [lesson for lesson in completed_lessons if is_actual_lesson(lesson)]
+            total_steps = get_total_lesson_steps()
+            
+            # Calculate completion rate
+            completion_rate = (len(completed_steps) / total_steps * 100) if total_steps > 0 else 0
+            
+            # Update progress metrics
+            result = await asyncio.to_thread(
+                db.users.update_one,
+                {"user_id": user_id},
+                {"$set": {
+                    "current_lesson": lesson_key,
+                    "last_active": current_date,
+                    "progress_metrics.last_lesson_date": current_date,
+                    "progress_metrics.completion_rate": round(completion_rate, 2),
+                    "progress_metrics.total_responses": len(completed_steps)
+                }}
             )
             
             success = result.modified_count > 0
@@ -963,6 +997,10 @@ class AnalyticsManager:
             if len(entries) >= 2:
                 start_time = datetime.fromisoformat(entries[0]['timestamp'].replace('Z', '+00:00'))
                 end_time = datetime.fromisoformat(entries[-1]['timestamp'].replace('Z', '+00:00'))
+                if not start_time.tzinfo:
+                    start_time = start_time.replace(tzinfo=timezone.utc)
+                if not end_time.tzinfo:
+                    end_time = end_time.replace(tzinfo=timezone.utc)
                 learning_duration = (end_time - start_time).days
                 avg_days_between_lessons = learning_duration / (len(entries) - 1) if len(entries) > 1 else 0
             else:
