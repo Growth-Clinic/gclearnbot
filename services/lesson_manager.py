@@ -17,13 +17,19 @@ class LessonService:
         self.task_manager = task_manager
         self.user_manager = user_manager
 
+    async def _send_error_message(self, chat_id: int, message: str, context: ContextTypes.DEFAULT_TYPE) -> None:
+        await context.bot.send_message(
+            chat_id=chat_id,
+            text=f"⚠️ {message}. Please try /start to restart."
+        )
+
     async def send_lesson(self, update: Update, context: ContextTypes.DEFAULT_TYPE, lesson_key: str) -> None:
         """Send lesson content with progress info and tasks"""
         try:
             chat_id = update.message.chat_id if update.message else update.callback_query.message.chat_id
             
             # Update progress
-            self.user_manager.update_progress(chat_id, lesson_key)
+            self.user_manager.update_user_progress(chat_id, lesson_key)
             
             lesson = self.lessons.get(lesson_key)
             if lesson:
@@ -68,10 +74,4 @@ class LessonService:
             await self._send_error_message(chat_id, "Lesson not found")
         except Exception as e:
             logger.error(f"Unexpected error: {e}")
-            await self._send_error_message(chat_id, "System error")
-
-async def _send_error_message(self, chat_id: int, message: str, context: ContextTypes.DEFAULT_TYPE) -> None:
-    await context.bot.send_message(
-        chat_id=chat_id,
-        text=f"⚠️ {message}. Please try /start to restart."
-    )
+            await self._send_error_message(chat_id, "System error", context)

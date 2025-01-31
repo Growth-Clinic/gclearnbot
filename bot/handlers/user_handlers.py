@@ -32,7 +32,7 @@ lesson_service = LessonService(
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Start command handler"""
     user = update.message.from_user
-    UserManager.save_user_info(user)
+    await UserManager.save_user_info(user)
     
     welcome_text = """
 Welcome to the Learning Bot! 🎓
