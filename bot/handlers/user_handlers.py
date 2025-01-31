@@ -221,7 +221,13 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     try:
         # Check if the user is sending feedback
         if context.user_data.get('expecting_feedback'):
-            # ... existing feedback handling code ...
+            # Handle feedback submission
+            success = await FeedbackManager.save_feedback(chat_id, user_response)
+            if success:
+                await update.message.reply_text("Thank you for your feedback! Our team will review it. 🙏")
+            else:
+                await update.message.reply_text("Sorry, there was an error saving your feedback. Please try again later.")
+            context.user_data['expecting_feedback'] = False
             return
 
         # Get user's current position in the lessons
@@ -231,7 +237,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             return
 
         current_lesson = user_data["current_lesson"]
-        
+
         # If we're on a main lesson, find its first step
         if not is_actual_lesson(current_lesson):
             lesson_structure = get_lesson_structure()
@@ -243,7 +249,6 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         # Save the response to the user's journal
         save_success = await save_journal_entry(chat_id, current_lesson, user_response)
-        
         if not save_success:
             await update.message.reply_text("There was an error saving your response. Please try again.")
             return
@@ -260,12 +265,12 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             # Format feedback message
             feedback_message = "📝 Feedback on your response:\n\n"
             feedback_message += "\n\n".join(feedback)
-            
+
             if quality_metrics['word_count'] < 20:
                 feedback_message += "\n\n💡 Tip: Consider expanding your response with more details."
             elif not quality_metrics['has_punctuation']:
                 feedback_message += "\n\n💡 Tip: Using proper punctuation can help express your ideas more clearly."
-                
+
             await update.message.reply_text(feedback_message)
 
         # Save feedback analytics
@@ -287,7 +292,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 await update.message.reply_text("Error updating progress. Please try /resume to continue.")
         else:
             await update.message.reply_text("✅ Response saved! You've completed all lessons.")
-    
+
     except Exception as e:
         logger.error(f"Error handling message from user {chat_id}: {e}", exc_info=True)
         await update.message.reply_text("An error occurred. Please try again later.")
@@ -300,9 +305,15 @@ async def handle_response(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await query.answer()  # Acknowledge the button press to remove loading state
 
     next_step = query.data
-    if next_step and next_step in lessons:  # Check if next_step exists in lessons
-        user_data[query.message.chat_id] = next_step
-        await lesson_service.send_lesson(update, context, next_step)
+    user_id = query.message.chat_id
+
+    if next_step and next_step in lessons:
+        # Update database with the new lesson
+        success = await UserManager.update_user_progress(user_id, next_step)
+        if success:
+            await lesson_service.send_lesson(update, context, next_step)
+        else:
+            await query.edit_message_text(text="Error progressing. Please try /resume.")
     else:
         await query.edit_message_text(text="Please reply with your input to proceed.")
 

@@ -367,11 +367,11 @@ class UserManager:
     async def update_user_progress(user_id: int, lesson_key: str) -> bool:
         """
         Update user's progress with enhanced metrics and proper step tracking.
-        
+
         Args:
             user_id: The user's Telegram ID
             lesson_key: Current lesson identifier
-            
+
         Returns:
             bool: True if update was successful, False otherwise
         """
@@ -388,7 +388,7 @@ class UserManager:
                 db.users.find_one,
                 {"user_id": user_id}
             )
-            
+
             if not user_data:
                 logger.error(f"User {user_id} not found")
                 return False
@@ -403,23 +403,23 @@ class UserManager:
             logger.info(f"User {user_id} moving from {current_lesson} to {lesson_key}")
 
             current_date = datetime.now(timezone.utc).isoformat()
-            
+
             # Update completed lessons
             await asyncio.to_thread(
                 db.users.update_one,
                 {"user_id": user_id},
                 {"$addToSet": {"completed_lessons": current_lesson}}
             )
-            
+
             # Calculate completion metrics
             completed_lessons = user_data.get('completed_lessons', [])
             completed_lessons.append(current_lesson)  # Include current lesson
             completed_steps = [lesson for lesson in completed_lessons if is_actual_lesson(lesson)]
             total_steps = get_total_lesson_steps()
-            
+
             # Calculate completion rate
             completion_rate = (len(completed_steps) / total_steps * 100) if total_steps > 0 else 0
-            
+
             # Update progress metrics
             result = await asyncio.to_thread(
                 db.users.update_one,
@@ -432,14 +432,14 @@ class UserManager:
                     "progress_metrics.total_responses": len(completed_steps)
                 }}
             )
-            
+
             success = result.modified_count > 0
             if success:
                 logger.info(f"Progress updated for user {user_id}: moved from {current_lesson} to {lesson_key}")
             else:
                 logger.warning(f"No progress updated for user {user_id}")
             return success
-            
+
         except Exception as e:
             logger.error(f"Error updating progress for user {user_id}: {e}", exc_info=True)
             return False
