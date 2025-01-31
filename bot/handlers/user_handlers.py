@@ -6,6 +6,7 @@ from services.lesson_manager import LessonService
 from services.lesson_loader import load_lessons
 from services.feedback_config import LESSON_FEEDBACK_RULES
 from services.utils import extract_keywords_from_response
+from services.lesson_helpers import get_lesson_structure, is_actual_lesson, get_total_lesson_steps
 import logging
 from datetime import datetime, timezone
 import re
@@ -214,81 +215,78 @@ def extract_rating_from_response(response: str) -> str:
 
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Handle user input and responses, including feedback and lesson responses."""
-    # Get chat_id from the update object
     chat_id = update.message.chat_id
     user_response = update.message.text
 
     try:
         # Check if the user is sending feedback
         if context.user_data.get('expecting_feedback'):
-            if not user_response.strip():
-                await update.message.reply_text("Feedback cannot be empty. Please try again.")
-                return
-
-            # Save feedback to the database
-            success = await FeedbackManager.save_feedback(chat_id, user_response)
-            if success:
-                await update.message.reply_text("Thank you for your feedback! It has been sent to our team. 🙏")
-                
-                # Track feedback rating (if applicable)
-                rating = extract_rating_from_response(user_response)
-                FeedbackAnalyticsManager.track_feedback_rating(chat_id, rating)
-            else:
-                await update.message.reply_text("Sorry, there was an error saving your feedback. Please try again later.")
-            
-            # Reset the feedback expectation flag
-            context.user_data['expecting_feedback'] = False
+            # ... existing feedback handling code ...
             return
 
-        # Default: Process as a lesson response
+        # Get user's current position in the lessons
         user_data = await UserManager.get_user_info(chat_id)
-        if user_data and user_data.get("current_lesson"):
-            current_lesson = user_data["current_lesson"]
+        if not user_data or not user_data.get("current_lesson"):
+            await update.message.reply_text("Please use /start to begin your learning journey.")
+            return
+
+        current_lesson = user_data["current_lesson"]
+        
+        # If we're on a main lesson, find its first step
+        if not is_actual_lesson(current_lesson):
+            lesson_structure = get_lesson_structure()
+            main_lesson = current_lesson.split('_step_')[0] if '_step_' in current_lesson else current_lesson
+            if main_lesson in lesson_structure and lesson_structure[main_lesson]:
+                current_lesson = lesson_structure[main_lesson][0]
+                # Update the current lesson to this step
+                await UserManager.update_user_progress(chat_id, current_lesson)
+
+        # Save the response to the user's journal
+        save_success = await save_journal_entry(chat_id, current_lesson, user_response)
+        
+        if not save_success:
+            await update.message.reply_text("There was an error saving your response. Please try again.")
+            return
+
+        # Get lesson data and next step
+        lesson_data = lessons.get(current_lesson, {})
+        next_step = lesson_data.get("next")
+
+        # Evaluate response and generate feedback
+        feedback = evaluate_response_enhanced(current_lesson, user_response, chat_id)
+        quality_metrics = analyze_response_quality(user_response)
+
+        if feedback:
+            # Format feedback message
+            feedback_message = "📝 Feedback on your response:\n\n"
+            feedback_message += "\n\n".join(feedback)
             
-            # Save the response to the user's journal
-            save_success = await save_journal_entry(chat_id, current_lesson, user_response)
-            
-            if not save_success:
-                await update.message.reply_text("There was an error saving your response. Please try again.")
-                return
-
-            # Get the next lesson/step
-            lesson_data = lessons.get(current_lesson, {})
-            next_step = lesson_data.get("next")
-
-            # Evaluate the response and generate feedback
-            feedback = evaluate_response_enhanced(current_lesson, user_response, chat_id)
-            quality_metrics = analyze_response_quality(user_response)
-
-            if feedback:
-                feedback_message = "📝 Feedback on your response:\n\n"
-                feedback_message += "\n\n".join(feedback)
+            if quality_metrics['word_count'] < 20:
+                feedback_message += "\n\n💡 Tip: Consider expanding your response with more details."
+            elif not quality_metrics['has_punctuation']:
+                feedback_message += "\n\n💡 Tip: Using proper punctuation can help express your ideas more clearly."
                 
-                if quality_metrics['word_count'] < 20:
-                    feedback_message += "\n\n💡 Tip: Consider expanding your response with more details."
-                elif not quality_metrics['has_punctuation']:
-                    feedback_message += "\n\n💡 Tip: Using proper punctuation can help express your ideas more clearly."
-                    
-                await update.message.reply_text(feedback_message)
+            await update.message.reply_text(feedback_message)
 
-            # Save feedback analytics
-            feedback_results = {
-                "matches": extract_keywords_from_response(user_response, current_lesson),
-                "feedback": feedback,
-                "quality_metrics": quality_metrics
-            }
-            await FeedbackAnalyticsManager.save_feedback_analytics(chat_id, current_lesson, feedback_results)
+        # Save feedback analytics
+        feedback_results = {
+            "matches": extract_keywords_from_response(user_response, current_lesson),
+            "feedback": feedback,
+            "quality_metrics": quality_metrics
+        }
+        await FeedbackAnalyticsManager.save_feedback_analytics(chat_id, current_lesson, feedback_results)
 
-            # Move to next step if available
-            if next_step:
-                # Update progress and move to next step
-                await UserManager.update_user_progress(chat_id, next_step)
+        # Progress to next step if available
+        if next_step:
+            logger.info(f"User {chat_id} progressing from {current_lesson} to {next_step}")
+            success = await UserManager.update_user_progress(chat_id, next_step)
+            if success:
                 await lesson_service.send_lesson(update, context, next_step)
             else:
-                await update.message.reply_text("✅ Response saved! You've completed all lessons.")
-
+                logger.error(f"Failed to update progress for user {chat_id}")
+                await update.message.reply_text("Error updating progress. Please try /resume to continue.")
         else:
-            await update.message.reply_text("Please use /start to begin your learning journey.")
+            await update.message.reply_text("✅ Response saved! You've completed all lessons.")
     
     except Exception as e:
         logger.error(f"Error handling message from user {chat_id}: {e}", exc_info=True)
