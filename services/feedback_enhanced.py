@@ -65,7 +65,12 @@ def evaluate_response_enhanced(lesson_id: str, response_text: str, user_id: int)
         if cached_feedback:
             return [cached_feedback]
 
-        # Get cached rules
+        # First check if this is a main lesson or a step
+        if "_step_" not in lesson_id:
+            # For main lessons (intros), just acknowledge the response
+            return ["Thanks for your response! Let's continue with the lesson."]
+
+        # Get cached rules for steps
         rules = get_feedback_rules(lesson_id)
         if not rules:
             logger.warning(f"No feedback rules found for lesson {lesson_id}")
