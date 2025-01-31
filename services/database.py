@@ -703,6 +703,7 @@ class FeedbackAnalyticsManager:
                         "lesson_id": lesson_id,
                         "keywords_found": feedback_results.get("matches", []),
                         "feedback_given": feedback_results.get("feedback", []),
+                        "quality_metrics": feedback_results.get("quality_metrics", {}),  # Added this line
                         "timestamp": datetime.now(timezone.utc)
                     }
                 }},
