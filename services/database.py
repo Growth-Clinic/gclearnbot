@@ -313,6 +313,28 @@ class UserManager:
             raise
 
     @staticmethod
+    async def get_user_info(user_id: int) -> Optional[Dict[str, Any]]:
+        """
+        Get user information from the database.
+        
+        Args:
+            user_id: The user's Telegram ID
+            
+        Returns:
+            Dictionary containing user information or None if not found
+        """
+        try:
+            user_data = db.users.find_one({"user_id": user_id})
+            if user_data:
+                user_data.pop('_id', None)  # Remove MongoDB ID
+                return user_data
+            return None
+            
+        except Exception as e:
+            logger.error(f"Error retrieving user info: {e}", exc_info=True)
+            return None
+
+    @staticmethod
     async def update_user_progress(user_id: int, lesson_key: str) -> bool:
         """Update user's progress with enhanced metrics."""
         try:
