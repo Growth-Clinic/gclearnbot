@@ -7,6 +7,7 @@ import os
 from datetime import datetime, timezone, timedelta
 from typing import Dict, Optional, Any, List
 from services.lesson_loader import load_lessons
+from services.utils import extract_keywords_from_response
 import time
 import asyncio
 
@@ -315,7 +316,7 @@ class UserManager:
     @staticmethod
     async def get_user_info(user_id: int) -> Optional[Dict[str, Any]]:
         """
-        Get user information from the database.
+        Get user information from the database, including current lesson progress.
         
         Args:
             user_id: The user's Telegram ID
@@ -324,10 +325,25 @@ class UserManager:
             Dictionary containing user information or None if not found
         """
         try:
-            user_data = db.users.find_one({"user_id": user_id})
+            user_data = await asyncio.to_thread(
+                db.users.find_one,
+                {"user_id": user_id}
+            )
+            
             if user_data:
+                # Ensure we have the required fields
+                if 'current_lesson' not in user_data:
+                    # If no current lesson is set, default to lesson_1
+                    user_data['current_lesson'] = 'lesson_1'
+                    await asyncio.to_thread(
+                        db.users.update_one,
+                        {"user_id": user_id},
+                        {"$set": {"current_lesson": "lesson_1"}}
+                    )
+                
                 user_data.pop('_id', None)  # Remove MongoDB ID
                 return user_data
+                
             return None
             
         except Exception as e:
@@ -414,9 +430,6 @@ class JournalManager:
         Returns:
             bool: True if save successful, False otherwise
         """
-
-        from bot.handlers.user_handlers import extract_keywords_from_response
-
         try:
             # Validate inputs
             if not response or not response.strip():
@@ -440,8 +453,9 @@ class JournalManager:
                 logger.error(f"Invalid journal entry for user {user_id}")
                 return False
             
-            # Update or create journal document
-            result = db.journals.update_one(
+            # Update or create journal document using asyncio
+            result = await asyncio.to_thread(
+                db.journals.update_one,
                 {"user_id": user_id},
                 {
                     "$push": {"entries": entry},
