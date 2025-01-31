@@ -9,6 +9,7 @@ from typing import Dict, Optional, Any, List
 from services.lesson_loader import load_lessons
 import time
 import asyncio
+from bot.handlers.user_handlers import extract_keywords_from_response
 
 
 # Configure logging
@@ -67,61 +68,237 @@ db = init_mongodb()
 
 
 
-class UserManager:
+class DataValidator:
+    """Handles data validation for database operations"""
+    
     @staticmethod
-    def update_progress(user_id: int, lesson_key: str) -> None:
-        """Update user's lesson progress"""
+    def validate_user_data(user_data: Dict[str, Any]) -> bool:
+        """
+        Validate user data before saving.
+        
+        Args:
+            user_data: Dictionary containing user information
+            
+        Returns:
+            bool: True if valid, False otherwise
+        """
+        required_fields = {
+            "user_id": int,
+            "username": str,
+            "first_name": str,
+            "language_code": str,
+            "joined_date": str
+        }
+        
         try:
-            db.users.update_one(
-                {"user_id": user_id},
-                {
-                    "$set": {
-                        "current_lesson": lesson_key,
-                        "last_activity": datetime.now(timezone.utc)
-                    },
-                    "$addToSet": {
-                        "completed_lessons": lesson_key
-                    }
-                },
-                upsert=True
-            )
-            logger.info(f"Progress updated for user {user_id}: {lesson_key}")
+            # Check required fields exist and are correct type
+            for field, field_type in required_fields.items():
+                if field not in user_data:
+                    logger.error(f"Missing required field: {field}")
+                    return False
+                if not isinstance(user_data[field], field_type) and user_data[field] is not None:
+                    logger.error(f"Invalid type for field {field}")
+                    return False
+            
+            # Validate timestamps
+            if not isinstance(user_data.get("joined_date"), str):
+                logger.error("Invalid joined_date format")
+                return False
+                
+            return True
+            
         except Exception as e:
-            logger.error(f"Error updating progress: {e}")
+            logger.error(f"Error validating user data: {e}")
+            return False
+
+    @staticmethod
+    def validate_feedback_data(feedback_data: Dict[str, Any]) -> bool:
+        """
+        Validate feedback data before saving.
+        
+        Args:
+            feedback_data: Dictionary containing feedback information
+            
+        Returns:
+            bool: True if valid, False otherwise
+        """
+        required_fields = {
+            "id": int,
+            "user_id": int,
+            "feedback": str,
+            "timestamp": (datetime, str),  # Can be either datetime or string
+            "processed": bool
+        }
+        
+        try:
+            # Check required fields exist and are correct type
+            for field, field_type in required_fields.items():
+                if field not in feedback_data:
+                    logger.error(f"Missing required field in feedback: {field}")
+                    return False
+                    
+                # Handle fields that can be multiple types
+                if isinstance(field_type, tuple):
+                    if not isinstance(feedback_data[field], field_type[0]) and not isinstance(feedback_data[field], field_type[1]):
+                        logger.error(f"Invalid type for feedback field {field}")
+                        return False
+                elif not isinstance(feedback_data[field], field_type):
+                    logger.error(f"Invalid type for feedback field {field}")
+                    return False
+            
+            # Validate feedback text is not empty
+            if not feedback_data["feedback"].strip():
+                logger.error("Empty feedback text")
+                return False
+                
+            return True
+            
+        except Exception as e:
+            logger.error(f"Error validating feedback data: {e}")
+            return False
+
+    @staticmethod
+    def validate_task_data(task_data: Dict[str, Any]) -> bool:
+        """
+        Validate task data before saving.
+        
+        Args:
+            task_data: Dictionary containing task information
+            
+        Returns:
+            bool: True if valid, False otherwise
+        """
+        required_fields = {
+            "task_id": int,
+            "company": str,
+            "lesson": str,
+            "description": str,
+            "requirements": list,
+            "is_active": bool
+        }
+        
+        try:
+            # Check required fields exist and are correct type
+            for field, field_type in required_fields.items():
+                if field not in task_data:
+                    logger.error(f"Missing required field in task: {field}")
+                    return False
+                if not isinstance(task_data[field], field_type):
+                    logger.error(f"Invalid type for task field {field}")
+                    return False
+            
+            # Validate text fields are not empty
+            if not task_data["company"].strip():
+                logger.error("Empty company name")
+                return False
+            if not task_data["description"].strip():
+                logger.error("Empty task description")
+                return False
+                
+            # Validate lesson exists
+            if task_data["lesson"] not in lessons:
+                logger.error(f"Invalid lesson in task: {task_data['lesson']}")
+                return False
+                
+            return True
+            
+        except Exception as e:
+            logger.error(f"Error validating task data: {e}")
+            return False
+
+    @staticmethod
+    def validate_journal_entry(entry: Dict[str, Any]) -> bool:
+        """
+        Validate journal entry before saving.
+        
+        Args:
+            entry: Dictionary containing journal entry
+            
+        Returns:
+            bool: True if valid, False otherwise
+        """
+        required_fields = {
+            "timestamp": str,
+            "lesson": str,
+            "response": str,
+            "response_length": int
+        }
+        
+        try:
+            # Check required fields exist and are correct type
+            for field, field_type in required_fields.items():
+                if field not in entry:
+                    logger.error(f"Missing required field: {field}")
+                    return False
+                if not isinstance(entry[field], field_type):
+                    logger.error(f"Invalid type for field {field}")
+                    return False
+            
+            # Validate response is not empty
+            if not entry["response"].strip():
+                logger.error("Empty response")
+                return False
+            
+            # Validate lesson exists
+            if entry["lesson"] not in lessons:
+                logger.error(f"Invalid lesson: {entry['lesson']}")
+                return False
+                
+            return True
+            
+        except Exception as e:
+            logger.error(f"Error validating journal entry: {e}")
+            return False
 
 
+class UserManager:
     @staticmethod
     async def save_user_info(user) -> Dict[str, Any]:
         """
-        Save user information when they start using the bot.
+        Save comprehensive user information when they start using the bot.
         
         Args:
             user: Telegram user object
             
         Returns:
             Dict containing saved user data
-            
-        Raises:
-            OperationFailure: If MongoDB operation fails
         """
         try:
             user_data = {
                 "user_id": user.id,
                 "username": user.username or "",
                 "first_name": user.first_name or "",
-                "last_name": user.last_name or "", 
+                "last_name": user.last_name or "",
                 "language_code": user.language_code or "en",
                 "joined_date": datetime.now(timezone.utc).isoformat(),
                 "current_lesson": "lesson_1",
                 "completed_lessons": [],
-                "last_active": datetime.now(timezone.utc).isoformat()
+                "last_active": datetime.now(timezone.utc).isoformat(),
+                # New fields for better tracking
+                "learning_preferences": {
+                    "preferred_language": user.language_code or "en",
+                    "notification_enabled": True
+                },
+                "progress_metrics": {
+                    "total_responses": 0,
+                    "average_response_length": 0,
+                    "completion_rate": 0,
+                    "last_lesson_date": None
+                }
             }
+
+            if not DataValidator.validate_user_data(user_data):
+                logger.error(f"Invalid user data for user {user.id}")
+                return None
             
             result = db.users.update_one(
                 {"user_id": user.id},
                 {
                     "$set": user_data,
-                    "$setOnInsert": {"created_at": datetime.now(timezone.utc).isoformat()}
+                    "$setOnInsert": {
+                        "created_at": datetime.now(timezone.utc).isoformat(),
+                        "source": "telegram"
+                    }
                 },
                 upsert=True
             )
@@ -137,46 +314,39 @@ class UserManager:
             raise
 
     @staticmethod
-    async def get_user_info(user_id: int) -> Optional[Dict[str, Any]]:
-        """
-        Get user information.
-        
-        Args:
-            user_id: Telegram user ID
-            
-        Returns:
-            User data dictionary or None if not found
-            
-        Raises:
-            OperationFailure: If MongoDB query fails
-        """
-        try:
-            user = db.users.find_one({"user_id": user_id})
-            if user:
-                user.pop('_id', None)  # Remove MongoDB ID
-            return user
-            
-        except OperationFailure as e:
-            logger.error(f"Database error fetching user {user_id}: {e}")
-            raise
-
-    @staticmethod
     async def update_user_progress(user_id: int, lesson_key: str) -> bool:
-        """Update user's progress."""
+        """Update user's progress with enhanced metrics."""
         try:
-            if not lesson_key in lessons:
+            if lesson_key not in lessons:
                 logger.error(f"Invalid lesson key: {lesson_key}")
                 return False
                 
+            current_date = datetime.now(timezone.utc).date().isoformat()
+                
+            update_data = {
+                "current_lesson": lesson_key,
+                "last_active": datetime.now(timezone.utc).isoformat(),
+                "progress_metrics.last_lesson_date": current_date,
+                "$addToSet": {
+                    "completed_lessons": lesson_key
+                },
+                "$inc": {
+                    "progress_metrics.total_responses": 1
+                }
+            }
+            
+            # Update completion rate
+            total_lessons = len(lessons)
+            completed_count = len(set(db.users.find_one(
+                {"user_id": user_id}
+            ).get('completed_lessons', [])))
+            
+            completion_rate = (completed_count / total_lessons) * 100
+            update_data["progress_metrics.completion_rate"] = completion_rate
+            
             result = db.users.update_one(
                 {"user_id": user_id},
-                {
-                    "$set": {
-                        "current_lesson": lesson_key,
-                        "last_active": datetime.now(timezone.utc).isoformat()
-                    },
-                    "$addToSet": {"completed_lessons": lesson_key}
-                }
+                {"$set": update_data}
             )
             
             success = result.modified_count > 0
@@ -189,6 +359,193 @@ class UserManager:
         except Exception as e:
             logger.error(f"Error updating progress for user {user_id}: {e}", exc_info=True)
             return False
+
+    @staticmethod
+    async def update_learning_preferences(user_id: int, preferences: Dict[str, Any]) -> bool:
+        """Update user's learning preferences."""
+        try:
+            result = db.users.update_one(
+                {"user_id": user_id},
+                {"$set": {
+                    "learning_preferences": preferences
+                }}
+            )
+            return result.modified_count > 0
+        except Exception as e:
+            logger.error(f"Error updating preferences for user {user_id}: {e}")
+            return False
+        
+
+
+class JournalManager:
+    """Manages journal operations in MongoDB with improved data quality and validation"""
+    
+    @staticmethod
+    def save_journal_entry(user_id: int, lesson_key: str, response: str) -> bool:
+        """
+        Save a user's response to their journal with validation and error handling.
+        
+        Args:
+            user_id: Telegram user ID
+            lesson_key: Current lesson identifier
+            response: User's response text
+            
+        Returns:
+            bool: True if save successful, False otherwise
+        """
+        try:
+            # Validate inputs
+            if not response or not response.strip():
+                logger.warning(f"Empty response from user {user_id}")
+                return False
+                
+            if not lesson_key in lessons:
+                logger.error(f"Invalid lesson key: {lesson_key}")
+                return False
+            
+            # Prepare journal entry
+            entry = {
+                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "lesson": lesson_key,
+                "response": response.strip(),
+                "response_length": len(response.strip()),
+                "keywords_used": extract_keywords_from_response(response, lesson_key)
+            }
+
+            if not DataValidator.validate_journal_entry(entry):
+                logger.error(f"Invalid journal entry for user {user_id}")
+                return False
+            
+            # Update or create journal document
+            result = db.journals.update_one(
+                {"user_id": user_id},
+                {
+                    "$push": {"entries": entry},
+                    "$setOnInsert": {
+                        "created_at": datetime.now(timezone.utc).isoformat()
+                    }
+                },
+                upsert=True
+            )
+            
+            if result.acknowledged:
+                logger.info(f"Journal entry saved for user {user_id} in lesson {lesson_key}")
+                return True
+            
+            logger.error(f"Failed to save journal entry for user {user_id}")
+            return False
+            
+        except Exception as e:
+            logger.error(f"Error saving journal entry for user {user_id}: {e}", exc_info=True)
+            return False
+
+    @staticmethod
+    def get_user_journal(user_id: int, limit: int = None) -> Optional[Dict[str, Any]]:
+        """
+        Get a user's journal entries with optional limit.
+        
+        Args:
+            user_id: Telegram user ID
+            limit: Optional maximum number of entries to return
+            
+        Returns:
+            Dictionary containing journal entries or None if not found
+        """
+        try:
+            # Base query
+            query = {"user_id": user_id}
+            
+            # If limit specified, only get recent entries
+            if limit:
+                journal = db.journals.aggregate([
+                    {"$match": query},
+                    {"$unwind": "$entries"},
+                    {"$sort": {"entries.timestamp": -1}},
+                    {"$limit": limit},
+                    {"$group": {
+                        "_id": "$_id",
+                        "user_id": {"$first": "$user_id"},
+                        "entries": {"$push": "$entries"}
+                    }}
+                ]).next()
+            else:
+                journal = db.journals.find_one(query)
+            
+            if journal:
+                journal.pop('_id', None)  # Remove MongoDB ID
+                
+            return journal
+            
+        except Exception as e:
+            logger.error(f"Error retrieving journal for user {user_id}: {e}", exc_info=True)
+            return None
+
+    @staticmethod
+    def get_lesson_responses(lesson_key: str, limit: int = 100) -> List[Dict[str, Any]]:
+        """
+        Get all user responses for a specific lesson.
+        
+        Args:
+            lesson_key: Lesson identifier
+            limit: Maximum number of responses to return
+            
+        Returns:
+            List of responses with user info
+        """
+        try:
+            responses = db.journals.aggregate([
+                {"$unwind": "$entries"},
+                {"$match": {"entries.lesson": lesson_key}},
+                {"$limit": limit},
+                {"$project": {
+                    "user_id": 1,
+                    "response": "$entries.response",
+                    "timestamp": "$entries.timestamp",
+                    "response_length": "$entries.response_length",
+                    "keywords_used": "$entries.keywords_used"
+                }}
+            ])
+            
+            return list(responses)
+            
+        except Exception as e:
+            logger.error(f"Error retrieving responses for lesson {lesson_key}: {e}", exc_info=True)
+            return []
+
+    @staticmethod
+    def get_journal_statistics(user_id: int) -> Dict[str, Any]:
+        """
+        Get statistics about a user's journal entries.
+        
+        Args:
+            user_id: Telegram user ID
+            
+        Returns:
+            Dictionary containing journal statistics
+        """
+        try:
+            stats = db.journals.aggregate([
+                {"$match": {"user_id": user_id}},
+                {"$unwind": "$entries"},
+                {"$group": {
+                    "_id": "$user_id",
+                    "total_entries": {"$sum": 1},
+                    "avg_response_length": {"$avg": "$entries.response_length"},
+                    "first_entry": {"$min": "$entries.timestamp"},
+                    "last_entry": {"$max": "$entries.timestamp"}
+                }}
+            ]).next()
+            
+            return stats
+            
+        except Exception as e:
+            logger.error(f"Error calculating journal stats for user {user_id}: {e}", exc_info=True)
+            return {
+                "total_entries": 0,
+                "avg_response_length": 0,
+                "first_entry": None,
+                "last_entry": None
+            }
 
 
 class FeedbackManager:
@@ -211,6 +568,10 @@ class FeedbackManager:
                 "timestamp": datetime.now(timezone.utc),
                 "processed": False
             }
+
+            if not DataValidator.validate_feedback_data(feedback_data):
+                logger.error(f"Invalid feedback data for user {user_id}")
+                return False
             
             result = await asyncio.to_thread(
                 db.feedback.insert_one,
@@ -442,6 +803,10 @@ class TaskManager:
                 "is_active": True,
                 "created_at": datetime.now(timezone.utc)
             }
+
+            if not DataValidator.validate_task_data(task):
+                logger.error(f"Invalid task data for lesson {lesson_key}")
+                return None
             
             result = db.tasks.insert_one(task)
             if result.acknowledged:
