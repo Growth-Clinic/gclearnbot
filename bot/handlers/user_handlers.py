@@ -221,7 +221,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     try:
         # Check if the user is sending feedback
         if context.user_data.get('expecting_feedback'):
-            # ... existing feedback handling code ...
+            await handle_feedback(update, context)
             return
 
         # Get user's current position in the lessons
@@ -232,15 +232,6 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         current_lesson = user_data["current_lesson"]
         
-        # If we're on a main lesson, find its first step
-        if not is_actual_lesson(current_lesson):
-            lesson_structure = get_lesson_structure()
-            main_lesson = current_lesson.split('_step_')[0] if '_step_' in current_lesson else current_lesson
-            if main_lesson in lesson_structure and lesson_structure[main_lesson]:
-                current_lesson = lesson_structure[main_lesson][0]
-                # Update the current lesson to this step
-                await UserManager.update_user_progress(chat_id, current_lesson)
-
         # Save the response to the user's journal
         save_success = await save_journal_entry(chat_id, current_lesson, user_response)
         
@@ -266,7 +257,14 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             elif not quality_metrics['has_punctuation']:
                 feedback_message += "\n\n💡 Tip: Using proper punctuation can help express your ideas more clearly."
                 
-            await update.message.reply_text(feedback_message)
+            # Send feedback and add the progress button if there's a next step
+            reply_markup = None
+            if next_step:
+                reply_markup = InlineKeyboardMarkup([[
+                    InlineKeyboardButton("✅ Continue", callback_data=next_step)
+                ]])
+            
+            await update.message.reply_text(feedback_message, reply_markup=reply_markup)
 
         # Save feedback analytics
         feedback_results = {
@@ -276,18 +274,6 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         }
         await FeedbackAnalyticsManager.save_feedback_analytics(chat_id, current_lesson, feedback_results)
 
-        # Progress to next step if available
-        if next_step:
-            logger.info(f"User {chat_id} progressing from {current_lesson} to {next_step}")
-            success = await UserManager.update_user_progress(chat_id, next_step)
-            if success:
-                await lesson_service.send_lesson(update, context, next_step)
-            else:
-                logger.error(f"Failed to update progress for user {chat_id}")
-                await update.message.reply_text("Error updating progress. Please try /resume to continue.")
-        else:
-            await update.message.reply_text("✅ Response saved! You've completed all lessons.")
-    
     except Exception as e:
         logger.error(f"Error handling message from user {chat_id}: {e}", exc_info=True)
         await update.message.reply_text("An error occurred. Please try again later.")
