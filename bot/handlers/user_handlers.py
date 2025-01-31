@@ -170,14 +170,6 @@ async def get_journal(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
 async def save_journal_entry(user_id: int, lesson_key: str, response: str) -> bool:
     """
     Save a user's response to their journal and update analytics.
-    
-    Args:
-        user_id: The user's Telegram ID
-        lesson_key: The current lesson identifier
-        response: The user's response text
-    
-    Returns:
-        bool: True if save was successful, False otherwise
     """
     try:
         # First save the journal entry
@@ -185,8 +177,13 @@ async def save_journal_entry(user_id: int, lesson_key: str, response: str) -> bo
         
         if save_success:
             # Update analytics after successful save
-            await AnalyticsManager.calculate_user_metrics(user_id)
-            logger.info(f"Journal entry and analytics updated for user {user_id}")
+            try:
+                metrics = await AnalyticsManager.calculate_user_metrics(user_id)
+                logger.info(f"Journal entry and analytics updated for user {user_id}")
+            except Exception as metrics_error:
+                logger.error(f"Error calculating metrics but entry was saved: {metrics_error}")
+                # Don't fail the whole operation if just metrics calculation fails
+                
             return True
         
         return False
