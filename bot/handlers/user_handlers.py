@@ -1,8 +1,10 @@
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import ContextTypes
 from services.database import JournalManager, UserManager, FeedbackManager, TaskManager, db, FeedbackAnalyticsManager, AnalyticsManager
+from services.feedback_enhanced import evaluate_response_enhanced, analyze_response_quality
 from services.lesson_manager import LessonService
 from services.lesson_loader import load_lessons
+from services.feedback_config import LESSON_FEEDBACK_RULES
 import logging
 from datetime import datetime, timezone
 import re
@@ -25,115 +27,6 @@ lesson_service = LessonService(
     task_manager=TaskManager(),
     user_manager=UserManager()
 )
-
-
-LESSON_FEEDBACK_RULES = {
-    "lesson_2": {  # Design Thinking
-        "criteria": {
-            "Empathy": {
-                "keywords": ["feel", "experience", "perspective", "user", "interview", "need", "challenge", "struggle", "pain point"],
-                "good_feedback": "✅ Excellent job showing empathy and understanding your user's perspective!",
-                "bad_feedback": "⚠️ Try to dig deeper into how your user feels and their experiences."
-            },
-            "Problem Definition": {
-                "keywords": ["problem statement", "needs", "insights", "define", "challenge", "opportunity"],
-                "good_feedback": "✅ Clear problem definition that combines user needs and insights!",
-                "bad_feedback": "⚠️ Make sure your problem statement includes both user needs and insights."
-            },
-            "Ideation": {
-                "keywords": ["solution", "idea", "creative", "brainstorm", "alternative", "possibility"],
-                "good_feedback": "✅ Great variety of creative solutions!",
-                "bad_feedback": "⚠️ Try generating more diverse ideas - think outside the box!"
-            },
-            "Prototyping": {
-                "keywords": ["prototype", "test", "mock", "sketch", "wireframe", "design"],
-                "good_feedback": "✅ Good job creating a testable prototype!",
-                "bad_feedback": "⚠️ Consider making your prototype more concrete and testable."
-            }
-        }
-    },
-    "lesson_3": {  # Business Modelling
-        "criteria": {
-            "Value Proposition": {
-                "keywords": ["unique", "offer", "value", "benefit", "solution", "different"],
-                "good_feedback": "✅ Strong value proposition that clearly defines your unique offering!",
-                "bad_feedback": "⚠️ Make your value proposition more specific and unique."
-            },
-            "Customer Segments": {
-                "keywords": ["segment", "customer", "target", "market", "audience", "demographic"],
-                "good_feedback": "✅ Well-defined customer segments with clear characteristics!",
-                "bad_feedback": "⚠️ Try to be more specific about who your customers are."
-            },
-            "Revenue Model": {
-                "keywords": ["revenue", "pricing", "monetization", "cost", "profit", "subscription", "freemium"],
-                "good_feedback": "✅ Clear and sustainable revenue model!",
-                "bad_feedback": "⚠️ Consider different ways to generate revenue."
-            },
-            "Business Canvas": {
-                "keywords": ["canvas", "partnership", "channel", "resource", "activity", "relationship"],
-                "good_feedback": "✅ Comprehensive business model canvas with all key elements!",
-                "bad_feedback": "⚠️ Make sure to address all nine elements of the business model canvas."
-            }
-        }
-    },
-    "lesson_4": {  # Market Thinking
-        "criteria": {
-            "Product Market Fit": {
-                "keywords": ["fit", "need", "solution", "problem", "market", "validation"],
-                "good_feedback": "✅ Strong evidence of product-market fit!",
-                "bad_feedback": "⚠️ Demonstrate how your product specifically fits market needs."
-            },
-            "Channel Strategy": {
-                "keywords": ["channel", "reach", "marketing", "distribution", "acquisition"],
-                "good_feedback": "✅ Well-thought-out channel strategy!",
-                "bad_feedback": "⚠️ Consider more specific channels to reach your target market."
-            },
-            "Growth Metrics": {
-                "keywords": ["cac", "ltv", "retention", "conversion", "metrics", "growth"],
-                "good_feedback": "✅ Good understanding of key growth metrics!",
-                "bad_feedback": "⚠️ Include specific metrics to measure your growth."
-            }
-        }
-    },
-    "lesson_5": {  # User Thinking
-        "criteria": {
-            "Emotional Triggers": {
-                "keywords": ["emotion", "feel", "trigger", "motivation", "desire", "need"],
-                "good_feedback": "✅ Excellent identification of emotional triggers!",
-                "bad_feedback": "⚠️ Dig deeper into the emotional drivers of user behavior."
-            },
-            "Habit Formation": {
-                "keywords": ["habit", "hook", "routine", "behavior", "pattern", "loop"],
-                "good_feedback": "✅ Strong understanding of habit-forming mechanics!",
-                "bad_feedback": "⚠️ Consider how to make your product more habit-forming."
-            },
-            "User Psychology": {
-                "keywords": ["psychology", "cognitive", "bias", "decision", "behavior"],
-                "good_feedback": "✅ Good application of psychological principles!",
-                "bad_feedback": "⚠️ Include more psychological insights in your analysis."
-            }
-        }
-    },
-    "lesson_6": {  # Project Thinking
-        "criteria": {
-            "Project Scope": {
-                "keywords": ["scope", "goal", "objective", "deliverable", "outcome"],
-                "good_feedback": "✅ Clear and well-defined project scope!",
-                "bad_feedback": "⚠️ Make your project scope more specific and measurable."
-            },
-            "Task Management": {
-                "keywords": ["task", "milestone", "sprint", "timeline", "priority"],
-                "good_feedback": "✅ Well-organized tasks and milestones!",
-                "bad_feedback": "⚠️ Break down your tasks into smaller, manageable pieces."
-            },
-            "Agile Principles": {
-                "keywords": ["agile", "iterate", "adapt", "flexible", "review", "retrospective"],
-                "good_feedback": "✅ Good application of Agile principles!",
-                "bad_feedback": "⚠️ Consider how to make your process more iterative and adaptive."
-            }
-        }
-    }
-}
 
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -302,53 +195,6 @@ async def save_journal_entry(user_id: int, lesson_key: str, response: str) -> bo
         return False
 
 
-# Helper function to evaluate responses
-def evaluate_response(lesson_id: str, response_text: str) -> list:
-    """Evaluate the user's response based on predefined rules and provide feedback."""
-    try:
-        if lesson_id not in LESSON_FEEDBACK_RULES:
-            logger.warning(f"No feedback rules found for lesson {lesson_id}")
-            return ["No feedback available for this lesson."]
-        
-        feedback = []
-        criteria = LESSON_FEEDBACK_RULES[lesson_id]["criteria"]
-        
-        for criterion, rules in criteria.items():
-            # Find matching keywords
-            matches = [kw for kw in rules["keywords"] 
-                     if kw.lower() in response_text.lower()]
-            
-            # Dynamic threshold (30% of keywords needed)
-            threshold = len(rules["keywords"]) * 0.3
-            feedback.append(
-                rules["good_feedback"] if len(matches) >= threshold
-                else rules["bad_feedback"]
-            )
-        
-        logger.info(f"Feedback generated for lesson {lesson_id}: {feedback}")
-        return feedback
-    
-    except Exception as e:
-        logger.error(f"Error evaluating response for lesson {lesson_id}: {e}", exc_info=True)
-        return ["An error occurred while evaluating your response. Please try again."]
-
-
-def generate_feedback(response_text: str, lesson_key: str) -> str:
-    """Generate rule-based feedback for a user's response."""
-    feedback = []
-    rules = LESSON_FEEDBACK_RULES.get(lesson_key, {})
-    
-    for criterion, data in rules.get("criteria", {}).items():
-        # Check if any keywords exist in the response
-        matches = [word for word in data["keywords"] if word in response_text.lower()]
-        if matches:
-            feedback.append(data["good_feedback"])
-        else:
-            feedback.append(data["bad_feedback"])
-    
-    return "\n\n".join(feedback) if feedback else "No feedback available."
-
-
 def extract_rating_from_response(response: str) -> str:
     """
     Extract a rating from the user's response.
@@ -435,14 +281,29 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 return
 
             # Evaluate the response and generate feedback
-            feedback = evaluate_response(current_lesson, user_response)
+            feedback = evaluate_response_enhanced(current_lesson, user_response, chat_id)
+
+            # Analyze response quality
+            quality_metrics = analyze_response_quality(user_response)
+
             if feedback:
-                await update.message.reply_text("📝 Feedback on your response:\n\n" + "\n\n".join(feedback))
+                # Format feedback message with quality insights
+                feedback_message = "📝 Feedback on your response:\n\n"
+                feedback_message += "\n\n".join(feedback)
                 
-                # Save feedback analytics
+                # Add quality insights if the response needs improvement
+                if quality_metrics['word_count'] < 20:
+                    feedback_message += "\n\n💡 Tip: Consider expanding your response with more details."
+                elif not quality_metrics['has_punctuation']:
+                    feedback_message += "\n\n💡 Tip: Using proper punctuation can help express your ideas more clearly."
+                    
+                await update.message.reply_text(feedback_message)
+                
+                # Save feedback analytics with enhanced metrics
                 feedback_results = {
                     "matches": extract_keywords_from_response(user_response, current_lesson),
-                    "feedback": feedback
+                    "feedback": feedback,
+                    "quality_metrics": quality_metrics
                 }
                 await FeedbackAnalyticsManager.save_feedback_analytics(chat_id, current_lesson, feedback_results)
 
