@@ -916,7 +916,7 @@ class AnalyticsManager:
     """Manages learning analytics and user progress tracking in MongoDB."""
 
     @staticmethod
-    def calculate_user_metrics(user_id: int) -> Dict[str, Any]:
+    async def calculate_user_metrics(user_id: int) -> Dict[str, Any]:
         """
         Calculate comprehensive metrics for a single user.
         
@@ -933,9 +933,15 @@ class AnalyticsManager:
             Dictionary containing user metrics
         """
         try:
-            # Get user data and journal entries
-            user_data = db.users.find_one({"user_id": user_id})
-            journal = db.journals.find_one({"user_id": user_id})
+            # Get user data and journal entries using asyncio
+            user_data = await asyncio.to_thread(
+                db.users.find_one,
+                {"user_id": user_id}
+            )
+            journal = await asyncio.to_thread(
+                db.journals.find_one,
+                {"user_id": user_id}
+            )
             
             if not user_data or not journal or not journal.get('entries'):
                 logger.warning(f"No data found for user {user_id}")
@@ -945,9 +951,13 @@ class AnalyticsManager:
             entries = sorted(journal['entries'], 
                            key=lambda x: x['timestamp'])
             
-            # Calculate basic metrics
+            # Calculate basic metrics with safe access
             total_responses = len(entries)
-            avg_response_length = sum(e['response_length'] for e in entries) / total_responses if total_responses > 0 else 0
+            avg_response_length = 0
+            if total_responses > 0:
+                # Safely get response lengths, defaulting to 0 if not present
+                response_lengths = [e.get('response_length', len(e.get('response', ''))) for e in entries]
+                avg_response_length = sum(response_lengths) / total_responses
             
             # Calculate time-based metrics
             if len(entries) >= 2:
