@@ -1,6 +1,6 @@
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import ContextTypes
-from services.database import UserManager, FeedbackManager, TaskManager, db, FeedbackAnalyticsManager
+from services.database import JournalManager, UserManager, FeedbackManager, TaskManager, db, FeedbackAnalyticsManager, AnalyticsManager
 from services.lesson_manager import LessonService
 from services.lesson_loader import load_lessons
 import logging
@@ -273,43 +273,33 @@ async def get_journal(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
 
 
 
-def save_journal_entry(user_id, lesson_key, response):
-    """Save a user's response to their journal."""
-    try:
-        # First check if user has an existing journal document
-        journal = db.journals.find_one({"user_id": user_id})
-        
-        if journal:
-            # Add new entry to existing journal
-            db.journals.update_one(
-                {"user_id": user_id},
-                {
-                    "$push": {
-                        "entries": {
-                            "timestamp": datetime.now(timezone.utc).isoformat(),
-                            "lesson": lesson_key,
-                            "response": response
-                        }
-                    }
-                }
-            )
-            logger.info(f"Journal entry added for user {user_id} in lesson {lesson_key}")
-        else:
-            # Create new journal document
-            journal = {
-                "user_id": user_id,
-                "entries": [{
-                    "timestamp": datetime.now(timezone.utc).isoformat(),
-                    "lesson": lesson_key,
-                    "response": response
-                }]
-            }
-            db.journals.insert_one(journal)
-            logger.info(f"New journal created for user {user_id} with lesson {lesson_key}")
+async def save_journal_entry(user_id: int, lesson_key: str, response: str) -> bool:
+    """
+    Save a user's response to their journal and update analytics.
     
+    Args:
+        user_id: The user's Telegram ID
+        lesson_key: The current lesson identifier
+        response: The user's response text
+    
+    Returns:
+        bool: True if save was successful, False otherwise
+    """
+    try:
+        # First save the journal entry
+        save_success = await JournalManager.save_journal_entry(user_id, lesson_key, response)
+        
+        if save_success:
+            # Update analytics after successful save
+            await AnalyticsManager.calculate_user_metrics(user_id)
+            logger.info(f"Journal entry and analytics updated for user {user_id}")
+            return True
+        
+        return False
+        
     except Exception as e:
-        logger.error(f"Error saving journal entry for user {user_id}: {e}", exc_info=True)
-        raise
+        logger.error(f"Error saving journal entry: {e}", exc_info=True)
+        return False
 
 
 # Helper function to evaluate responses
@@ -406,6 +396,7 @@ def extract_keywords_from_response(response: str, lesson_id: str) -> list:
 
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Handle user input and responses, including feedback and lesson responses."""
+    # Get chat_id from the update object
     chat_id = update.message.chat_id
     user_response = update.message.text
 
@@ -437,7 +428,11 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             current_lesson = user_data["current_lesson"]
             
             # Save the response to the user's journal
-            save_journal_entry(chat_id, current_lesson, user_response)
+            save_success = await save_journal_entry(chat_id, current_lesson, user_response)
+            
+            if not save_success:
+                await update.message.reply_text("There was an error saving your response. Please try again.")
+                return
 
             # Evaluate the response and generate feedback
             feedback = evaluate_response(current_lesson, user_response)
@@ -449,7 +444,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
                     "matches": extract_keywords_from_response(user_response, current_lesson),
                     "feedback": feedback
                 }
-                FeedbackAnalyticsManager.save_feedback_analytics(chat_id, current_lesson, feedback_results)
+                await FeedbackAnalyticsManager.save_feedback_analytics(chat_id, current_lesson, feedback_results)
 
             # Get the next lesson from the current lesson's "next" field
             next_lesson = lessons.get(current_lesson, {}).get("next")

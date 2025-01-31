@@ -4,7 +4,7 @@ import certifi
 from config.settings import Config
 import logging
 import os
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from typing import Dict, Optional, Any, List
 from services.lesson_loader import load_lessons
 import time
@@ -871,3 +871,209 @@ class TaskManager:
         except OperationFailure as e:
             logger.error(f"Failed to deactivate task {task_id}: {e}")
             raise
+
+
+class AnalyticsManager:
+    """Manages learning analytics and user progress tracking in MongoDB."""
+
+    @staticmethod
+    def calculate_user_metrics(user_id: int) -> Dict[str, Any]:
+        """
+        Calculate comprehensive metrics for a single user.
+        
+        This method analyzes:
+        - Lesson completion rates
+        - Response patterns
+        - Engagement levels
+        - Time-based progress
+        
+        Args:
+            user_id: The user's ID
+            
+        Returns:
+            Dictionary containing user metrics
+        """
+        try:
+            # Get user data and journal entries
+            user_data = db.users.find_one({"user_id": user_id})
+            journal = db.journals.find_one({"user_id": user_id})
+            
+            if not user_data or not journal or not journal.get('entries'):
+                logger.warning(f"No data found for user {user_id}")
+                return {}
+            
+            # Get all entries and sort by timestamp
+            entries = sorted(journal['entries'], 
+                           key=lambda x: x['timestamp'])
+            
+            # Calculate basic metrics
+            total_responses = len(entries)
+            avg_response_length = sum(e['response_length'] for e in entries) / total_responses if total_responses > 0 else 0
+            
+            # Calculate time-based metrics
+            if len(entries) >= 2:
+                start_time = datetime.fromisoformat(entries[0]['timestamp'].replace('Z', '+00:00'))
+                end_time = datetime.fromisoformat(entries[-1]['timestamp'].replace('Z', '+00:00'))
+                learning_duration = (end_time - start_time).days
+                avg_days_between_lessons = learning_duration / (len(entries) - 1) if len(entries) > 1 else 0
+            else:
+                learning_duration = 0
+                avg_days_between_lessons = 0
+            
+            # Calculate engagement score (0-100)
+            engagement_factors = {
+                'response_length': min(avg_response_length / 100, 1) * 30,  # 30% weight
+                'completion_rate': user_data['progress_metrics']['completion_rate'],  # 40% weight
+                'consistency': min(7 / (avg_days_between_lessons if avg_days_between_lessons > 0 else 7), 1) * 30  # 30% weight
+            }
+            engagement_score = sum(engagement_factors.values())
+            
+            # Compile metrics
+            return {
+                "total_responses": total_responses,
+                "average_response_length": round(avg_response_length, 2),
+                "completed_lessons": len(user_data.get('completed_lessons', [])),
+                "completion_rate": round(user_data['progress_metrics']['completion_rate'], 2),
+                "learning_duration_days": learning_duration,
+                "avg_days_between_lessons": round(avg_days_between_lessons, 2),
+                "engagement_score": round(engagement_score, 2),
+                "last_active": user_data.get('last_active'),
+                "current_lesson": user_data.get('current_lesson')
+            }
+            
+        except Exception as e:
+            logger.error(f"Error calculating metrics for user {user_id}: {e}", exc_info=True)
+            return {}
+
+    @staticmethod
+    def calculate_cohort_metrics(start_date: Optional[str] = None, 
+                               end_date: Optional[str] = None) -> Dict[str, Any]:
+        """
+        Calculate metrics across all users within a date range.
+        
+        Args:
+            start_date: Optional ISO format start date
+            end_date: Optional ISO format end date
+            
+        Returns:
+            Dictionary containing cohort metrics
+        """
+        try:
+            # Build date range query
+            query = {}
+            if start_date or end_date:
+                query['joined_date'] = {}
+                if start_date:
+                    query['joined_date']['$gte'] = start_date
+                if end_date:
+                    query['joined_date']['$lte'] = end_date
+            
+            # Get all users in date range
+            users = list(db.users.find(query))
+            
+            if not users:
+                return {}
+            
+            # Calculate aggregate metrics
+            total_users = len(users)
+            completion_rates = [u['progress_metrics']['completion_rate'] for u in users]
+            avg_completion_rate = sum(completion_rates) / total_users if total_users > 0 else 0
+            
+            # Count users at each lesson
+            lesson_distribution = {}
+            for user in users:
+                current_lesson = user.get('current_lesson')
+                if current_lesson:
+                    lesson_distribution[current_lesson] = lesson_distribution.get(current_lesson, 0) + 1
+            
+            # Calculate retention metrics
+            active_last_day = sum(1 for u in users if 
+                                datetime.fromisoformat(u['last_active'].replace('Z', '+00:00')) >
+                                datetime.now(timezone.utc) - timedelta(days=1))
+            
+            active_last_week = sum(1 for u in users if 
+                                 datetime.fromisoformat(u['last_active'].replace('Z', '+00:00')) >
+                                 datetime.now(timezone.utc) - timedelta(days=7))
+            
+            return {
+                "total_users": total_users,
+                "average_completion_rate": round(avg_completion_rate, 2),
+                "lesson_distribution": lesson_distribution,
+                "active_users": {
+                    "last_24h": active_last_day,
+                    "last_7d": active_last_week
+                },
+                "retention_rates": {
+                    "daily": round((active_last_day / total_users * 100), 2) if total_users > 0 else 0,
+                    "weekly": round((active_last_week / total_users * 100), 2) if total_users > 0 else 0
+                }
+            }
+            
+        except Exception as e:
+            logger.error(f"Error calculating cohort metrics: {e}", exc_info=True)
+            return {}
+
+    @staticmethod
+    def get_lesson_analytics(lesson_key: str) -> Dict[str, Any]:
+        """
+        Get analytics for a specific lesson.
+        
+        Args:
+            lesson_key: The lesson identifier
+            
+        Returns:
+            Dictionary containing lesson analytics
+        """
+        try:
+            # Get all responses for this lesson
+            responses = list(db.journals.aggregate([
+                {"$unwind": "$entries"},
+                {"$match": {"entries.lesson": lesson_key}},
+                {"$project": {
+                    "response_length": "$entries.response_length",
+                    "keywords_used": "$entries.keywords_used",
+                    "timestamp": "$entries.timestamp"
+                }}
+            ]))
+            
+            if not responses:
+                return {}
+            
+            # Calculate response metrics
+            total_responses = len(responses)
+            avg_response_length = sum(r['response_length'] for r in responses) / total_responses if total_responses > 0 else 0
+            
+            # Analyze keywords
+            all_keywords = [kw for r in responses for kw in r.get('keywords_used', [])]
+            keyword_frequency = {}
+            if all_keywords:
+                keyword_frequency = {kw: all_keywords.count(kw) for kw in set(all_keywords)}
+            
+            # Calculate completion time distribution
+            completion_times = []
+            users_completed = set()
+            
+            user_responses = db.journals.aggregate([
+                {"$unwind": "$entries"},
+                {"$match": {"entries.lesson": lesson_key}},
+                {"$group": {
+                    "_id": "$user_id",
+                    "completed_at": {"$min": "$entries.timestamp"}
+                }}
+            ])
+            
+            for response in user_responses:
+                users_completed.add(response['_id'])
+                completion_times.append(response['completed_at'])
+            
+            return {
+                "total_responses": total_responses,
+                "average_response_length": round(avg_response_length, 2),
+                "unique_completions": len(users_completed),
+                "keyword_frequency": keyword_frequency,
+                "responses_per_day": round(total_responses / (7 if total_responses > 7 else 1), 2)
+            }
+            
+        except Exception as e:
+            logger.error(f"Error calculating lesson analytics for {lesson_key}: {e}", exc_info=True)
+            return {}
