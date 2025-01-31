@@ -402,7 +402,7 @@ class JournalManager:
     """Manages journal operations in MongoDB with improved data quality and validation"""
     
     @staticmethod
-    def save_journal_entry(user_id: int, lesson_key: str, response: str) -> bool:
+    async def save_journal_entry(user_id: int, lesson_key: str, response: str) -> bool:
         """
         Save a user's response to their journal with validation and error handling.
         
@@ -464,7 +464,7 @@ class JournalManager:
             return False
 
     @staticmethod
-    def get_user_journal(user_id: int, limit: int = None) -> Optional[Dict[str, Any]]:
+    async def get_user_journal(user_id: int, limit: int = None) -> Optional[Dict[str, Any]]:
         """
         Get a user's journal entries with optional limit.
         
@@ -505,7 +505,7 @@ class JournalManager:
             return None
 
     @staticmethod
-    def get_lesson_responses(lesson_key: str, limit: int = 100) -> List[Dict[str, Any]]:
+    async def get_lesson_responses(lesson_key: str, limit: int = 100) -> List[Dict[str, Any]]:
         """
         Get all user responses for a specific lesson.
         
@@ -537,7 +537,7 @@ class JournalManager:
             return []
 
     @staticmethod
-    def get_journal_statistics(user_id: int) -> Dict[str, Any]:
+    async def get_journal_statistics(user_id: int) -> Dict[str, Any]:
         """
         Get statistics about a user's journal entries.
         
@@ -715,24 +715,24 @@ class FeedbackAnalyticsManager:
     """Manages feedback analytics and ratings in MongoDB."""
 
     @staticmethod
-    def save_feedback_analytics(user_id: int, lesson_id: str, feedback_results: dict) -> None:
+    async def save_feedback_analytics(user_id: int, lesson_id: str, feedback_results: dict) -> None:
         """Store feedback data for continuous improvement."""
         try:
-            db.feedback_analytics.update_one(
+            await asyncio.to_thread(
+                db.feedback_analytics.update_one,
                 {"user_id": user_id},
                 {"$push": {
                     "lessons": {
                         "lesson_id": lesson_id,
                         "keywords_found": feedback_results.get("matches", []),
                         "feedback_given": feedback_results.get("feedback", []),
-                        "quality_metrics": feedback_results.get("quality_metrics", {}),  # Added this line
+                        "quality_metrics": feedback_results.get("quality_metrics", {}),
                         "timestamp": datetime.now(timezone.utc)
                     }
                 }},
                 upsert=True
             )
             logger.info(f"Feedback analytics saved for user {user_id} and lesson {lesson_id}")
-        
         except Exception as e:
             logger.error(f"Error saving feedback analytics for user {user_id}: {e}", exc_info=True)
             raise
