@@ -366,7 +366,7 @@ class UserManager:
     @staticmethod
     async def update_user_progress(user_id: int, lesson_key: str) -> bool:
         """
-        Update user's progress with enhanced metrics.
+        Update user's progress with enhanced metrics and proper step tracking.
         
         Args:
             user_id: The user's Telegram ID
@@ -380,16 +380,7 @@ class UserManager:
                 logger.error(f"Invalid lesson key: {lesson_key}")
                 return False
 
-            current_date = datetime.now(timezone.utc).isoformat()
-            
-            # First update to add to completed lessons
-            await asyncio.to_thread(
-                db.users.update_one,
-                {"user_id": user_id},
-                {"$addToSet": {"completed_lessons": lesson_key}}
-            )
-            
-            # Get updated user data
+            # Get current user data
             user_data = await asyncio.to_thread(
                 db.users.find_one,
                 {"user_id": user_id}
@@ -398,9 +389,25 @@ class UserManager:
             if not user_data:
                 logger.error(f"User {user_id} not found")
                 return False
-                
+
+            # Only update if this is a new step
+            current_lesson = user_data.get('current_lesson')
+            if current_lesson == lesson_key:
+                logger.info(f"User {user_id} already on lesson {lesson_key}")
+                return True
+
+            current_date = datetime.now(timezone.utc).isoformat()
+            
+            # Update completed lessons
+            await asyncio.to_thread(
+                db.users.update_one,
+                {"user_id": user_id},
+                {"$addToSet": {"completed_lessons": current_lesson}}
+            )
+            
             # Calculate completion metrics
             completed_lessons = user_data.get('completed_lessons', [])
+            completed_lessons.append(current_lesson)  # Include current lesson
             completed_steps = [lesson for lesson in completed_lessons if is_actual_lesson(lesson)]
             total_steps = get_total_lesson_steps()
             
@@ -422,7 +429,7 @@ class UserManager:
             
             success = result.modified_count > 0
             if success:
-                logger.info(f"Progress updated for user {user_id}: {lesson_key}")
+                logger.info(f"Progress updated for user {user_id}: moved from {current_lesson} to {lesson_key}")
             else:
                 logger.warning(f"No progress updated for user {user_id}")
             return success
