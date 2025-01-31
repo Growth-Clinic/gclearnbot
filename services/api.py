@@ -1,5 +1,5 @@
 from quart import Quart, request, jsonify, ResponseReturnValue
-from services.database import db
+from services.database import db, AnalyticsManager
 from datetime import datetime, timezone
 import asyncio
 import logging
@@ -89,3 +89,34 @@ def setup_routes(app: Quart, application: Application) -> None:
             logger.debug("Warm-up successful")
         except Exception as e:
             logger.error(f"Warm-up failed: {e}")
+
+
+    @app.route('/analytics')
+    async def get_analytics():
+        """Analytics endpoint for dashboard"""
+        try:
+            # Get analytics data
+            cohort_metrics = AnalyticsManager.calculate_cohort_metrics()
+            
+            # Return formatted response
+            return jsonify({
+                "status": "success",
+                "data": {
+                    "user_metrics": {
+                        "total_users": cohort_metrics.get('total_users', 0),
+                        "active_users": cohort_metrics.get('active_users', {}),
+                        "retention_rates": cohort_metrics.get('retention_rates', {})
+                    },
+                    "learning_metrics": {
+                        "average_completion_rate": cohort_metrics.get('average_completion_rate', 0),
+                        "lesson_distribution": cohort_metrics.get('lesson_distribution', {})
+                    }
+                }
+            })
+            
+        except Exception as e:
+            logger.error(f"Error generating analytics API response: {e}")
+            return jsonify({
+                "status": "error",
+                "message": "Error generating analytics"
+            }), 500
