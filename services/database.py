@@ -376,6 +376,9 @@ class UserManager:
             bool: True if update was successful, False otherwise
         """
         try:
+            # Log the start of progress update
+            logger.info(f"Starting progress update for user {user_id} to lesson {lesson_key}")
+
             if lesson_key not in lessons:
                 logger.error(f"Invalid lesson key: {lesson_key}")
                 return False
@@ -395,6 +398,9 @@ class UserManager:
             if current_lesson == lesson_key:
                 logger.info(f"User {user_id} already on lesson {lesson_key}")
                 return True
+
+            # Log the actual progression
+            logger.info(f"User {user_id} moving from {current_lesson} to {lesson_key}")
 
             current_date = datetime.now(timezone.utc).isoformat()
             
