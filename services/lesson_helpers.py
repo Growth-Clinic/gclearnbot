@@ -1,5 +1,5 @@
 from typing import Dict, List
-from services.lesson_loader import load_lessons
+from services.content_loader import content_loader
 
 def get_lesson_structure() -> Dict[str, List[str]]:
     """
@@ -16,7 +16,7 @@ def get_lesson_structure() -> Dict[str, List[str]]:
             "lesson_3": ["lesson_3_step_1", "lesson_3_step_2"]
         }
     """
-    lessons = load_lessons()
+    lessons = content_loader.load_content('lessons')
     lesson_structure = {}
     
     for key in lessons.keys():
