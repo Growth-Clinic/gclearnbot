@@ -2,147 +2,391 @@
   "guides": {
     "guide_1": {
       "guide_id": "guide_1",
+      "pathways": ["user_thinking", "design_thinking"],
       "title": "Conducting User Interviews for Insights",
       "content": "🤝 **How to Run User Interviews**\n\nUser interviews are a powerful tool for understanding people's experiences, needs, and challenges. The key is to go beyond surface-level responses and uncover deeper insights.\n\n**Why This Matters**:\n- Interviews reveal the human story behind problems, helping you design solutions that truly resonate with users.\n- By listening deeply, you can understand the emotional and practical barriers people face.\n\n**Key Strategies**:\n1. **Empathetic Listening**: Focus on understanding the user's perspective, not just collecting data.\n2. **Open-Ended Questions**: Ask questions that invite storytelling and detailed responses.\n3. **Probe Deeper**: Use follow-up questions to uncover the root of experiences and emotions.\n\n**Emotional Intelligence**:\n- Recognize that emotions drive decisions and experiences.\n- Look for the feelings behind the facts.\n- Understand that each user's experience is unique and valid.",
-      "pathways": ["user_thinking", "design_thinking"]
+      "used_in": {
+        "lessons": ["lesson_2", "lesson_2_step_1"],
+        "tasks": ["task_1"]
+      },
+      "templates": [
+        {
+          "template_id": "basic_interview_questions",
+          "content": "1. Can you tell me about the last time you...\n2. What was challenging about that experience?\n3. How did that make you feel?\n4. What would have made it better?\n5. Can you walk me through your typical process?"
+        },
+        {
+          "template_id": "follow_up_prompts",
+          "content": "- \"Can you tell me more about that?\"\n- \"Why do you think that happens?\"\n- \"How does that affect you?\"\n- \"What do you mean by...?\"\n- \"Can you give me an example?\""
+        }
+      ]
     },
     "guide_2": {
       "guide_id": "guide_2",
+      "pathways": ["user_thinking"],
       "title": "Deep Dive User Research with the 5 Whys",
       "content": "🔍 **The 5 Whys Method: Uncovering Root Causes**\n\nThe 5 Whys is a powerful technique for understanding the deeper motivations and challenges behind surface-level problems. It helps you move beyond symptoms to discover fundamental issues.\n\n**How It Works**:\n1. Start with an observed problem or challenge.\n2. Ask 'Why?' repeatedly, drilling down to the core reason.\n3. Each 'Why?' reveals a layer of complexity, leading to more profound insights.\n\n**Example Journey**:\n- Surface Problem: *People avoid public transport*\n- 1st Why: *Because it feels overcrowded*\n- 2nd Why: *Limited number of buses*\n- 3rd Why: *Insufficient budget for infrastructure*\n- 4th Why: *Lack of political prioritization*\n- 5th Why: *Disconnection between community needs and policy*\n\n**Why This Matters**:\n- Root cause analysis prevents superficial solutions\n- Reveals systemic issues that need comprehensive approaches\n- Encourages holistic thinking about complex challenges",
-      "pathways": ["user_thinking"]
+      "used_in": {
+        "lessons": ["lesson_2", "lesson_2_step_2"],
+        "tasks": ["task_2"]
+      },
+      "templates": [
+        {
+          "template_id": "five_whys_template",
+          "content": "Problem Statement: [Write the initial problem]\n1st Why: ________\n2nd Why: ________\n3rd Why: ________\n4th Why: ________\n5th Why: ________\nRoot Cause: ________"
+        }
+      ]
     },
     "guide_3": {
       "guide_id": "guide_3",
+      "pathways": ["user_thinking", "design_thinking"],
       "title": "Crafting a Problem Statement",
       "content": "🎯 **Transforming Insights into Actionable Problem Statements**\n\nA problem statement is more than a description—it's a bridge between research and innovation. It captures the essence of a challenge in a way that inspires creative solutions.\n\n**Problem Statement Formula**:\n*\"[User] needs a way to [action] because [barrier].\"*\n\n**Why This Matters**:\n- Clarifies the core challenge\n- Focuses creative energy\n- Ensures solutions address real user needs\n\n**Crafting Powerful Statements**:\n1. **User-Centered**: Ground the statement in real human experiences\n2. **Specific Actions**: Use clear, actionable verbs\n3. **Reveal Barriers**: Highlight the underlying challenges preventing easy solutions\n\n**Example Transformation**:\n- Vague: *\"Commuters have transportation problems.\"\n- Powerful: *\"Commuters need a way to predict bus arrivals because unpredictable schedules cause significant daily stress and inefficiency.\"*\n\n**Emotional Intelligence**:\n- Recognize the human experience behind the problem\n- Understand that every challenge is also an opportunity for innovation",
-      "pathways": ["user_thinking", "design_thinking"]
+      "used_in": {
+        "lessons": ["lesson_2", "lesson_2_step_3"],
+        "tasks": ["task_3"]
+      },
+      "templates": [
+        {
+          "template_id": "problem_statement_template",
+          "content": "[User/Persona] needs a way to [action/goal] because [barrier/insight]."
+        }
+      ]
     },
     "guide_4": {
       "guide_id": "guide_4",
+      "pathways": ["design_thinking"],
       "title": "Brainstorming Creative Solutions",
       "content": "💡 **Unleashing Creative Potential Through Collaborative Ideation**\n\nBrainstorming is an art of suspending judgment and embracing wild, unexpected ideas. It's about creating a space where creativity can flourish without the constraints of immediate feasibility.\n\n**Brainstorming Philosophy**:\n1. **Quantity Over Quality**: Generate many ideas without self-censorship\n2. **No Criticism Zone**: Every idea has potential\n3. **Build and Expand**: Use others' ideas as springboards\n\n**Creativity Techniques**:\n- **Steal Like an Artist**: Adapt successful ideas from different domains\n- **Combination Thinking**: Merge seemingly unrelated concepts\n- **Constraint Liberation**: Use limitations as creative fuel\n\n**Example Prompts**:\n- *How might we make recycling easier for apartment dwellers?*\n- *What if gig workers could share childcare costs?*\n\n**Why This Matters**:\n- Breaks conventional thinking patterns\n- Reveals unexpected solutions\n- Builds team creativity and collaboration",
-      "pathways": ["design_thinking"]
+      "used_in": {
+        "lessons": ["lesson_2", "lesson_2_step_4"],
+        "tasks": ["task_4"]
+      },
+      "templates": [
+        {
+          "template_id": "brainstorm_prompts",
+          "content": "1. What if [problem] didn't exist?\n2. How might we help [user] to [action]?\n3. What would [successful company] do?\n4. What's the opposite of [current solution]?\n5. How could we combine [solution A] with [solution B]?"
+        }
+      ]
     },
     "guide_5": {
       "guide_id": "guide_5",
+      "pathways": ["design_thinking"],
       "title": "Creating a Simple Prototype",
       "content": "🛠️ **Rapid Prototyping: Transforming Ideas into Tangible Experiences**\n\nPrototyping is about making ideas real, quickly and cheaply. It's not about perfection, but about learning and iteration.\n\n**Prototyping Approaches**:\n1. **Digital**: Sketch app screens on paper or use design tools\n2. **Service**: Role-play a process to understand user interactions\n3. **Physical**: Build quick models using available materials\n\n**Prototyping Philosophy**:\n- Start rough\n- Focus on core features\n- Prioritize learning over aesthetics\n\n**Prototyping Tools**:\n- Paper and pencil\n- Cardboard and LEGO\n- Digital wireframing tools\n- Role-playing scenarios\n\n**Why This Matters**:\n- Reduces risk by testing ideas early\n- Provides tangible feedback\n- Accelerates learning and innovation",
-      "pathways": ["design_thinking"]
+      "used_in": {
+        "lessons": ["lesson_2", "lesson_2_step_5"],
+        "tasks": ["task_5"]
+      },
+      "templates": [
+        {
+          "template_id": "prototype_checklist",
+          "content": "1. Core Features to Test:\n   □ Feature 1: ________\n   □ Feature 2: ________\n   □ Feature 3: ________\n\n2. User Flow:\n   □ Entry point: ________\n   □ Key interactions: ________\n   □ Exit point: ________\n\n3. Testing Plan:\n   □ Key questions to answer\n   □ Success metrics\n   □ Feedback collection method"
+        }
+      ]
     },
     "guide_6": {
       "guide_id": "guide_6",
+      "pathways": ["design_thinking"],
       "title": "Refining Solutions with User Feedback",
       "content": "🔄 **The Art of Iterative Improvement**\n\nUser feedback is the compass that guides your solution's evolution. It's not about validation, but about continuous learning and adaptation.\n\n**Feedback Framework**:\n1. Present your prototype without defensiveness\n2. Ask open, non-leading questions\n3. Listen more than you speak\n4. Iterate one change at a time\n\n**Key Questions**:\n- *\"What's confusing or frustrating?\"*\n- *\"What would make this indispensable?\"*\n- *\"How does this solution fit into your current workflow?\"*\n\n**Emotional Intelligence in Feedback**:\n- Recognize feedback as a gift\n- Separate your ego from the solution\n- See criticism as an opportunity for growth\n\n**Why This Matters**:\n- Ensures solutions evolve with user needs\n- Builds user trust and engagement\n- Prevents costly mistakes in later development stages",
-      "pathways": ["design_thinking"]
+      "used_in": {
+        "lessons": ["lesson_2", "lesson_2_step_6"],
+        "tasks": ["task_6"]
+      },
+      "templates": [
+        {
+          "template_id": "feedback_collection",
+          "content": "User Feedback Session\n\n1. Initial Reactions:\n   □ What stands out?\n   □ What's unclear?\n\n2. Usage Experience:\n   □ What worked well?\n   □ What was frustrating?\n   □ What was missing?\n\n3. Improvement Areas:\n   □ Must-have changes\n   □ Nice-to-have features\n   □ Future considerations"
+        }
+      ]
     },
     "guide_7": {
       "guide_id": "guide_7",
+      "pathways": ["business_modeling"],
       "title": "Prototyping Business Models",
-      "content": "💰 **Prototyping Your Business Model**\n\nPrototyping isn’t just for products—it’s also a powerful way to test and refine your business model. Use the Business Model Canvas to explore different ways your idea can become a sustainable business.\n\n**Key Strategies**:\n- **Experiment with Revenue Streams**: Test different pricing models, such as subscriptions, one-time purchases, or freemium models.\n- **Reimagine Channels**: Explore new ways to reach customers, like mobile apps, social media, or partnerships.\n- **Test Value Propositions**: Validate whether your solution truly resonates with customers by testing different value propositions.\n\n**Creative Thinking**:\n- Consider unexpected models, like offering free services to drive demand for paid add-ons.\n- Use the Business Model Canvas to create 2-3 variations of your business model and compare their potential.\n\n**Why This Matters**:\n- Prototyping your business model helps you identify the most sustainable approach.\n- It allows you to test assumptions before committing significant resources.\n- Encourages innovation and flexibility in how you create, deliver, and capture value.",
-      "pathways": ["business_modeling"]
+      "content": "💰 **Prototyping Your Business Model**\n\nPrototyping isn't just for products—it's also a powerful way to test and refine your business model. Use the Business Model Canvas to explore different ways your idea can become a sustainable business.\n\n**Key Strategies**:\n- **Experiment with Revenue Streams**: Test different pricing models, such as subscriptions, one-time purchases, or freemium models.\n- **Reimagine Channels**: Explore new ways to reach customers, like mobile apps, social media, or partnerships.\n- **Test Value Propositions**: Validate whether your solution truly resonates with customers by testing different value propositions.\n\n**Creative Thinking**:\n- Consider unexpected models, like offering free services to drive demand for paid add-ons.\n- Use the Business Model Canvas to create 2-3 variations of your business model and compare their potential.\n\n**Why This Matters**:\n- Prototyping your business model helps you identify the most sustainable approach.\n- It allows you to test assumptions before committing significant resources.\n- Encourages innovation and flexibility in how you create, deliver, and capture value.",
+      "used_in": {
+        "lessons": ["lesson_3", "lesson_3_step_2", "lesson_3_step_3"],
+        "tasks": ["task_7"]
+      },
+      "templates": [
+        {
+          "template_id": "business_model_canvas",
+          "content": "Business Model Canvas\n\n1. Customer Segments:\n   □ Who are your customers?\n\n2. Value Proposition:\n   □ What problem do you solve?\n   □ What value do you deliver?\n\n3. Channels:\n   □ How do you reach customers?\n\n4. Customer Relationships:\n   □ How do you interact?\n\n5. Revenue Streams:\n   □ How do you make money?\n\n6. Key Resources:\n   □ What do you need?\n\n7. Key Activities:\n   □ What must you do?\n\n8. Key Partners:\n   □ Who helps you?\n\n9. Cost Structure:\n   □ What are your costs?"
+        }
+      ]
     },
     "guide_8": {
       "guide_id": "guide_8",
+      "pathways": ["business_modeling"],
       "title": "Testing Business Model Assumptions",
-      "content": "🔍 **Testing Your Business Model**\n\nOnce you have a prototype, it’s time to test your assumptions and validate your business model. Focus on answering key questions to ensure your model aligns with real-world demand.\n\n**Key Questions to Test**:\n1. **Value Proposition**: Do customers care about the problem you’re solving? Is your solution compelling?\n2. **Willingness to Pay**: Are customers willing to pay for your solution? What pricing model works best?\n3. **Channel Effectiveness**: Are your chosen channels (e.g., social media, apps) effective in reaching your target audience?\n\n**Testing Strategies**:\n- **Talk to Potential Customers**: Gather real-world feedback through interviews or surveys.\n- **Run Small-Scale Pilots**: Test your model in a controlled environment to see how it performs.\n- **Experiment with Marketing Campaigns**: Test different messaging and channels to see what resonates.\n\n**Why This Matters**:\n- Testing ensures your business model is grounded in reality, not just assumptions.\n- It helps you refine your approach before scaling up.\n- Provides actionable insights to improve your value proposition, pricing, and customer engagement.",
-      "pathways": ["business_modeling"]
+      "content": "🔍 **Testing Your Business Model**\n\nOnce you have a prototype, it's time to test your assumptions and validate your business model. Focus on answering key questions to ensure your model aligns with real-world demand.\n\n**Key Questions to Test**:\n1. **Value Proposition**: Do customers care about the problem you're solving? Is your solution compelling?\n2. **Willingness to Pay**: Are customers willing to pay for your solution? What pricing model works best?\n3. **Channel Effectiveness**: Are your chosen channels (e.g., social media, apps) effective in reaching your target audience?\n\n**Testing Strategies**:\n- **Talk to Potential Customers**: Gather real-world feedback through interviews or surveys.\n- **Run Small-Scale Pilots**: Test your model in a controlled environment to see how it performs.\n- **Experiment with Marketing Campaigns**: Test different messaging and channels to see what resonates.\n\n**Why This Matters**:\n- Testing ensures your business model is grounded in reality, not just assumptions.\n- It helps you refine your approach before scaling up.\n- Provides actionable insights to improve your value proposition, pricing, and customer engagement.",
+      "used_in": {
+        "lessons": ["lesson_3", "lesson_3_step_4"],
+        "tasks": ["task_8"]
+      },
+      "templates": [
+        {
+          "template_id": "assumption_testing",
+          "content": "Business Model Assumptions\n\n1. Value Hypothesis:\n   □ Problem assumption: ________\n   □ Solution assumption: ________\n   □ Test method: ________\n\n2. Growth Hypothesis:\n   □ Customer acquisition: ________\n   □ Revenue generation: ________\n   □ Test method: ________\n\n3. Market Hypothesis:\n   □ Target market size: ________\n   □ Channel effectiveness: ________\n   □ Test method: ________"
+        }
+      ]
     },
     "guide_9": {
       "guide_id": "guide_9",
+      "pathways": ["business_modeling"],
       "title": "Navigating the Business Environment",
-      "content": "🌍 **Understanding Your Business Environment**\n\nYour business doesn’t exist in isolation. To succeed, you need to understand the external forces that shape your industry and market. Here’s how to map your environment effectively:\n\n**Key Areas to Explore**:\n1. **Market Forces**: Who are your competitors? What trends are shaping customer behavior?\n2. **Key Trends**: Are there emerging technologies, regulations, or cultural shifts that could impact your business?\n3. **Industry Forces**: How is your industry evolving? What partnerships or collaborations can you leverage?\n4. **Macroeconomic Forces**: What global factors (e.g., economic shifts, political changes) might affect your business model?\n\n**Why This Matters**:\n- Understanding your environment helps you anticipate challenges and seize opportunities.\n- It ensures your business model remains adaptable and resilient in a changing world.\n- Provides a clear view of where your business fits in the broader ecosystem.",
-      "pathways": ["business_modeling"]
+      "content": "🌍 **Understanding Your Business Environment**\n\nYour business doesn't exist in isolation. To succeed, you need to understand the external forces that shape your industry and market. Here's how to map your environment effectively:\n\n**Key Areas to Explore**:\n1. **Market Forces**: Who are your competitors? What trends are shaping customer behavior?\n2. **Key Trends**: Are there emerging technologies, regulations, or cultural shifts that could impact your business?\n3. **Industry Forces**: How is your industry evolving? What partnerships or collaborations can you leverage?\n4. **Macroeconomic Forces**: What global factors (e.g., economic shifts, political changes) might affect your business model?\n\n**Why This Matters**:\n- Understanding your environment helps you anticipate challenges and seize opportunities.\n- It ensures your business model remains adaptable and resilient in a changing world.\n- Provides a clear view of where your business fits in the broader ecosystem.",
+      "used_in": {
+        "lessons": ["lesson_3", "lesson_3_step_5"],
+        "tasks": ["task_9"]
+      },
+      "templates": [
+        {
+          "template_id": "environment_analysis",
+          "content": "Business Environment Analysis\n\n1. Market Forces:\n   □ Competitors: ________\n   □ Customer trends: ________\n   □ Market gaps: ________\n\n2. Industry Forces:\n   □ Key players: ________\n   □ Industry trends: ________\n   □ Potential partners: ________\n\n3. External Forces:\n   □ Technology changes: ________\n   □ Regulatory changes: ________\n   □ Economic factors: ________"
+        }
+      ]
     },
     "guide_10": {
       "guide_id": "guide_10",
+      "pathways": ["business_modeling"],
       "title": "Crafting a Compelling Business Story",
       "content": "📖 **Narrative Design for Business Communication**\n\nA compelling business story transforms abstract concepts into relatable human experiences.\n\n**Story Structure: Before-After-Bridge**\n1. **Before**: Paint the problem landscape\n2. **After**: Illustrate the transformed state\n3. **Bridge**: Show how your solution connects these worlds\n\n**Storytelling Elements**:\n- Emotional resonance\n- Clear transformation\n- Tangible value proposition\n\n**Example Framework**:\n- *Before*: *\"Freelancers waste hours finding workspaces.\"\n- *After*: *\"Instant, affordable workspace access.\"\n- *Bridge*: *\"Our app connects available spaces with workers.\"\n\n**Narrative Psychology**:\n- Tap into universal human experiences\n- Create an emotional connection\n- Make abstract value concrete\n\n**Why This Matters**:\n- Simplifies complex ideas\n- Creates memorable communication\n- Builds emotional engagement with your vision",
-      "pathways": ["business_modeling"]
+      "used_in": {
+        "lessons": ["lesson_3", "lesson_3_step_6"],
+        "tasks": ["task_10"]
+      },
+      "templates": [
+        {
+          "template_id": "business_story_template",
+          "content": "Business Story Structure\n\n1. Before (Problem):\n   □ Current situation: ________\n   □ Pain points: ________\n   □ Cost of inaction: ________\n\n2. After (Vision):\n   □ Ideal state: ________\n   □ Benefits: ________\n   □ Emotional impact: ________\n\n3. Bridge (Solution):\n   □ Your approach: ________\n   □ Key features: ________\n   □ Transformation story: ________"
+        }
+      ]
     },
     "guide_11": {
       "guide_id": "guide_11",
+      "pathways": ["market_thinking"],
       "title": "Achieving Product-Market Fit",
-      "content": "🎯 **What is Product-Market Fit?**\n\nProduct-Market Fit (PMF) means your product solves a pressing problem for a specific group of people. It’s the foundation for scalable growth.\n\n**Key Signs of PMF**:\n- **Enthusiastic Feedback**: Users love your product and recommend it.\n- **Repeated Usage**: Customers return regularly.\n- **Organic Growth**: Word-of-mouth drives new users.\n\n**How to Achieve PMF**:\n1. **Define Your Target Audience**:\n   - Identify the specific group with the problem you’re solving.\n   - Understand their behaviors and pain points.\n\n2. **Validate the Problem**:\n   - Conduct user interviews to confirm the problem is real and pressing.\n   - Ask: *“How do you currently solve this problem?”*\n\n3. **Build a Minimum Viable Product (MVP)**:\n   - Create a simple version of your product that solves the core problem.\n   - Focus on delivering value quickly.\n\n4. **Test and Iterate**:\n   - Launch your MVP to a small group and gather feedback.\n   - Ask: *“What’s working well?”* and *“What’s frustrating?”*\n   - Use feedback to refine your product.\n\n5. **Measure PMF Indicators**:\n   - **Retention Rates**: Are users sticking around?\n   - **Net Promoter Score (NPS)**: Are users willing to recommend your product?\n   - **Organic Growth**: Are users referring others without incentives?\n\n**Why This Matters**:\n- PMF ensures your product solves a real problem for a specific audience.\n- It’s the foundation for scalable, sustainable growth.\n\n**Next Steps**: Once you’ve achieved PMF, focus on aligning your product with the right channels and revenue models to scale effectively.",
-      "pathways": ["market_thinking"]
+      "content": "🎯 **What is Product-Market Fit?**\n\nProduct-Market Fit (PMF) means your product solves a pressing problem for a specific group of people. It's the foundation for scalable growth.\n\n**Key Signs of PMF**:\n- **Enthusiastic Feedback**: Users love your product and recommend it.\n- **Repeated Usage**: Customers return regularly.\n- **Organic Growth**: Word-of-mouth drives new users.\n\n**How to Achieve PMF**:\n1. **Define Your Target Audience**:\n   - Identify the specific group with the problem you're solving.\n   - Understand their behaviors and pain points.\n\n2. **Validate the Problem**:\n   - Conduct user interviews to confirm the problem is real and pressing.\n   - Consider asking \\\"How do you currently solve this problem?\\\"\n\n3. **Build a Minimum Viable Product (MVP)**:\n   - Create a simple version of your product that solves the core problem.\n   - Focus on delivering value quickly.\n\n4. **Test and Iterate**:\n   - Launch your MVP to a small group and gather feedback.\n   - Key questions to ask: \\\"What's working well?\\\" and \\\"What's frustrating?\\\"\n   - Use feedback to refine your product.\n\n5. **Measure PMF Indicators**:\n   - **Retention Rates**: Are users sticking around?\n   - **Net Promoter Score (NPS)**: Are users willing to recommend your product?\n   - **Organic Growth**: Are users referring others without incentives?\n\n**Why This Matters**:\n- PMF ensures your product solves a real problem for a specific audience.\n- It's the foundation for scalable, sustainable growth.",
+      "used_in": {
+        "lessons": ["lesson_4", "lesson_4_step_1"],
+        "tasks": ["task_11"]
+      },
+      "templates": [
+        {
+          "template_id": "pmf_checklist",
+          "content": "Product-Market Fit Assessment\n\n1. Target Market:\n   □ User persona: ________\n   □ Problem definition: ________\n   □ Current solutions: ________\n\n2. Product Solution:\n   □ Core features: ________\n   □ Value proposition: ________\n   □ Differentiation: ________\n\n3. Metrics:\n   □ Retention rate: ________\n   □ NPS score: ________\n   □ Referral rate: ________"
+        }
+      ]
     },
     "guide_12": {
       "guide_id": "guide_12",
+      "pathways": ["market_thinking"],
       "title": "Achieving Market-Channel Fit",
-      "content": "📡 **Aligning Your Product with the Right Channels**\n\nMarket-Channel Fit means choosing distribution channels that align with how your target users already behave. The right channel ensures your product reaches its audience effectively and efficiently.\n\n**Key Channels to Consider**:\n- **Social Media**: Platforms like Instagram, YouTube, or LinkedIn where your users are active.\n- **Messaging Apps**: Tools like WhatsApp or Slack for IM-based platforms.\n- **Partnerships**: Collaborations with other businesses or influencers in your industry.\n\n**Example**: Facebook initially grew by targeting college campuses—a concentrated, accessible audience that aligned with its early product.\n\n**Why This Matters**:\n- The right channel reduces customer acquisition costs (CAC).\n- It ensures your product is visible to the right audience.\n- Misaligned channels waste resources and slow growth.\n\n**How to Achieve Market-Channel Fit**:\n1. **Research User Behavior**: Where do your target users spend their time online or offline?\n2. **Test Multiple Channels**: Experiment with different platforms to see which drives the most engagement.\n3. **Optimize for Alignment**: Focus on the channels where your product naturally fits into users’ existing behaviors.\n\n**Next Steps**: Once you’ve identified the right channel, ensure it aligns with your revenue model for sustainable growth.",
-      "pathways": ["market_thinking"]
+      "content": "📡 **Aligning Your Product with the Right Channels**\n\nMarket-Channel Fit means choosing distribution channels that align with how your target users already behave. The right channel ensures your product reaches its audience effectively and efficiently.\n\n**Key Channels to Consider**:\n- **Social Media**: Platforms like Instagram, YouTube, or LinkedIn where your users are active.\n- **Messaging Apps**: Tools like WhatsApp or Slack for IM-based platforms.\n- **Partnerships**: Collaborations with other businesses or influencers in your industry.\n\n**Example**: Facebook initially grew by targeting college campuses—a concentrated, accessible audience that aligned with its early product.\n\n**Why This Matters**:\n- The right channel reduces customer acquisition costs (CAC).\n- It ensures your product is visible to the right audience.\n- Misaligned channels waste resources and slow growth.\n\n**How to Achieve Market-Channel Fit**:\n1. **Research User Behavior**: Where do your target users spend their time online or offline?\n2. **Test Multiple Channels**: Experiment with different platforms to see which drives the most engagement.\n3. **Optimize for Alignment**: Focus on the channels where your product naturally fits into users' existing behaviors.",
+      "used_in": {
+        "lessons": ["lesson_4", "lesson_4_step_2"],
+        "tasks": ["task_12"]
+      },
+      "templates": [
+        {
+          "template_id": "channel_analysis",
+          "content": "Channel Strategy Planning\n\n1. User Behavior Analysis:\n   □ Online presence: ________\n   □ Preferred platforms: ________\n   □ Communication preferences: ________\n\n2. Channel Testing:\n   □ Platform 1: ________\n   □ Platform 2: ________\n   □ Platform 3: ________\n   □ Results & metrics: ________\n\n3. Channel Optimization:\n   □ Best performing channels: ________\n   □ Cost per acquisition: ________\n   □ Engagement rates: ________"
+        }
+      ]
     },
     "guide_13": {
       "guide_id": "guide_13",
+      "pathways": ["market_thinking"],
       "title": "Ensuring Channel-Model Fit",
-      "content": "💰 **Aligning Channels with Your Revenue Model**\n\nChannel-Model Fit ensures your chosen distribution channels are profitable and align with your revenue model. Without this fit, even the best channels can drain resources.\n\n**Key Metrics to Evaluate**:\n- **Customer Acquisition Cost (CAC)**: How much does it cost to acquire a customer through each channel?\n- **Average Revenue Per User (ARPU)**: How much revenue does each customer generate?\n- **Profitability**: Does the revenue from a channel justify the cost of acquiring users?\n\n**Example**: Shopify’s partnerships with influencers work well because they drive traffic to stores, supporting its subscription-based revenue model.\n\n**Why This Matters**:\n- Ensures your business model is sustainable.\n- Prevents overspending on unprofitable channels.\n- Helps you focus on channels that drive long-term growth.\n\n**How to Ensure Channel-Model Fit**:\n1. **Calculate CAC and ARPU**: Compare the cost of acquiring users with the revenue they generate.\n2. **Focus on Profitable Channels**: Prioritize channels where CAC < ARPU.\n3. **Optimize for Efficiency**: Reduce friction in high-performing channels to improve profitability.\n\n**Next Steps**: Once you’ve aligned your channels with your revenue model, ensure your pricing strategy fits your market’s behavior.",
-      "pathways": ["market_thinking"]
+      "content": "💰 **Aligning Channels with Your Revenue Model**\n\nChannel-Model Fit ensures your chosen distribution channels are profitable and align with your revenue model. Without this fit, even the best channels can drain resources.\n\n**Key Metrics to Evaluate**:\n- **Customer Acquisition Cost (CAC)**: How much does it cost to acquire a customer through each channel?\n- **Average Revenue Per User (ARPU)**: How much revenue does each customer generate?\n- **Profitability**: Does the revenue from a channel justify the cost of acquiring users?\n\n**Example**: Shopify's partnerships with influencers work well because they drive traffic to stores, supporting its subscription-based revenue model.\n\n**Why This Matters**:\n- Ensures your business model is sustainable.\n- Prevents overspending on unprofitable channels.\n- Helps you focus on channels that drive long-term growth.",
+      "used_in": {
+        "lessons": ["lesson_4", "lesson_4_step_3"],
+        "tasks": ["task_13"]
+      },
+      "templates": [
+        {
+          "template_id": "channel_metrics",
+          "content": "Channel-Model Analysis\n\n1. Cost Analysis:\n   □ Channel costs: ________\n   □ Customer acquisition cost: ________\n   □ Marketing expenses: ________\n\n2. Revenue Analysis:\n   □ Revenue per customer: ________\n   □ Customer lifetime value: ________\n   □ Channel ROI: ________\n\n3. Profitability Metrics:\n   □ Break-even point: ________\n   □ Profit margins: ________\n   □ Growth potential: ________"
+        }
+      ]
     },
     "guide_14": {
       "guide_id": "guide_14",
+      "pathways": ["market_thinking"],
       "title": "Achieving Model-Market Fit",
-      "content": "💳 **Aligning Your Revenue Model with Market Behavior**\n\nModel-Market Fit ensures your revenue model aligns with your market’s spending habits and willingness to pay. Without this fit, even a great product can struggle to generate revenue.\n\n**Key Considerations**:\n- **Pricing Strategy**: Does your pricing model (e.g., subscription, freemium, one-time purchase) match your market’s expectations?\n- **Spending Habits**: Are your users price-sensitive, or are they willing to pay for convenience?\n- **Testing Pricing Models**: Experiment with free trials, tiered pricing, or discounts to find the best fit.\n\n**Example**: Netflix succeeds because its subscription model aligns with consumer habits of binge-watching and predictable monthly budgets.\n\n**Why This Matters**:\n- Ensures your revenue model is sustainable and scalable.\n- Helps you avoid pricing models that alienate your target market.\n- Provides clarity on how to monetize your product effectively.\n\n**How to Achieve Model-Market Fit**:\n1. **Research Market Behavior**: Understand your users’ spending habits and preferences.\n2. **Test Pricing Models**: Experiment with different pricing strategies to see what resonates.\n3. **Gather Feedback**: Use early adopter feedback to refine your pricing and revenue model.\n\n**Next Steps**: Once you’ve aligned your revenue model with your market, craft a growth strategy that ties all four fits together.",
-      "pathways": ["market_thinking"]
+      "content": "💳 **Aligning Your Revenue Model with Market Behavior**\n\nModel-Market Fit ensures your revenue model aligns with your market's spending habits and willingness to pay. Without this fit, even a great product can struggle to generate revenue.\n\n**Key Considerations**:\n- **Pricing Strategy**: Does your pricing model (e.g., subscription, freemium, one-time purchase) match your market's expectations?\n- **Spending Habits**: Are your users price-sensitive, or are they willing to pay for convenience?\n- **Testing Pricing Models**: Experiment with free trials, tiered pricing, or discounts to find the best fit.\n\n**Example**: Netflix succeeds because its subscription model aligns with consumer habits of binge-watching and predictable monthly budgets.\n\n**Why This Matters**:\n- Ensures your revenue model is sustainable and scalable.\n- Helps you avoid pricing models that alienate your target market.\n- Provides clarity on how to monetize your product effectively.",
+      "used_in": {
+        "lessons": ["lesson_4", "lesson_4_step_4"],
+        "tasks": ["task_14"]
+      },
+      "templates": [
+        {
+          "template_id": "pricing_strategy",
+          "content": "Pricing Model Analysis\n\n1. Market Research:\n   □ Competitor pricing: ________\n   □ Customer willingness to pay: ________\n   □ Market expectations: ________\n\n2. Pricing Models:\n   □ Model options: ________\n   □ Price points: ________\n   □ Value metrics: ________\n\n3. Testing Plan:\n   □ Test scenarios: ________\n   □ Success metrics: ________\n   □ Timeline: ________"
+        }
+      ]
     },
     "guide_15": {
       "guide_id": "guide_15",
+      "pathways": ["market_thinking"],
       "title": "Crafting a Growth Strategy",
-      "content": "🚀 **Putting It All Together**\n\nWith insights from each fit, you can craft a clear growth strategy that aligns your product, market, channels, and revenue model. This strategy ensures your business scales sustainably.\n\n**Key Components of a Growth Strategy**:\n1. **Define Your Customers**: Who are your target users, and what problem are you solving for them?\n2. **Choose Your Channels**: Which distribution channels align with your users’ behavior and your revenue model?\n3. **Generate Revenue**: How will you monetize your product in a way that fits your market’s spending habits?\n\n**Example**: A bike-sharing app might use social media (Market-Channel Fit) to reach urban commuters, charge per ride (Model-Market Fit), and partner with local businesses (Channel-Model Fit) to drive growth.\n\n**Why This Matters**:\n- Provides a roadmap for scaling your business.\n- Ensures all elements of your business are aligned for growth.\n- Helps you avoid common pitfalls like over-reliance on a single channel or unsustainable pricing.\n\n**How to Craft a Growth Strategy**:\n1. **Summarize Your Fits**: Write a clear statement that ties together your Product-Market Fit, Market-Channel Fit, Channel-Model Fit, and Model-Market Fit.\n2. **Set Clear Goals**: Define what success looks like for your growth strategy.\n3. **Iterate and Optimize**: Continuously test and refine your strategy based on real-world feedback.\n\n**Next Steps**: Execute your growth strategy, measure results, and adapt as needed to ensure long-term success.",
-      "pathways": ["market_thinking"]
+      "content": "🚀 **Putting It All Together**\n\nWith insights from each fit, you can craft a clear growth strategy that aligns your product, market, channels, and revenue model. This strategy ensures your business scales sustainably.\n\n**Key Components of a Growth Strategy**:\n1. **Define Your Customers**: Who are your target users, and what problem are you solving for them?\n2. **Choose Your Channels**: Which distribution channels align with your users' behavior and your revenue model?\n3. **Generate Revenue**: How will you monetize your product in a way that fits your market's spending habits?\n\n**Example**: A bike-sharing app might use social media (Market-Channel Fit) to reach urban commuters, charge per ride (Model-Market Fit), and partner with local businesses (Channel-Model Fit) to drive growth.\n\n**Why This Matters**:\n- Provides a roadmap for scaling your business.\n- Ensures all elements of your business are aligned for growth.\n- Helps you avoid common pitfalls like over-reliance on a single channel or unsustainable pricing.",
+      "used_in": {
+        "lessons": ["lesson_4", "lesson_4_step_5"],
+        "tasks": ["task_15"]
+      },
+      "templates": [
+        {
+          "template_id": "growth_strategy",
+          "content": "Growth Strategy Framework\n\n1. Market Definition:\n   □ Target audience: ________\n   □ Problem solved: ________\n   □ Value proposition: ________\n\n2. Channel Strategy:\n   □ Primary channels: ________\n   □ Channel metrics: ________\n   □ Growth targets: ________\n\n3. Revenue Plan:\n   □ Pricing model: ________\n   □ Revenue streams: ________\n   □ Growth projections: ________"
+        }
+      ]
     },
     "guide_16": {
       "guide_id": "guide_16",
+      "pathways": ["user_thinking"],
       "title": "Understanding Emotions in User Behavior",
-      "content": "😊 **The Emotional Drivers of User Experience**\n\nEmotions are not secondary to decision-making—they are fundamental. Understanding emotional triggers helps create more engaging, meaningful products.\n\n**Emotional Trigger Types**:\n- **FOMO (Fear of Missing Out)**: Creates urgency\n- **Trust**: Builds credibility\n- **Joy**: Generates positive associations\n\n**Emotional Intelligence in Design**:\n- Recognize that decisions are rarely purely logical\n- Understand the underlying emotional needs\n- Design experiences that resonate on an emotional level\n\n**Example Strategies**:\n- Limited availability notifications\n- Social proof elements\n- Celebratory interactions\n- Personalized experiences\n\n**Psychological Insights**:\n- Emotions help prioritize information\n- Emotional engagement drives long-term user retention\n- Different emotions trigger different behaviors\n\n**Why This Matters**:\n- Creates deeper user connections\n- Increases product engagement\n- Transforms functional products into meaningful experiences",
-      "pathways": ["user_thinking"]
+      "content": "😊 **The Emotional Drivers of User Experience**\n\nEmotions are not secondary to decision-making—they are fundamental. Understanding emotional triggers helps create more engaging, meaningful products.\n\n**Emotional Trigger Types**:\n- **FOMO (Fear of Missing Out)**: Creates urgency\n- **Trust**: Builds credibility\n- **Joy**: Generates positive associations\n\n**Emotional Intelligence in Design**:\n- Recognize that decisions are rarely purely logical\n- Understand the underlying emotional needs\n- Design experiences that resonate on an emotional level\n\n**Example Strategies**:\n- Limited availability notifications\n- Social proof elements\n- Celebratory interactions\n- Personalized experiences\n\n**Psychological Insights**:\n- Emotions help prioritize information\n- Emotional engagement drives long-term user retention\n- Different emotions trigger different behaviors",
+      "used_in": {
+        "lessons": ["lesson_5", "lesson_5_step_1"],
+        "tasks": ["task_16"]
+      },
+      "templates": [
+        {
+          "template_id": "emotion_mapping",
+          "content": "Emotional Journey Map\n\n1. User State:\n   □ Initial emotion: ________\n   □ Pain points: ________\n   □ Desired emotional outcome: ________\n\n2. Trigger Analysis:\n   □ FOMO triggers: ________\n   □ Trust signals: ________\n   □ Joy moments: ________\n\n3. Design Elements:\n   □ Visual cues: ________\n   □ Interaction points: ________\n   □ Feedback mechanisms: ________"
+        }
+      ]
     },
     "guide_17": {
       "guide_id": "guide_17",
+      "pathways": ["user_thinking"],
       "title": "Applying the Hooked Model to Your Product",
-      "content": "🔄 **Designing Habit-Forming Products with the Hooked Model**\n\nThe Hooked Model is a framework for creating products that users return to naturally and frequently. It consists of four phases: Trigger, Action, Reward, and Investment.\n\n**1. Triggers**:\n- **External Triggers**: Cues in the environment, like notifications or ads, that prompt users to take action.\n- **Internal Triggers**: Emotions or situations that drive users to seek a solution (e.g., boredom, loneliness, stress).\n\n**2. Action**:\n- The simplest behavior users take in anticipation of a reward (e.g., clicking a button, scrolling, or typing).\n- For an action to occur, users need sufficient motivation, ability, and a well-timed trigger.\n\n**3. Variable Reward**:\n- Unpredictable rewards keep users engaged. There are three types:\n  - **Rewards of the Tribe**: Social validation (e.g., likes, comments).\n  - **Rewards of the Hunt**: The search for resources or information (e.g., scrolling through a news feed).\n  - **Rewards of the Self**: Intrinsic satisfaction (e.g., completing a task or leveling up).\n\n**4. Investment**:\n- Users invest time, data, or effort into your product, which increases its value and their likelihood of returning (e.g., building a profile, saving preferences, or earning points).\n\n**Why This Matters**:\n- The Hooked Model helps you design products that users engage with habitually.\n- It creates a cycle of engagement by aligning user motivations with product features.\n- Encourages long-term user retention and loyalty.",
-      "pathways": ["user_thinking"]
+      "content": "🔄 **Designing Habit-Forming Products with the Hooked Model**\n\nThe Hooked Model is a framework for creating products that users return to naturally and frequently. It consists of four phases: Trigger, Action, Reward, and Investment.\n\n**1. Triggers**:\n- **External Triggers**: Cues in the environment, like notifications or ads, that prompt users to take action.\n- **Internal Triggers**: Emotions or situations that drive users to seek a solution (e.g., boredom, loneliness, stress).\n\n**2. Action**:\n- The simplest behavior users take in anticipation of a reward (e.g., clicking a button, scrolling, or typing).\n- For an action to occur, users need sufficient motivation, ability, and a well-timed trigger.\n\n**3. Variable Reward**:\n- Unpredictable rewards keep users engaged. There are three types:\n  - **Rewards of the Tribe**: Social validation (e.g., likes, comments).\n  - **Rewards of the Hunt**: The search for resources or information (e.g., scrolling through a news feed).\n  - **Rewards of the Self**: Intrinsic satisfaction (e.g., completing a task or leveling up).\n\n**4. Investment**:\n- Users invest time, data, or effort into your product, which increases its value and their likelihood of returning (e.g., building a profile, saving preferences, or earning points).",
+      "used_in": {
+        "lessons": ["lesson_5", "lesson_5_step_2", "lesson_5_step_3"],
+        "tasks": ["task_17"]
+      },
+      "templates": [
+        {
+          "template_id": "hooked_model_template",
+          "content": "Hooked Model Implementation\n\n1. Triggers:\n   □ External triggers: ________\n   □ Internal triggers: ________\n   □ Trigger timing: ________\n\n2. Action:\n   □ User behavior: ________\n   □ Motivation factors: ________\n   □ Ability factors: ________\n\n3. Variable Rewards:\n   □ Tribe rewards: ________\n   □ Hunt rewards: ________\n   □ Self rewards: ________\n\n4. Investment:\n   □ User contributions: ________\n   □ Value creation: ________\n   □ Future benefits: ________"
+        }
+      ]
     },
     "guide_18": {
       "guide_id": "guide_18",
+      "pathways": ["user_thinking"],
       "title": "Exploring BJ Fogg's Behavior Model",
-      "content": "🧠 **Behavior Change Through Designed Interactions**\n\nBJ Fogg's Behavior Model provides a sophisticated framework for understanding how behavior is influenced by motivation, ability, and triggers.\n\n**Key Concepts**:\n1. **Behavior = Motivation + Ability + Trigger**:\n   - For a behavior to occur, users must have sufficient motivation, the ability to perform the action, and a trigger to prompt them.\n\n2. **Motivation**:\n   - Users are motivated by seeking pleasure, avoiding pain, seeking hope, avoiding fear, and seeking social acceptance.\n\n3. **Ability**:\n   - To increase the likelihood of a behavior, make it easier to do. This can involve reducing the time, cost, or effort required.\n\n4. **Triggers**:\n   - Triggers must be well-timed and relevant to the user’s current state of motivation and ability.\n\n**Why This Matters**:\n- Helps design products that encourage desired behaviors\n- Provides a clear framework for understanding user actions\n- Enables the creation of intuitive and engaging user experiences",
-      "pathways": ["user_thinking"]
+      "content": "🧠 **Behavior Change Through Designed Interactions**\n\nBJ Fogg's Behavior Model provides a sophisticated framework for understanding how behavior is influenced by motivation, ability, and triggers.\n\n**Key Concepts**:\n1. **Behavior = Motivation + Ability + Trigger**:\n   - For a behavior to occur, users must have sufficient motivation, the ability to perform the action, and a trigger to prompt them.\n\n2. **Motivation**:\n   - Users are motivated by seeking pleasure, avoiding pain, seeking hope, avoiding fear, and seeking social acceptance.\n\n3. **Ability**:\n   - To increase the likelihood of a behavior, make it easier to do. This can involve reducing the time, cost, or effort required.\n\n4. **Triggers**:\n   - Triggers must be well-timed and relevant to the user's current state of motivation and ability.\n\n**Why This Matters**:\n- Helps design products that encourage desired behaviors\n- Provides a clear framework for understanding user actions\n- Enables the creation of intuitive and engaging user experiences",
+      "used_in": {
+        "lessons": ["lesson_5", "lesson_5_step_4", "lesson_5_step_5"],
+        "tasks": ["task_18"]
+      },
+      "templates": [
+        {
+          "template_id": "behavior_model_analysis",
+          "content": "Behavior Model Analysis\n\n1. Motivation Analysis:\n   □ Pleasure/Pain factors: ________\n   □ Hope/Fear factors: ________\n   □ Social factors: ________\n\n2. Ability Assessment:\n   □ Time required: ________\n   □ Physical effort: ________\n   □ Mental effort: ________\n   □ Financial cost: ________\n\n3. Trigger Design:\n   □ Trigger type: ________\n   □ Timing strategy: ________\n   □ Context relevance: ________"
+        }
+      ]
     },
     "guide_19": {
       "guide_id": "guide_19",
+      "pathways": ["agile_thinking"],
       "title": "Scoping Your Work Package",
-      "content": "📋 **Defining Your Work Scope**\n\nScoping is the process of clearly defining what needs to be delivered and why. It ensures everyone on the team understands the goals and boundaries of the project.\n\n**Key Questions to Answer**:\n1. **Deliverables**: What will be created or delivered by completing this work?\n2. **Purpose**: What is the goal of the work? Why is it important?\n\n**Why This Matters**:\n- Clear scoping prevents scope creep and keeps the team focused on what’s essential.\n- It aligns expectations and ensures everyone is working toward the same objectives.\n- Provides a roadmap for execution and success.",
-      "pathways": ["agile_thinking"]
+      "content": "📋 **Defining Your Work Scope**\n\nScoping is the process of clearly defining what needs to be delivered and why. It ensures everyone on the team understands the goals and boundaries of the project.\n\n**Key Questions to Answer**:\n1. **Deliverables**: What will be created or delivered by completing this work?\n2. **Purpose**: What is the goal of the work? Why is it important?\n\n**Why This Matters**:\n- Clear scoping prevents scope creep and keeps the team focused on what's essential.\n- It aligns expectations and ensures everyone is working toward the same objectives.\n- Provides a roadmap for execution and success.",
+      "used_in": {
+        "lessons": ["lesson_6", "lesson_6_step_2"],
+        "tasks": ["task_19"]
+      },
+      "templates": [
+        {
+          "template_id": "project_scope",
+          "content": "Project Scope Document\n\n1. Project Overview:\n   □ Project name: ________\n   □ Start date: ________\n   □ End date: ________\n\n2. Deliverables:\n   □ Key output 1: ________\n   □ Key output 2: ________\n   □ Key output 3: ________\n\n3. Success Criteria:\n   □ Metric 1: ________\n   □ Metric 2: ________\n   □ Metric 3: ________\n\n4. Out of Scope:\n   □ Exclusion 1: ________\n   □ Exclusion 2: ________"
+        }
+      ]
     },
     "guide_20": {
       "guide_id": "guide_20",
+      "pathways": ["agile_thinking"],
       "title": "Creating Milestones",
       "content": "⏳ **Breaking Work into Milestones**\n\nMilestones are clear checkpoints that help you track progress and ensure your project stays on track. They break your work into smaller, manageable parts.\n\n**How to Create Milestones**:\n1. Identify the key activities or deliverables that will make your project complete.\n2. Arrange them in the order they need to be completed.\n\n**Example Milestones**:\n- Week 1: Conduct user interviews\n- Week 2: Create a prototype\n- Week 3: Test with 5 users\n- Week 4: Iterate and launch\n\n**Why This Matters**:\n- Milestones provide structure and clarity, making it easier to manage complex projects.\n- They help you measure progress and celebrate small wins along the way.\n- Keeps the team motivated and aligned toward achieving key goals.",
-      "pathways": ["agile_thinking"]
+      "used_in": {
+        "lessons": ["lesson_6", "lesson_6_step_3"],
+        "tasks": ["task_20"]
+      },
+      "templates": [
+        {
+          "template_id": "milestone_planning",
+          "content": "Milestone Planning Template\n\n1. Project Timeline:\n   Week 1:\n   □ Milestone: ________\n   □ Key deliverable: ________\n   □ Success criteria: ________\n\n   Week 2:\n   □ Milestone: ________\n   □ Key deliverable: ________\n   □ Success criteria: ________\n\n   Week 3:\n   □ Milestone: ________\n   □ Key deliverable: ________\n   □ Success criteria: ________\n\n   Week 4:\n   □ Milestone: ________\n   □ Key deliverable: ________\n   □ Success criteria: ________"
+        }
+      ]
     },
     "guide_21": {
       "guide_id": "guide_21",
+      "pathways": ["agile_thinking"],
       "title": "Defining Actionable Tasks",
       "content": "📝 **Breaking Milestones into Tasks**\n\nTasks are the specific, actionable steps needed to achieve each milestone. Breaking work into tasks ensures clarity and accountability.\n\n**How to Define Tasks**:\n1. For each milestone, list the specific tasks that need to be completed.\n2. Identify the resources or skills required for each task.\n\n**Example Tasks**:\n- Research: Survey 10 users\n- Design: Sketch 3 app screens\n- Build: Create a WhatsApp prototype\n\n**Why This Matters**:\n- Tasks make large milestones feel more achievable.\n- They help distribute work effectively among team members.\n- Provides a clear action plan for execution.",
-      "pathways": ["agile_thinking"]
+      "used_in": {
+        "lessons": ["lesson_6", "lesson_6_step_4"],
+        "tasks": ["task_21"]
+      },
+      "templates": [
+        {
+          "template_id": "task_breakdown",
+          "content": "Task Breakdown Template\n\n1. Milestone: [Enter milestone name]\n\n   Tasks:\n   □ Task 1:\n     - Description: ________\n     - Owner: ________\n     - Resources needed: ________\n     - Estimated time: ________\n\n   □ Task 2:\n     - Description: ________\n     - Owner: ________\n     - Resources needed: ________\n     - Estimated time: ________\n\n   □ Task 3:\n     - Description: ________\n     - Owner: ________\n     - Resources needed: ________\n     - Estimated time: ________"
+        }
+      ]
     },
     "guide_22": {
       "guide_id": "guide_22",
+      "pathways": ["agile_thinking"],
       "title": "Prioritizing Tasks",
       "content": "📊 **Focusing on What Matters Most**\n\nPrioritization ensures you focus on the tasks that will have the biggest impact. Use frameworks like the Eisenhower Matrix to categorize tasks based on urgency and importance.\n\n**How to Prioritize**:\n1. **Urgent/Important**: Tasks that must be done immediately (e.g., fixing a critical bug).\n2. **Important/Not Urgent**: Tasks that are essential but can be scheduled (e.g., adding a new feature).\n3. **Urgent/Not Important**: Tasks that require immediate attention but have low impact (e.g., replying to non-critical emails).\n4. **Not Urgent/Not Important**: Tasks that can be deferred or eliminated (e.g., archiving old files).\n\n**Why This Matters**:\n- Prioritization helps you manage time and resources effectively.\n- Ensures you focus on high-impact activities that move the project forward.\n- Reduces stress by providing clarity on what to tackle first.",
-      "pathways": ["agile_thinking"]
+      "used_in": {
+        "lessons": ["lesson_6", "lesson_6_step_5"],
+        "tasks": ["task_22"]
+      },
+      "templates": [
+        {
+          "template_id": "eisenhower_matrix",
+          "content": "Eisenhower Matrix Template\n\n1. Urgent & Important (Do First):\n   □ Task: ________\n   □ Deadline: ________\n   □ Impact: ________\n\n2. Important, Not Urgent (Schedule):\n   □ Task: ________\n   □ Deadline: ________\n   □ Impact: ________\n\n3. Urgent, Not Important (Delegate):\n   □ Task: ________\n   □ Delegate to: ________\n\n4. Not Urgent, Not Important (Eliminate):\n   □ Task: ________\n   □ Reason for elimination: ________"
+        }
+      ]
     },
     "guide_23": {
       "guide_id": "guide_23",
+      "pathways": ["agile_thinking"],
       "title": "Creating Weekly Sprints",
       "content": "🗓️ **Structuring Work into Sprints**\n\nSprints are short, focused work cycles (usually 1-2 weeks) that help you deliver incremental progress. They allow you to adapt quickly and stay on track.\n\n**How to Create Sprints**:\n1. Assign each task a completion time.\n2. Group tasks into weekly sprints based on priority and available time.\n\n**Example Sprint Plan**:\n- Monday: User interviews (2 hours)\n- Tuesday: Prototype edits (1 hour)\n- Wednesday: Feedback session (1 hour)\n- Friday: Buffer time (1 hour)\n\n**Why This Matters**:\n- Sprints help you deliver results incrementally and adapt to changes.\n- Provides a structured approach to managing work in short, focused cycles.\n- Encourages continuous improvement and flexibility.",
-      "pathways": ["agile_thinking"]
+      "used_in": {
+        "lessons": ["lesson_6", "lesson_6_step_6"],
+        "tasks": ["task_23"]
+      },
+      "templates": [
+        {
+          "template_id": "sprint_planning",
+          "content": "Sprint Planning Template\n\n1. Sprint Goal: ________\n\nDaily Breakdown:\n\nMonday:\n□ Task 1: ________ (Time: ________)\n□ Task 2: ________ (Time: ________)\n\nTuesday:\n□ Task 1: ________ (Time: ________)\n□ Task 2: ________ (Time: ________)\n\nWednesday:\n□ Task 1: ________ (Time: ________)\n□ Task 2: ________ (Time: ________)\n\nThursday:\n□ Task 1: ________ (Time: ________)\n□ Task 2: ________ (Time: ________)\n\nFriday:\n□ Task 1: ________ (Time: ________)\n□ Buffer time: ________"
+        }
+      ]
     },
     "guide_24": {
       "guide_id": "guide_24",
+      "pathways": ["agile_thinking"],
       "title": "Reviewing and Reflecting for Continuous Improvement",
-      "content": "🔄 **Learning from Each Sprint**\n\nAt the end of each sprint, take time to reflect on what worked, what didn’t, and how you can improve. This process ensures continuous learning and growth.\n\n**Key Questions to Reflect On**:\n1. **Completed**: What did you accomplish this week?\n2. **Challenges**: What obstacles or blockers did you face?\n3. **Improvements**: What can you do differently next week to improve?\n\n**Why This Matters**:\n- Regular reflection helps you identify areas for improvement and celebrate successes.\n- Fosters a culture of accountability and continuous learning.\n- Ensures your team stays aligned and motivated for future sprints.",
-      "pathways": ["agile_thinking"]
-    }
+      "content": "🔄 **Learning from Each Sprint**\n\nAt the end of each sprint, take time to reflect on what worked, what didn't, and how you can improve. This process ensures continuous learning and growth.\n\n**Key Questions to Reflect On**:\n1. **Completed**: What did you accomplish this week?\n2. **Challenges**: What obstacles or blockers did you face?\n3. **Improvements**: What can you do differently next week to improve?\n\n**Why This Matters**:\n- Regular reflection helps you identify areas for improvement and celebrate successes.\n- Fosters a culture of accountability and continuous learning.\n- Ensures your team stays aligned and motivated for future sprints.",
+      "used_in": {
+        "lessons": ["lesson_6", "lesson_6_step_7"],
+        "tasks": ["task_24"]
+      },
+      "templates": [
+        {
+          "template_id": "sprint_retrospective",
+          "content": "Sprint Retrospective Template\n\n1. Achievements:\n   □ Completed tasks: ________\n   □ Key wins: ________\n   □ Metrics achieved: ________\n\n2. Challenges:\n   □ Blockers encountered: ________\n   □ Resource gaps: ________\n   □ Unexpected issues: ________\n\n3. Learnings:\n   □ What worked well: ________\n   □ What didn't work: ________\n   □ Areas for improvement: ________\n\n4. Action Items:\n   □ Next sprint changes: ________\n   □ Process improvements: ________\n   □ Team adjustments: ________"
+        }
+      ]
+    }            
   }
 }
