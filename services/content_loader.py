@@ -19,10 +19,7 @@ class ContentLoader:
     @lru_cache(maxsize=1)
     def load_content(self, content_type: str) -> Dict[str, Any]:
         """
-        Load content from JSON files.
-        
-        Args:
-            content_type: Type of content to load ('lessons', 'tasks', 'guides', 'pathways')
+        Load content from JSON files with detailed error checking.
         """
         try:
             file_path = self.data_dir / f"{content_type}.json"
@@ -32,12 +29,19 @@ class ContentLoader:
                 return {}
                 
             with open(file_path, 'r', encoding='utf-8') as f:
-                content = json.load(f)
+                # Log the raw content first
+                raw_content = f.read()
+                logger.info(f"Raw content from {content_type}.json: {raw_content[:200]}...")  # First 200 chars
                 
-                # Handle different content structures
+                # Try to parse the JSON
+                content = json.loads(raw_content)
+                
+                # Log the parsed structure
+                logger.info(f"Parsed {content_type} structure: {list(content.keys()) if isinstance(content, dict) else 'not a dict'}")
+                
                 if content_type in ['tasks', 'guides', 'pathways']:
-                    return content.get(content_type, {})
-                return content  # For lessons which are directly structured
+                    return content
+                return content
                 
         except json.JSONDecodeError as e:
             logger.error(f"Invalid JSON in {content_type} file: {e}")
