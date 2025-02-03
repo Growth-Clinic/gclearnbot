@@ -23,12 +23,15 @@ class LessonService:
         self.task_manager = task_manager
         self.user_manager = user_manager
 
-    async def _send_error_message(self, chat_id: int, message: str, context: ContextTypes.DEFAULT_TYPE) -> None:
+    async def _send_error_message(self, chat_id: int, message: str, context: ContextTypes.DEFAULT_TYPE = None) -> None:
         """Send error message to user"""
-        await context.bot.send_message(
-            chat_id=chat_id,
-            text=f"⚠️ {message}. Please try /start to restart."
-        )
+        if context:
+            await context.bot.send_message(
+                chat_id=chat_id,
+                text=f"⚠️ {message}. Please try /start to restart."
+            )
+        else:
+            logger.error(f"Could not send error message to user {chat_id}: {message}")
 
     async def send_lesson(self, update: Update, context: ContextTypes.DEFAULT_TYPE, lesson_key: str) -> None:
         """Send lesson content with progress info and tasks"""
@@ -100,7 +103,7 @@ class LessonService:
         try:
             chat_id = update.message.chat_id if update.message else update.callback_query.message.chat_id
             
-            # Get task content using content_loader
+            # Get task content using content_loader 
             tasks = content_loader.load_content('tasks')
             task = tasks.get(task_id)
             
@@ -110,11 +113,11 @@ class LessonService:
 ⏱️ Estimated time: {task.get('estimated_time', 'N/A')}
 
 📝 {task.get('description')}
-
-<b>Examples:</b>
 """
-                for example in task.get('examples', []):
-                    message += f"• {example}\n"
+                if task.get('examples'):
+                    message += "\n<b>Examples:</b>\n"
+                    for example in task.get('examples', []):
+                        message += f"• {example}\n"
                 
                 # Get related content
                 related = content_loader.get_related_content(task_id, 'tasks')
@@ -134,7 +137,7 @@ class LessonService:
                     ])
                 )
             else:
-                await self._send_error_message(chat_id, "Task not found")
+                await self._send_error_message(chat_id, "Task not found", context)
                 
         except Exception as e:
             logger.error(f"Error sending task: {e}")

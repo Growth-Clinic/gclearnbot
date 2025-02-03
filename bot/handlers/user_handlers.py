@@ -75,10 +75,14 @@ async def handle_start_choice(update: Update, context: ContextTypes.DEFAULT_TYPE
             # Skip congratulations lessons
             if 'congratulations' not in lesson_id:
                 keyboard.append([InlineKeyboardButton(
-                    f"📚 {lesson.get('type', 'Lesson')}: {lesson.get('description', '')}",
+                    f"📚 {lesson.get('description', lesson_id)}",
                     callback_data=lesson_id
                 )])
         
+        if not keyboard:
+            await query.edit_message_text("No lessons available yet. Please try again later.")
+            return
+            
         await query.edit_message_text(
             "Choose a lesson to begin:",
             reply_markup=InlineKeyboardMarkup(keyboard)
@@ -88,10 +92,14 @@ async def handle_start_choice(update: Update, context: ContextTypes.DEFAULT_TYPE
         # Get available quick tasks
         tasks = content_loader.get_quick_tasks()
         keyboard = []
+        
+        if not tasks:
+            await query.edit_message_text("No quick tasks available yet. Please try the full lessons instead.")
+            return
+            
         for task_id, task in tasks.items():
-            # Add better task description
             keyboard.append([InlineKeyboardButton(
-                f"⚡ {task.get('title', '')} ({task.get('estimated_time', 'N/A')})",
+                f"⚡ {task.get('title', task_id)} ({task.get('estimated_time', 'N/A')})",
                 callback_data=f"task_{task_id}"
             )])
         

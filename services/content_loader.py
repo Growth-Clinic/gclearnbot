@@ -52,10 +52,16 @@ class ContentLoader:
     def get_quick_tasks(self) -> Dict[str, Any]:
         """Get tasks marked as quick_task type"""
         tasks = self.load_content('tasks')
-        return {
-            task_id: task for task_id, task in tasks.items()
-            if task.get('type') == 'quick_task'
-        }
+        quick_tasks = {}
+        
+        # Look through the tasks dictionary properly
+        if isinstance(tasks, dict) and 'tasks' in tasks:
+            for task_id, task in tasks['tasks'].items():
+                if task.get('type') == 'quick_task':
+                    quick_tasks[task_id] = task
+        
+        logger.info(f"Found {len(quick_tasks)} quick tasks")  # Add logging
+        return quick_tasks
 
     def get_full_lessons(self) -> Dict[str, Any]:
         """Get main lessons (not steps)"""
