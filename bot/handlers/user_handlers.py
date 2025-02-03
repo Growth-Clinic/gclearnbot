@@ -72,10 +72,12 @@ async def handle_start_choice(update: Update, context: ContextTypes.DEFAULT_TYPE
         lessons = content_loader.get_full_lessons()
         keyboard = []
         for lesson_id, lesson in lessons.items():
-            keyboard.append([InlineKeyboardButton(
-                f"📚 {lesson.get('description', lesson_id)}",
-                callback_data=lesson_id
-            )])
+            # Skip congratulations lessons
+            if 'congratulations' not in lesson_id:
+                keyboard.append([InlineKeyboardButton(
+                    f"📚 {lesson.get('type', 'Lesson')}: {lesson.get('description', '')}",
+                    callback_data=lesson_id
+                )])
         
         await query.edit_message_text(
             "Choose a lesson to begin:",
@@ -87,8 +89,9 @@ async def handle_start_choice(update: Update, context: ContextTypes.DEFAULT_TYPE
         tasks = content_loader.get_quick_tasks()
         keyboard = []
         for task_id, task in tasks.items():
+            # Add better task description
             keyboard.append([InlineKeyboardButton(
-                f"⚡ {task.get('title', task_id)} ({task.get('estimated_time', 'N/A')})",
+                f"⚡ {task.get('title', '')} ({task.get('estimated_time', 'N/A')})",
                 callback_data=f"task_{task_id}"
             )])
         
@@ -352,7 +355,13 @@ async def handle_response(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     callback_data = query.data
     user_id = query.message.chat_id
-    
+
+    # Handle task selection
+    if callback_data.startswith('task_'):
+        task_id = callback_data.replace('task_', '')
+        await lesson_service.send_task(update, context, task_id)
+        return
+
     # Handle task completion
     if callback_data.startswith('complete_task_'):
         task_id = callback_data.replace('complete_task_', '')

@@ -898,7 +898,7 @@ class TaskManager:
             raise
 
     @staticmethod
-    def get_tasks_for_lesson(lesson_key: str) -> List[Dict[str, Any]]:
+    async def get_tasks_for_lesson(lesson_key: str) -> List[Dict[str, Any]]:
         """
         Get active tasks for a specific lesson.
         
@@ -907,19 +907,19 @@ class TaskManager:
             
         Returns:
             List of active tasks for the lesson
-            
-        Raises:
-            OperationFailure: If MongoDB query fails
         """
         try:
-            tasks = list(db.tasks.find({
-                "lesson": lesson_key,
-                "is_active": True
-            }))
+            # Use asyncio to handle the database call
+            tasks = await asyncio.to_thread(
+                lambda: list(db.tasks.find({
+                    "lesson": lesson_key,
+                    "is_active": True
+                }))
+            )
             return [{k:v for k,v in task.items() if k != '_id'} for task in tasks]
-        except OperationFailure as e:
+        except Exception as e:
             logger.error(f"Failed to get tasks for lesson {lesson_key}: {e}")
-            raise
+            return []
 
     @staticmethod
     def deactivate_task(task_id: int) -> bool:
