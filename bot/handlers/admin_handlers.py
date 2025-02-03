@@ -1,13 +1,12 @@
 from telegram import Update
 from telegram.ext import ContextTypes
 from services.database import TaskManager, FeedbackManager, UserManager, init_mongodb, AnalyticsManager
-from services.lesson_loader import load_lessons
+from services.content_loader import content_loader
 from config.settings import Config
 import logging
 
 # Initialize database connection and load lessons
 db = init_mongodb()
-lessons = load_lessons()
 ADMIN_IDS = Config.ADMIN_IDS
 
 logger = logging.getLogger(__name__)
@@ -179,6 +178,7 @@ async def add_task_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -
             return
             
         lesson_key = cmd_parts[1]
+        lessons = content_loader.load_content('lessons')
         
         # Validate lesson key
         if lesson_key not in lessons:
