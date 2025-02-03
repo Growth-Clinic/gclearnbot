@@ -6,7 +6,7 @@ import logging
 import os
 from datetime import datetime, timezone, timedelta
 from typing import Dict, Optional, Any, List
-from services.lesson_loader import load_lessons
+from services.content_loader import content_loader
 from services.utils import extract_keywords_from_response
 from services.lesson_helpers import get_lesson_structure, is_actual_lesson, get_total_lesson_steps
 import time
@@ -21,7 +21,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__) # Get logger instance
 
 
-lessons = load_lessons()
+lessons = content_loader.load_content('lessons')
 
 
 # Create directories for storage
@@ -160,25 +160,17 @@ class DataValidator:
 
     @staticmethod
     def validate_task_data(task_data: Dict[str, Any]) -> bool:
-        """
-        Validate task data before saving.
-        
-        Args:
-            task_data: Dictionary containing task information
-            
-        Returns:
-            bool: True if valid, False otherwise
-        """
-        required_fields = {
-            "task_id": int,
-            "company": str,
-            "lesson": str,
-            "description": str,
-            "requirements": list,
-            "is_active": bool
-        }
-        
+        """Validate task data before saving."""
         try:
+            required_fields = {
+                "task_id": int,
+                "company": str,
+                "lesson": str,
+                "description": str,
+                "requirements": list,
+                "is_active": bool
+            }
+            
             # Check required fields exist and are correct type
             for field, field_type in required_fields.items():
                 if field not in task_data:
@@ -195,8 +187,9 @@ class DataValidator:
             if not task_data["description"].strip():
                 logger.error("Empty task description")
                 return False
-                
+            
             # Validate lesson exists
+            lessons = content_loader.load_content('lessons')
             if task_data["lesson"] not in lessons:
                 logger.error(f"Invalid lesson in task: {task_data['lesson']}")
                 return False

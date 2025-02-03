@@ -3,7 +3,7 @@ from telegram.ext import ContextTypes
 from services.database import JournalManager, UserManager, FeedbackManager, TaskManager, db, FeedbackAnalyticsManager, AnalyticsManager
 from services.feedback_enhanced import evaluate_response_enhanced, analyze_response_quality
 from services.lesson_manager import LessonService
-from services.lesson_loader import load_lessons
+from services.content_loader import content_loader
 from services.feedback_config import LESSON_FEEDBACK_RULES
 from services.utils import extract_keywords_from_response
 from services.lesson_helpers import get_lesson_structure, is_actual_lesson, get_total_lesson_steps
@@ -19,25 +19,27 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__) # Get logger instance
 
-
-lessons = load_lessons() # Load lessons from JSON file
 user_data = {} # In-memory storage for user progress
 
-
 lesson_service = LessonService(
-    lessons=load_lessons(),
     task_manager=TaskManager(),
     user_manager=UserManager()
 )
 
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    """Start command handler"""
+    """Start command handler with learning path choices"""
     user = update.message.from_user
     await UserManager.save_user_info(user)
     
     welcome_text = """
 Welcome to the Learning Bot! 🎓
+
+I can help you learn through:
+• Full Lessons: Comprehensive learning paths 📚
+• Quick Tasks: Short, focused exercises ⚡
+
+Choose your learning style below:
 
 Available commands:
 /start - Start or restart the learning journey
@@ -45,11 +47,55 @@ Available commands:
 /journal - View your learning journal
 /feedback - Send feedback or questions to us
 /help - Show this help message
-
-Type /start to begin your learning journey!
 """
-    await update.message.reply_text(welcome_text)
-    await lesson_service.send_lesson(update, context, "lesson_1")
+    
+    # Create keyboard with learning choices
+    keyboard = [
+        [
+            InlineKeyboardButton("📚 Full Lessons", callback_data="start_lessons"),
+            InlineKeyboardButton("⚡ Quick Tasks", callback_data="start_tasks")
+        ]
+    ]
+    reply_markup = InlineKeyboardMarkup(keyboard)
+    
+    await update.message.reply_text(welcome_text, reply_markup=reply_markup)
+
+async def handle_start_choice(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Handle user's choice between lessons and tasks"""
+    query = update.callback_query
+    await query.answer()
+    
+    choice = query.data
+    
+    if choice == "start_lessons":
+        # Get available full lessons
+        lessons = content_loader.get_full_lessons()
+        keyboard = []
+        for lesson_id, lesson in lessons.items():
+            keyboard.append([InlineKeyboardButton(
+                f"📚 {lesson.get('description', lesson_id)}",
+                callback_data=lesson_id
+            )])
+        
+        await query.edit_message_text(
+            "Choose a lesson to begin:",
+            reply_markup=InlineKeyboardMarkup(keyboard)
+        )
+        
+    elif choice == "start_tasks":
+        # Get available quick tasks
+        tasks = content_loader.get_quick_tasks()
+        keyboard = []
+        for task_id, task in tasks.items():
+            keyboard.append([InlineKeyboardButton(
+                f"⚡ {task.get('title', task_id)} ({task.get('estimated_time', 'N/A')})",
+                callback_data=f"task_{task_id}"
+            )])
+        
+        await query.edit_message_text(
+            "Choose a quick task to begin:",
+            reply_markup=InlineKeyboardMarkup(keyboard)
+        )
 
 
 async def resume_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -237,13 +283,13 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             return
 
         current_lesson = user_data["current_lesson"]
+        lessons = content_loader.load_content('lessons')
 
         # If we're on a main lesson, find its first step
-        if not is_actual_lesson(current_lesson):
-            lesson_structure = get_lesson_structure()
-            main_lesson = current_lesson.split('_step_')[0] if '_step_' in current_lesson else current_lesson
-            if main_lesson in lesson_structure and lesson_structure[main_lesson]:
-                current_lesson = lesson_structure[main_lesson][0]
+        if not '_step_' in current_lesson:
+            steps = content_loader.get_lesson_steps(current_lesson)
+            if steps:
+                current_lesson = list(steps.keys())[0]
                 # Update the current lesson to this step
                 await UserManager.update_user_progress(chat_id, current_lesson)
 
@@ -302,16 +348,26 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def handle_response(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Handle button responses."""
     query = update.callback_query
-    await query.answer()  # Acknowledge the button press to remove loading state
+    await query.answer()
 
-    next_step = query.data
+    callback_data = query.data
     user_id = query.message.chat_id
+    
+    # Handle task completion
+    if callback_data.startswith('complete_task_'):
+        task_id = callback_data.replace('complete_task_', '')
+        await query.edit_message_text(
+            text="🎉 Task completed! Use /start to choose another task or lesson.",
+            parse_mode='HTML'
+        )
+        return
 
-    if next_step and next_step in lessons:
-        # Update database with the new lesson
-        success = await UserManager.update_user_progress(user_id, next_step)
+    # Handle lesson progression
+    lessons = content_loader.load_content('lessons')
+    if callback_data in lessons:
+        success = await UserManager.update_user_progress(user_id, callback_data)
         if success:
-            await lesson_service.send_lesson(update, context, next_step)
+            await lesson_service.send_lesson(update, context, callback_data)
         else:
             await query.edit_message_text(text="Error progressing. Please try /resume.")
     else:

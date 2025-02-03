@@ -2,22 +2,29 @@ from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import ContextTypes
 from telegram.constants import ParseMode
 from typing import Optional, Dict, Any
-from services.lesson_loader import load_lessons
+from services.content_loader import content_loader
 from services.database import TaskManager, UserManager
 import logging
 
 
 logger = logging.getLogger(__name__)
-lessons = load_lessons()
+lessons = content_loader.load_content('lessons')
 
 
 class LessonService:
-    def __init__(self, lessons: Dict[str, Any], task_manager: TaskManager, user_manager: UserManager):
-        self.lessons = lessons
+    def __init__(self, task_manager: TaskManager, user_manager: UserManager):
+        """
+        Initialize LessonService with dependencies.
+        
+        Args:
+            task_manager: Instance of TaskManager for handling tasks
+            user_manager: Instance of UserManager for handling user data
+        """
         self.task_manager = task_manager
         self.user_manager = user_manager
 
     async def _send_error_message(self, chat_id: int, message: str, context: ContextTypes.DEFAULT_TYPE) -> None:
+        """Send error message to user"""
         await context.bot.send_message(
             chat_id=chat_id,
             text=f"⚠️ {message}. Please try /start to restart."
@@ -29,9 +36,12 @@ class LessonService:
             chat_id = update.message.chat_id if update.message else update.callback_query.message.chat_id
             
             # Update progress
-            self.user_manager.update_user_progress(chat_id, lesson_key)
+            await self.user_manager.update_user_progress(chat_id, lesson_key)
             
-            lesson = self.lessons.get(lesson_key)
+            # Get lesson content using content_loader
+            lessons = content_loader.load_content('lessons')
+            lesson = lessons.get(lesson_key)
+            
             if lesson:
                 # Format progress header
                 parts = lesson_key.split('_')
@@ -48,7 +58,7 @@ class LessonService:
                 message = header + lesson["text"].replace('[', '<').replace(']', '>')
                 
                 # Add available tasks
-                available_tasks = self.task_manager.get_tasks_for_lesson(lesson_key)
+                available_tasks = await self.task_manager.get_tasks_for_lesson(lesson_key)
                 if available_tasks:
                     message += "\n\n<b>🌟 Real World Tasks Available!</b>\n"
                     for task in available_tasks:
@@ -58,6 +68,15 @@ class LessonService:
                             message += "<b>Requirements:</b>\n"
                             for req in task["requirements"]:
                                 message += f"- {req}\n"
+                
+                # Get related content
+                related = content_loader.get_related_content(lesson_key, 'lessons')
+                
+                # Add related guides if available
+                if related.get('guides'):
+                    message += "\n\n<b>📖 Available Guides:</b>\n"
+                    for guide in related['guides']:
+                        message += f"• {guide.get('title', 'Guide')}\n"
                 
                 await context.bot.send_message(
                     chat_id=chat_id,
@@ -75,3 +94,48 @@ class LessonService:
         except Exception as e:
             logger.error(f"Unexpected error: {e}")
             await self._send_error_message(chat_id, "System error", context)
+
+    async def send_task(self, update: Update, context: ContextTypes.DEFAULT_TYPE, task_id: str) -> None:
+        """Send task content to user"""
+        try:
+            chat_id = update.message.chat_id if update.message else update.callback_query.message.chat_id
+            
+            # Get task content using content_loader
+            tasks = content_loader.load_content('tasks')
+            task = tasks.get(task_id)
+            
+            if task:
+                message = f"""
+<b>⚡ Quick Task: {task.get('title')}</b>
+⏱️ Estimated time: {task.get('estimated_time', 'N/A')}
+
+📝 {task.get('description')}
+
+<b>Examples:</b>
+"""
+                for example in task.get('examples', []):
+                    message += f"• {example}\n"
+                
+                # Get related content
+                related = content_loader.get_related_content(task_id, 'tasks')
+                
+                # Add related guides if available
+                if related.get('guides'):
+                    message += "\n<b>📖 Available Guides:</b>\n"
+                    for guide in related['guides']:
+                        message += f"• {guide.get('title', 'Guide')}\n"
+                
+                await context.bot.send_message(
+                    chat_id=chat_id,
+                    text=message,
+                    parse_mode='HTML',
+                    reply_markup=InlineKeyboardMarkup([
+                        [InlineKeyboardButton("✅ Complete Task", callback_data=f"complete_task_{task_id}")]
+                    ])
+                )
+            else:
+                await self._send_error_message(chat_id, "Task not found")
+                
+        except Exception as e:
+            logger.error(f"Error sending task: {e}")
+            await self._send_error_message(chat_id, "Error loading task", context)
