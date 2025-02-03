@@ -68,9 +68,12 @@ async def handle_start_choice(update: Update, context: ContextTypes.DEFAULT_TYPE
     choice = query.data
     
     if choice == "start_tasks":
+        # Clear cache to get the latest tasks
+        content_loader.load_content.cache_clear()
+
         # Get available quick tasks
         logger.info("Loading quick tasks...")
-        tasks = content_loader.get_quick_tasks()
+        tasks = content_loader.get_all_tasks()
         logger.info(f"Loaded tasks: {tasks}")
         
         keyboard = []
@@ -350,6 +353,7 @@ async def handle_response(update: Update, context: ContextTypes.DEFAULT_TYPE):
     # Handle task selection
     if callback_data.startswith('task_'):
         task_id = callback_data.replace('task_', '')
+        logger.info(f"User selected task: {task_id}")
         await lesson_service.send_task(update, context, task_id)
         return
 

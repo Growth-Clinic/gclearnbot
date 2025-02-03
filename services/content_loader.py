@@ -45,23 +45,18 @@ class ContentLoader:
             logger.error(f"Error loading {content_type}: {e}")
             return {}
 
-    def get_quick_tasks(self) -> Dict[str, Any]:
-        """Get tasks marked as quick_task type"""
+    def get_all_tasks(self) -> Dict[str, Any]:
+        """Get all available tasks, regardless of type"""
         content = self.load_content('tasks')
-        quick_tasks = {}
-        
-        logger.info("Loading quick tasks...")
-        
-        # Check for tasks key in the content
         tasks_dict = content.get('tasks', {})
-        
-        for task_id, task in tasks_dict.items():
-            if isinstance(task, dict) and task.get('type') == 'quick_task':
-                quick_tasks[task_id] = task
-                logger.info(f"Found quick task: {task_id} - {task.get('title')}")
-        
-        logger.info(f"Total quick tasks found: {len(quick_tasks)}")
-        return quick_tasks
+
+        if not tasks_dict:
+            logger.warning("No tasks found in tasks.json")
+            return {}
+
+        logger.info(f"Total tasks found: {len(tasks_dict)}")
+        return tasks_dict
+
 
     def get_full_lessons(self) -> Dict[str, Any]:
         """Get main lessons (not steps)"""
