@@ -105,15 +105,22 @@ class LessonService:
             
             # Get task content using content_loader 
             tasks = content_loader.load_content('tasks')
+            logger.info(f"Loading task {task_id} from tasks: {tasks}")
+            
+            # Handle nested structure
+            if 'tasks' in tasks:
+                tasks = tasks['tasks']
+            
             task = tasks.get(task_id)
             
             if task:
+                logger.info(f"Found task: {task}")
                 message = f"""
-<b>⚡ Quick Task: {task.get('title')}</b>
-⏱️ Estimated time: {task.get('estimated_time', 'N/A')}
+    <b>⚡ Quick Task: {task.get('title')}</b>
+    ⏱️ Estimated time: {task.get('estimated_time', 'N/A')}
 
-📝 {task.get('description')}
-"""
+    📝 {task.get('description')}
+    """
                 if task.get('examples'):
                     message += "\n<b>Examples:</b>\n"
                     for example in task.get('examples', []):
@@ -137,8 +144,9 @@ class LessonService:
                     ])
                 )
             else:
+                logger.error(f"Task {task_id} not found in tasks: {tasks}")
                 await self._send_error_message(chat_id, "Task not found", context)
                 
         except Exception as e:
-            logger.error(f"Error sending task: {e}")
+            logger.error(f"Error sending task: {e}", exc_info=True)
             await self._send_error_message(chat_id, "Error loading task", context)

@@ -67,33 +67,16 @@ async def handle_start_choice(update: Update, context: ContextTypes.DEFAULT_TYPE
     
     choice = query.data
     
-    if choice == "start_lessons":
-        # Get available full lessons
-        lessons = content_loader.get_full_lessons()
-        keyboard = []
-        for lesson_id, lesson in lessons.items():
-            # Skip congratulations lessons
-            if 'congratulations' not in lesson_id:
-                keyboard.append([InlineKeyboardButton(
-                    f"📚 {lesson.get('description', lesson_id)}",
-                    callback_data=lesson_id
-                )])
-        
-        if not keyboard:
-            await query.edit_message_text("No lessons available yet. Please try again later.")
-            return
-            
-        await query.edit_message_text(
-            "Choose a lesson to begin:",
-            reply_markup=InlineKeyboardMarkup(keyboard)
-        )
-        
-    elif choice == "start_tasks":
+    if choice == "start_tasks":
         # Get available quick tasks
+        logger.info("Loading quick tasks...")
         tasks = content_loader.get_quick_tasks()
+        logger.info(f"Loaded tasks: {tasks}")
+        
         keyboard = []
         
         if not tasks:
+            logger.warning("No quick tasks found")
             await query.edit_message_text("No quick tasks available yet. Please try the full lessons instead.")
             return
             
@@ -373,6 +356,7 @@ async def handle_response(update: Update, context: ContextTypes.DEFAULT_TYPE):
     # Handle task completion
     if callback_data.startswith('complete_task_'):
         task_id = callback_data.replace('complete_task_', '')
+        logger.info(f"Selected task: {task_id}")
         await query.edit_message_text(
             text="🎉 Task completed! Use /start to choose another task or lesson.",
             parse_mode='HTML'

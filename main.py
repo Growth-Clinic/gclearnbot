@@ -21,6 +21,10 @@ async def async_main():
                 logger.error("Could not acquire lock, exiting")
                 return 1
 
+            # Validate content structure before initializing services
+            logger.info("Validating content structure...")
+            content_loader.validate_content_structure()
+
             # Initialize services
             try:
                 lesson_service = LessonService(
@@ -33,7 +37,7 @@ async def async_main():
 
             # Create and start the Quart app
             app = await create_app()
-            await start_app(app)  # Pass the app object to start_app
+            await start_app(app)
             return 0
                 
     except Exception as e:

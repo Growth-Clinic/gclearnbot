@@ -23,9 +23,6 @@ class ContentLoader:
         
         Args:
             content_type: Type of content to load ('lessons', 'tasks', 'guides', 'pathways')
-            
-        Returns:
-            Dictionary containing content data
         """
         try:
             file_path = self.data_dir / f"{content_type}.json"
@@ -54,13 +51,19 @@ class ContentLoader:
         tasks = self.load_content('tasks')
         quick_tasks = {}
         
-        # Look through the tasks dictionary properly
-        if isinstance(tasks, dict) and 'tasks' in tasks:
-            for task_id, task in tasks['tasks'].items():
-                if task.get('type') == 'quick_task':
-                    quick_tasks[task_id] = task
+        # Add debugging log
+        logger.info(f"Loading tasks from file...")
+        logger.info(f"Loaded tasks structure: {tasks}")
         
-        logger.info(f"Found {len(quick_tasks)} quick tasks")  # Add logging
+        if isinstance(tasks, dict) and 'tasks' in tasks:
+            tasks_dict = tasks['tasks']
+            for task_id, task in tasks_dict.items():
+                # Check for quick_task type
+                if isinstance(task, dict) and task.get('type') == 'quick_task':
+                    quick_tasks[task_id] = task
+                    logger.info(f"Found quick task: {task_id} - {task.get('title')}")
+        
+        logger.info(f"Total quick tasks found: {len(quick_tasks)}")
         return quick_tasks
 
     def get_full_lessons(self) -> Dict[str, Any]:
@@ -124,6 +127,28 @@ class ContentLoader:
             ]
             
         return related
+    
+    def validate_content_structure(self) -> None:
+        """Validate the structure of loaded content files and log any issues"""
+        tasks = self.load_content('tasks')
+        logger.info("Validating content structure...")
+        
+        if not isinstance(tasks, dict):
+            logger.error(f"Tasks content is not a dictionary: {type(tasks)}")
+            return
+            
+        if 'tasks' not in tasks:
+            logger.error("No 'tasks' key found in tasks content")
+            return
+            
+        tasks_dict = tasks['tasks']
+        if not isinstance(tasks_dict, dict):
+            logger.error(f"Tasks dictionary is not a dictionary: {type(tasks_dict)}")
+            return
+            
+        quick_tasks_count = sum(1 for task in tasks_dict.values() 
+                            if isinstance(task, dict) and task.get('type') == 'quick_task')
+        logger.info(f"Found {quick_tasks_count} quick tasks in content")
 
 # Create a singleton instance
 content_loader = ContentLoader()
