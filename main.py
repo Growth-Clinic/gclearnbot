@@ -4,7 +4,7 @@ from config.settings import Config
 from services.lock_manager import LockManager
 from services.application import create_app, start_app
 from services.lesson_manager import LessonService
-from services.content_loader import load_lessons
+from services.content_loader import content_loader
 from services.database import TaskManager, UserManager
 
 # Setup logging
