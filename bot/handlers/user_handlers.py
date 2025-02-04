@@ -68,31 +68,33 @@ async def handle_start_choice(update: Update, context: ContextTypes.DEFAULT_TYPE
     choice = query.data
     
     if choice == "start_tasks":
-        # Clear cache to get the latest tasks
-        content_loader.load_content.cache_clear()
+        content_loader.load_content.cache_clear()  # Ensure fresh data
 
-        # Get available quick tasks
-        logger.info("Loading quick tasks...")
+        logger.info("Loading all tasks...")
         tasks = content_loader.get_all_tasks()
         logger.info(f"Loaded tasks: {tasks}")
-        
+
         keyboard = []
         
         if not tasks:
-            logger.warning("No quick tasks found")
-            await query.edit_message_text("No quick tasks available yet. Please try the full lessons instead.")
+            logger.warning("No tasks found")
+            await query.edit_message_text("No tasks available yet. Please try the full lessons instead.")
             return
             
         for task_id, task in tasks.items():
-            keyboard.append([InlineKeyboardButton(
-                f"⚡ {task.get('title', task_id)} ({task.get('estimated_time', 'N/A')})",
-                callback_data=f"task_{task_id}"
-            )])
+            logger.info(f"Mapping task: {task_id} -> {task.get('title')}")  # ✅ Log task ID
+            keyboard.append([
+                InlineKeyboardButton(
+                    f"⚡ {task.get('title', task_id)} ({task.get('estimated_time', 'N/A')})",
+                    callback_data=f"task_{task_id}"  # ✅ Ensure format matches tasks.json
+                )
+            ])
         
         await query.edit_message_text(
-            "Choose a quick task to begin:",
+            "Choose a task to begin:",
             reply_markup=InlineKeyboardMarkup(keyboard)
         )
+
 
 
 async def resume_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -350,17 +352,29 @@ async def handle_response(update: Update, context: ContextTypes.DEFAULT_TYPE):
     callback_data = query.data
     user_id = query.message.chat_id
 
+    logger.info(f"User clicked: {callback_data}")  # ✅ Log the button data
+
     # Handle task selection
     if callback_data.startswith('task_'):
-        task_id = callback_data.replace('task_', '')
-        logger.info(f"User selected task: {task_id}")
+        task_id = callback_data.replace('task_', '').lower()  # ✅ Normalize to lowercase
+        logger.info(f"Looking for task: {task_id}")
+
+        content_loader.load_content.cache_clear()  # Ensure fresh task data
+        tasks = content_loader.get_all_tasks()
+
+        if task_id not in tasks:
+            logger.error(f"Task '{task_id}' not found! Available tasks: {list(tasks.keys())}")
+            await query.edit_message_text("⚠️ Task not found. Please select a valid task.")
+            return
+
         await lesson_service.send_task(update, context, task_id)
         return
 
     # Handle task completion
     if callback_data.startswith('complete_task_'):
-        task_id = callback_data.replace('complete_task_', '')
-        logger.info(f"Selected task: {task_id}")
+        task_id = callback_data.replace('complete_task_', '').lower()  # ✅ Normalize to lowercase
+        logger.info(f"Task completed: {task_id}")
+        
         await query.edit_message_text(
             text="🎉 Task completed! Use /start to choose another task or lesson.",
             parse_mode='HTML'
@@ -377,6 +391,7 @@ async def handle_response(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await query.edit_message_text(text="Error progressing. Please try /resume.")
     else:
         await query.edit_message_text(text="Please reply with your input to proceed.")
+
 
 
 
