@@ -356,18 +356,21 @@ async def handle_response(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     # Handle task selection
     if callback_data.startswith('task_'):
-        task_id = callback_data.replace('task_', '').lower()  # ✅ Normalize to lowercase
-        logger.info(f"Looking for task: {task_id}")
+        task_id = callback_data.replace('task_', '')
 
-        content_loader.load_content.cache_clear()  # Ensure fresh task data
+        # ✅ Ensure task_id has "task_" prefix before lookup
+        corrected_task_id = f"task_{task_id}" if not task_id.startswith("task_") else task_id
+        logger.info(f"Looking for task: {corrected_task_id}")
+
+        content_loader.load_content.cache_clear()  # Ensure fresh data
         tasks = content_loader.get_all_tasks()
 
-        if task_id not in tasks:
-            logger.error(f"Task '{task_id}' not found! Available tasks: {list(tasks.keys())}")
+        if corrected_task_id not in tasks:
+            logger.error(f"Task '{corrected_task_id}' not found! Available tasks: {list(tasks.keys())}")
             await query.edit_message_text("⚠️ Task not found. Please select a valid task.")
             return
 
-        await lesson_service.send_task(update, context, task_id)
+        await lesson_service.send_task(update, context, corrected_task_id)
         return
 
     # Handle task completion
