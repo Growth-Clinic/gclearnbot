@@ -5,11 +5,10 @@ from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from telegram.ext import Application, CommandHandler, MessageHandler, CallbackQueryHandler, filters
 from telegram import BotCommand
 from bot.handlers.user_handlers import (
-    start, resume_command, get_journal, feedback_command, 
-    my_feedback_command, help_command, handle_response, 
+    start, resume_command, get_journal, help_command, handle_response, 
     handle_message, handle_start_choice
 )
-from bot.handlers.admin_handlers import adminhelp_command, list_users, view_feedback, process_feedback_command, add_task_command, list_tasks_command, deactivate_task_command, analytics_command, user_analytics_command, lesson_analytics_command
+from bot.handlers.admin_handlers import adminhelp_command, list_users, analytics_command, user_analytics_command, lesson_analytics_command
 from services.error_handler import error_handler
 import logging
 import validators
@@ -58,18 +57,11 @@ async def initialize_application() -> Application:
         application.add_handler(CommandHandler("start", start))
         application.add_handler(CommandHandler("resume", resume_command))
         application.add_handler(CommandHandler("journal", get_journal))
-        application.add_handler(CommandHandler("feedback", feedback_command))
-        application.add_handler(CommandHandler("myfeedback", my_feedback_command))
         application.add_handler(CommandHandler("help", help_command))
         
         # Admin handlers
         application.add_handler(CommandHandler("adminhelp", adminhelp_command))
         application.add_handler(CommandHandler("users", list_users))
-        application.add_handler(CommandHandler("viewfeedback", view_feedback))
-        application.add_handler(CommandHandler("processfeedback", process_feedback_command))
-        application.add_handler(CommandHandler("addtask", add_task_command))
-        application.add_handler(CommandHandler("listtasks", list_tasks_command))
-        application.add_handler(CommandHandler("deactivatetask", deactivate_task_command))
         application.add_handler(CommandHandler("analytics", analytics_command))
         application.add_handler(CommandHandler("useranalytics", user_analytics_command))
         application.add_handler(CommandHandler("lessonanalytics", lesson_analytics_command))

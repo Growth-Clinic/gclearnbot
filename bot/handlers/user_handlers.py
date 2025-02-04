@@ -33,35 +33,35 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     await UserManager.save_user_info(user)
     
     welcome_text = """
-Welcome to the Learning Bot! 🎓
+Welcome to Growth Clinic! 🌱
 
-I can help you learn about:
-• Design Thinking 🎨
-• Business Model Thinking 💼
-• Market Thinking 📈
-• User Thinking 👤
-• Agile Project Thinking 🚀
+Ready to future-proof your career and drive high-growth businesses? Our bite-sized, task-based lessons equip you with essential mental models and skills to thrive in today's fast-paced tech landscape.
 
-Choose a lesson to begin:
+🌟 Choose Your Learning Path:
 
-Available commands:
-/start - Start or restart the learning journey
-/resume - Continue from your last lesson
-/journal - View your learning journal
-/feedback - Send feedback or questions to us
-/help - Show this help message
+Design Thinking: Solve real-world problems creatively.
+Business Modelling: Turn your ideas into sustainable ventures.
+Market Thinking: Scale your product to millions.
+User Thinking: Understand and engage your audience.
+Agile Project Thinking: Execute your ideas efficiently.
+Let's get started and transform your skills! 🚀
+
+Need help? Type /help or check the menu beside the text box.
 """
     
     # Load only main lessons (not steps)
     lessons = content_loader.get_full_lessons()
     
-    # Create keyboard with lesson choices
+    # Create keyboard with lesson choices, filtering out congratulation messages
     keyboard = []
     for lesson_id, lesson in lessons.items():
-        if lesson_id != "lesson_1":  # Skip intro lesson
+        # Skip intro lesson, congratulation messages, and ensure it's a full lesson
+        if (lesson_id != "lesson_1" and 
+            not "congratulations" in lesson_id.lower() and 
+            lesson.get("type") == "full_lesson"):
             keyboard.append([
                 InlineKeyboardButton(
-                    f"📚 {lesson.get('description', f'Lesson {lesson_id}')}",
+                    f"📚 {lesson.get('description')}",  # Show action-oriented description
                     callback_data=lesson_id
                 )
             ])
@@ -122,36 +122,6 @@ async def resume_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
         await update.message.reply_text("Error resuming progress. Please try again.")
 
 
-
-async def my_feedback_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    """Command to let users view their own feedback history"""
-    try:
-        user_id = update.message.from_user.id
-        feedback_list = await FeedbackManager.get_user_feedback(user_id)
-        
-        if not feedback_list:
-            await update.message.reply_text("You haven't submitted any feedback yet.")
-            return
-            
-        report = "📋 Your Feedback History:\n\n"
-        for feedback in feedback_list:
-            timestamp = feedback['timestamp'].strftime("%Y-%m-%d %H:%M:%S")
-            report += f"📅 {timestamp}\n"
-            report += f"💭 {feedback['feedback']}\n"
-            report += "------------------------\n\n"
-        
-        # Split long reports into multiple messages if needed
-        if len(report) > 4096:
-            for i in range(0, len(report), 4096):
-                await update.message.reply_text(report[i:i+4096])
-        else:
-            await update.message.reply_text(report)
-            
-    except Exception as e:
-        logger.error(f"Error viewing user feedback: {e}", exc_info=True)
-        await update.message.reply_text("Error retrieving your feedback. Please try again later.")
-
-
 async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Send a message when the command /help is issued."""
     help_text = """
@@ -159,9 +129,7 @@ async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 /start - Start or restart the learning journey
 /resume - Continue from your last lesson
-/journal - View your learning journal 
-/feedback - Send feedback
-/myfeedback - View your feedback history
+/journal - View your learning journal entries
 /help - Show this help message
 
 To progress through lessons:
@@ -171,18 +139,9 @@ To progress through lessons:
 4. Click ✅ when prompted to move forward
 
 Your responses are automatically saved to your learning journal.
+
     """
     await update.message.reply_text(help_text)
-
-
-
-async def feedback_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    """Handle feedback command"""
-    await update.message.reply_text(
-        "Please share your feedback or questions. Your message will be sent to our team."
-    )
-    context.user_data['expecting_feedback'] = True
-
 
 
 async def get_journal(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:

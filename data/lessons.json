@@ -12,7 +12,8 @@
         "text": "🎨 Lesson 2 - Design Thinking\n\nWelcome to Design Thinking! 🎉\n\nIn this lesson, we'll work on improving the gift-giving experience for someone. You’ll learn how to understand their needs, define the problem, and come up with creative solutions.\n\n✅ Why This Matters:\n- You can use this process to improve any experience—not just gift-giving.\n- It’s a powerful way to solve real-world problems by focusing on the user’s perspective.\n\nHere's the 5-step breakdown:\n1. Empathise: Understand your user's perspective and feelings. 🤝\n2. Define: Identify the core problem or challenge. 🎯\n3. Ideate: Brainstorm creative solutions. 💡\n4. Prototype: Develop an initial version of your solution. 🛠️\n5. Test: Get user feedback and refine your ideas. 🔄\n\nReady to dive in? Tap to begin! 📝",
         "next": "lesson_2_step_1",
         "type": "full_lesson",
-        "description": "Learn the design thinking process",
+        "title": "Design Thinking",
+        "description": "Master creative problem-solving",
         "related_tasks": [],
         "related_guides": ["guide_1"],
         "pathways": ["pathway_design_thinking"]
@@ -63,7 +64,8 @@
         "text": "💼 Lesson 3 - Business Modelling\n\nWelcome to Business Modelling! 🎉\n\nThis lesson helps you transform your idea into a sustainable business by learning how to create, deliver, and capture value using the Business Model Canvas.\n\n✅ Step 1: What is a Business Model?\nA business model explains how your idea will create, deliver, and capture value. Think of it as the story of your business that answers:\n1. Who are you serving?\n2. What value do you offer them?\n3. How do you deliver and sustain that value profitably?\n\nTask: Write down your initial answers to these three questions for your idea. This will act as your starting point.\n\nReply with your answers 📝",
         "next": "lesson_3_step_1",
         "type": "full_lesson",
-        "description": "Learn to transform ideas into sustainable businesses",
+        "title": "Business Models",
+        "description": "Build profitable ventures",
         "related_tasks": [],
         "related_guides": ["guide_7"],
         "pathways": ["pathway_business_modeling"]
@@ -114,7 +116,8 @@
         "text": "📈 Lesson 4 - Market Thinking\n\nWelcome to Market Thinking! 🌟\n\nThis lesson is all about helping you understand how your product fits into the broader market and scales to millions (or billions) in revenue. We’ll explore Brian Balfour’s Four Fit Framework in detail to ensure your product thrives.\n\n✅ Step 1: Build on Your Product-Market Fit\nIn Lesson 2, you focused on deeply understanding your user’s problem. Now, take what you’ve learned and connect it to your product’s market.\n\nQuick Recap: Product-Market Fit means solving a pressing problem for a specific group of people. Signs of strong fit include enthusiastic feedback, repeated usage, and word-of-mouth referrals.\n\nExample: Dropbox achieved Product-Market Fit by solving the universal problem of file sharing with a simple, user-friendly solution.\n\nTask: Write down the specific group of users your product is designed for and how your solution addresses their core pain points. Reply with your notes 📝",
         "next": "lesson_4_step_1",
         "type": "full_lesson",
-        "description": "Learn market alignment and scaling strategies",
+        "title": "Market Strategy",
+        "description": "Grow your market impact",
         "related_tasks": [],
         "related_guides": ["guide_11"],
         "pathways": ["pathway_market_thinking"]
@@ -159,7 +162,8 @@
         "text": "👤 Lesson 5 - User Thinking\n\nWelcome to User Thinking! 🧠\n\nUnderstanding why people do what they do and how they think is essential to building products they love. This lesson introduces user psychology and behavior, equipping you with tools to create innovative, user-centered solutions.\n\n✅ What You’ll Learn:\n- How emotions influence actions and decisions.\n- How to use the Hooked Model to design habit-forming products.\n\nReady to dive in? Let’s get started! 📝",
         "next": "lesson_5_step_1",
         "type": "full_lesson",
-        "description": "Master user psychology and behavior design",
+        "title": "User Psychology",
+        "description": "Create engaging experiences",
         "related_tasks": [],
         "related_guides": ["guide_16"],
         "pathways": ["pathway_user_thinking"]
@@ -204,7 +208,8 @@
         "text": "🚀 Lesson 6 - Project Thinking\n\nWelcome to Project Thinking! 🛠️\n\nThis lesson combines principles from Agile and traditional project management to help you execute your business ideas efficiently and effectively.\n\n✅ What You’ll Learn:\n- How to scope and plan your work.\n- How to use milestones and tasks to track progress.\n- How to prioritise, batch, and review work for continuous improvement.\n\nReady to start? Tap to dive in! 📝",
         "next": "lesson_6_step_1",
         "type": "full_lesson",
-        "description": "Master agile project execution",
+        "title": "Agile Methods",
+        "description": "Lead successful projects",
         "related_tasks": [],
         "related_guides": ["guide_19"],
         "pathways": ["pathway_agile_thinking"]
