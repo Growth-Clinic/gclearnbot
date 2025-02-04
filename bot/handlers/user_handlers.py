@@ -28,18 +28,21 @@ lesson_service = LessonService(
 
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    """Start command handler with learning path choices"""
+    """Start command handler with lesson choices"""
     user = update.message.from_user
     await UserManager.save_user_info(user)
     
     welcome_text = """
 Welcome to the Learning Bot! 🎓
 
-I can help you learn through:
-• Full Lessons: Comprehensive learning paths 📚
-• Quick Tasks: Short, focused exercises ⚡
+I can help you learn about:
+• Design Thinking 🎨
+• Business Model Thinking 💼
+• Market Thinking 📈
+• User Thinking 👤
+• Agile Project Thinking 🚀
 
-Choose your learning style below:
+Choose a lesson to begin:
 
 Available commands:
 /start - Start or restart the learning journey
@@ -49,15 +52,21 @@ Available commands:
 /help - Show this help message
 """
     
-    # Create keyboard with learning choices
-    keyboard = [
-        [
-            InlineKeyboardButton("📚 Full Lessons", callback_data="start_lessons"),
-            InlineKeyboardButton("⚡ Quick Tasks", callback_data="start_tasks")
-        ]
-    ]
-    reply_markup = InlineKeyboardMarkup(keyboard)
+    # Load only main lessons (not steps)
+    lessons = content_loader.get_full_lessons()
     
+    # Create keyboard with lesson choices
+    keyboard = []
+    for lesson_id, lesson in lessons.items():
+        if lesson_id != "lesson_1":  # Skip intro lesson
+            keyboard.append([
+                InlineKeyboardButton(
+                    f"📚 {lesson.get('description', f'Lesson {lesson_id}')}",
+                    callback_data=lesson_id
+                )
+            ])
+    
+    reply_markup = InlineKeyboardMarkup(keyboard)
     await update.message.reply_text(welcome_text, reply_markup=reply_markup)
 
 async def handle_start_choice(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -352,39 +361,9 @@ async def handle_response(update: Update, context: ContextTypes.DEFAULT_TYPE):
     callback_data = query.data
     user_id = query.message.chat_id
 
-    logger.info(f"User clicked: {callback_data}")  # ✅ Log the button data
+    logger.info(f"User clicked: {callback_data}")
 
-    # Handle task selection
-    if callback_data.startswith('task_'):
-        task_id = callback_data.replace('task_', '')
-
-        # ✅ Ensure task_id has "task_" prefix before lookup
-        corrected_task_id = f"task_{task_id}" if not task_id.startswith("task_") else task_id
-        logger.info(f"Looking for task: {corrected_task_id}")
-
-        content_loader.load_content.cache_clear()  # Ensure fresh data
-        tasks = content_loader.get_all_tasks()
-
-        if corrected_task_id not in tasks:
-            logger.error(f"Task '{corrected_task_id}' not found! Available tasks: {list(tasks.keys())}")
-            await query.edit_message_text("⚠️ Task not found. Please select a valid task.")
-            return
-
-        await lesson_service.send_task(update, context, corrected_task_id)
-        return
-
-    # Handle task completion
-    if callback_data.startswith('complete_task_'):
-        task_id = callback_data.replace('complete_task_', '').lower()  # ✅ Normalize to lowercase
-        logger.info(f"Task completed: {task_id}")
-        
-        await query.edit_message_text(
-            text="🎉 Task completed! Use /start to choose another task or lesson.",
-            parse_mode='HTML'
-        )
-        return
-
-    # Handle lesson progression
+    # Handle lesson selection
     lessons = content_loader.load_content('lessons')
     if callback_data in lessons:
         success = await UserManager.update_user_progress(user_id, callback_data)

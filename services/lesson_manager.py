@@ -34,7 +34,7 @@ class LessonService:
             logger.error(f"Could not send error message to user {chat_id}: {message}")
 
     async def send_lesson(self, update: Update, context: ContextTypes.DEFAULT_TYPE, lesson_key: str) -> None:
-        """Send lesson content with progress info and tasks"""
+        """Send lesson content with progress info"""
         try:
             chat_id = update.message.chat_id if update.message else update.callback_query.message.chat_id
             
@@ -59,27 +59,6 @@ class LessonService:
                 
                 # Prepare message with header
                 message = header + lesson["text"].replace('[', '<').replace(']', '>')
-                
-                # Add available tasks
-                available_tasks = await self.task_manager.get_tasks_for_lesson(lesson_key)
-                if available_tasks:
-                    message += "\n\n<b>🌟 Real World Tasks Available!</b>\n"
-                    for task in available_tasks:
-                        message += f"\n🏢 From <b>{task['company']}</b>:\n"
-                        message += f"📝 {task['description']}\n"
-                        if task.get("requirements"):
-                            message += "<b>Requirements:</b>\n"
-                            for req in task["requirements"]:
-                                message += f"- {req}\n"
-                
-                # Get related content
-                related = content_loader.get_related_content(lesson_key, 'lessons')
-                
-                # Add related guides if available
-                if related.get('guides'):
-                    message += "\n\n<b>📖 Available Guides:</b>\n"
-                    for guide in related['guides']:
-                        message += f"• {guide.get('title', 'Guide')}\n"
                 
                 await context.bot.send_message(
                     chat_id=chat_id,
