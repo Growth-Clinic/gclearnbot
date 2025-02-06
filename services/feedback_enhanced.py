@@ -125,14 +125,30 @@ def analyze_response_quality(response_text: str) -> Dict[str, Any]:
     Returns:
         Dictionary containing quality metrics
     """
-    words = response_text.split()
-    return {
-        'length': len(response_text),
-        'word_count': len(words),
-        'avg_word_length': sum(len(word) for word in words) / len(words) if words else 0,
-        'has_punctuation': bool(re.search(r'[.!?]', response_text)),
-        'sentence_count': len(re.split(r'[.!?]+', response_text))
-    }
+    try:
+        # Basic text cleanup
+        clean_text = response_text.strip()
+        words = clean_text.split()
+        sentences = re.split(r'[.!?]+', clean_text)
+        
+        # Core metrics
+        metrics = {
+            'length': len(clean_text),
+            'word_count': len(words),
+            'sentence_count': len([s for s in sentences if s.strip()]),
+            'has_punctuation': bool(re.search(r'[.!?]', clean_text)),
+            'includes_details': len(words) > 30
+        }
+        
+        return metrics
+        
+    except Exception as e:
+        logger.error(f"Error analyzing response quality: {e}")
+        return {
+            'length': len(response_text),
+            'word_count': len(response_text.split()),
+            'error': str(e)
+        }
 
 
 def format_feedback_message(feedback_list: List[str], quality_metrics: Dict[str, Any]) -> str:
@@ -146,21 +162,18 @@ def format_feedback_message(feedback_list: List[str], quality_metrics: Dict[str,
     Returns:
         Formatted feedback message with emojis and markdown
     """
-    message = "📝 *Feedback on Your Response*\n\n"
+    message = "📝 *Response Analysis*\n\n"
     
     # Add quality indicators
-    if quality_metrics['word_count'] > 30:
-        message += "✨ *Great Detail!* Your response is thorough.\n"
-    if quality_metrics['has_punctuation']:
+    if quality_metrics.get('includes_details'):
+        message += "✨ *Detailed Response!* Good level of explanation.\n"
+    if quality_metrics.get('has_punctuation'):
         message += "📖 *Well Structured!* Good use of punctuation.\n"
-    if quality_metrics['sentence_count'] >= 3:
-        message += "🎯 *Clear Expression!* Multiple points covered.\n"
     
-    # Add main feedback
-    message += "\n*Key Observations:*\n"
-    message += "\n".join(feedback_list)
+    # Add main feedback from lesson
+    message += "\n*Feedback:*\n" + "\n".join(feedback_list)
     
-    # Add response statistics
+    # Add basic stats
     message += f"\n\n📊 *Response Stats:*\n"
     message += f"• Words: {quality_metrics['word_count']}\n"
     message += f"• Sentences: {quality_metrics['sentence_count']}\n"
