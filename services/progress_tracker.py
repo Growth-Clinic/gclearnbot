@@ -1,6 +1,9 @@
+from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
+from telegram.ext import ContextTypes
 from datetime import datetime, timezone, timedelta
 import logging
 from typing import Dict, Any, List, Optional
+from services.database import JournalManager, UserManager, AnalyticsManager
 
 logger = logging.getLogger(__name__)
 
@@ -84,3 +87,60 @@ class ProgressTracker:
         except Exception as e:
             logger.error(f"Error formatting progress message: {e}")
             return "Error generating progress update. Please try again."
+
+    @staticmethod
+    async def get_complete_progress(user_id: int) -> str:
+        """Generate a complete progress summary."""
+        try:
+            # Get user metrics
+            metrics = await AnalyticsManager.calculate_user_metrics(user_id)
+            if not metrics:
+                return "No progress data available yet. Start your learning journey! 🌱"
+
+            # Format message with Telegram markdown
+            message = "*📊 Complete Progress Report*\n\n"
+
+            # Overall Progress
+            message += "*Overall Progress*\n"
+            message += f"• Completion: {metrics['completion_rate']}%\n"
+            message += f"• Total Responses: {metrics['total_responses']}\n"
+            message += f"• Learning Duration: {metrics['learning_duration_days']} days\n"
+
+            # Engagement Stats
+            message += "\n*Engagement*\n"
+            message += f"• Engagement Score: {metrics['engagement_score']}/100\n"
+            message += f"• Avg Response Length: {metrics['average_response_length']} words\n"
+            
+            # Get journal entries for streak
+            journal = await JournalManager.get_user_journal(user_id)
+            if journal and journal.get('entries'):
+                streak = ProgressTracker.calculate_streak(journal['entries'])
+                if streak > 0:
+                    message += f"• Current Streak: {streak} days 🔥\n"
+
+            # Learning Pattern Analysis
+            message += "\n*Learning Pattern*\n"
+            if metrics.get('avg_days_between_lessons'):
+                message += f"• Learning Pace: {metrics['avg_days_between_lessons']:.1f} days between lessons\n"
+            
+            # Add encouragement based on metrics
+            message += "\n" + ProgressTracker.get_encouragement_message(
+                metrics['completion_rate'],
+                metrics['engagement_score']
+            )
+
+            return message
+
+        except Exception as e:
+            logger.error(f"Error generating complete progress: {e}")
+            return "Error generating progress report. Please try again."
+
+    @staticmethod
+    def get_encouragement_message(completion_rate: float, engagement_score: float) -> str:
+        """Generate contextual encouragement message."""
+        if completion_rate >= 80 and engagement_score >= 80:
+            return "🌟 Outstanding progress! You're mastering the content!"
+        elif completion_rate >= 50 or engagement_score >= 50:
+            return "💪 Great work! Keep up the momentum!"
+        else:
+            return "🌱 You're on your way! Every step counts!"

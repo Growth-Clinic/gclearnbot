@@ -123,6 +123,23 @@ async def resume_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
         await update.message.reply_text("Error resuming progress. Please try again.")
 
 
+async def progress_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Send complete progress report on /progress command"""
+    try:
+        user_id = update.message.from_user.id
+        progress_message = await ProgressTracker.get_complete_progress(user_id)
+        
+        await update.message.reply_text(
+            progress_message,
+            parse_mode='Markdown'
+        )
+    except Exception as e:
+        logger.error(f"Error in progress command: {e}")
+        await update.message.reply_text(
+            "Error generating progress report. Please try again later."
+        )
+
+
 async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Send a message when the command /help is issued."""
     help_text = """

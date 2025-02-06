@@ -6,7 +6,7 @@ from telegram.ext import Application, CommandHandler, MessageHandler, CallbackQu
 from telegram import BotCommand
 from bot.handlers.user_handlers import (
     start, resume_command, get_journal, help_command, handle_response, 
-    handle_message, handle_start_choice
+    handle_message, handle_start_choice, progress_command
 )
 from bot.handlers.admin_handlers import adminhelp_command, list_users, analytics_command, user_analytics_command, lesson_analytics_command
 from services.error_handler import error_handler
@@ -56,6 +56,7 @@ async def initialize_application() -> Application:
         # Add command handlers
         application.add_handler(CommandHandler("start", start))
         application.add_handler(CommandHandler("resume", resume_command))
+        application.add_handler(CommandHandler("progress", progress_command))
         application.add_handler(CommandHandler("journal", get_journal))
         application.add_handler(CommandHandler("help", help_command))
         
@@ -79,9 +80,8 @@ async def initialize_application() -> Application:
         await application.bot.set_my_commands([
             BotCommand("start", "Start or restart the learning journey"),
             BotCommand("resume", "Continue from your last lesson"),
+            BotCommand("progress", "View your complete learning progress"),
             BotCommand("journal", "View your learning journal"),
-            BotCommand("feedback", "Send feedback"),
-            BotCommand("myfeedback", "View your feedback history"),
             BotCommand("help", "Show help information")
         ])
         # Set webhook in application
