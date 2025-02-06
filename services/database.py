@@ -47,6 +47,10 @@ def init_mongodb(max_retries=3, retry_delay=2):
             # Test connection with longer timeout
             client.admin.command('ping', serverSelectionTimeoutMS=10000)
             db = client['telegram_bot']
+            if "user_skills" not in db.list_collection_names():
+                db.create_collection("user_skills")
+                db.user_skills.create_index("user_id", unique=True)
+                logger.info("Created user_skills collection with index")
             # Ensure an index on user_id for journals collection
             db.journals.create_index("user_id")
             
