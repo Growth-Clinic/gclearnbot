@@ -4,7 +4,7 @@ from typing import Dict, List, Any, Optional
 from datetime import datetime, timedelta
 import logging
 from services.feedback_config import LESSON_FEEDBACK_RULES
-from services.feedback_enhanced import db
+from services.database import db
 
 logger = logging.getLogger(__name__)
 
