@@ -215,8 +215,52 @@ class SkillConfig:
     }
 
     @classmethod
+    def validate_patterns(cls) -> bool:
+        """
+        Validate all skill patterns during initialization.
+        Returns True if valid, logs errors and returns False if invalid.
+        """
+        try:
+            for skill_area, config in cls.SKILL_PATTERNS.items():
+                # Check required keys
+                if not all(key in config for key in ['patterns', 'levels']):
+                    logger.error(f"Missing required keys in {skill_area} configuration")
+                    return False
+                
+                # Validate patterns
+                if not config['patterns'] or not all(isinstance(p, str) for p in config['patterns']):
+                    logger.error(f"Invalid patterns in {skill_area} configuration")
+                    return False
+                
+                # Validate levels
+                levels = config['levels']
+                if not isinstance(levels, dict) or not all(k in levels for k in ['beginner', 'intermediate', 'advanced']):
+                    logger.error(f"Invalid level configuration in {skill_area}")
+                    return False
+                
+                # Validate keywords in levels exist in patterns
+                pattern_keywords = set(re.sub(r'\b|\\', '', p) for p in config['patterns'])
+                for level_keywords in levels.values():
+                    if not all(kw in pattern_keywords for kw in level_keywords):
+                        logger.error(f"Level keywords not found in patterns for {skill_area}")
+                        return False
+            
+            logger.info("All skill patterns validated successfully")
+            return True
+            
+        except Exception as e:
+            logger.error(f"Error validating skill patterns: {e}")
+            return False
+
+    @classmethod
     def get_skill_patterns(cls, skill_area: str) -> Dict[str, Any]:
         """Get patterns and progression metrics for a skill area"""
+        # Add validation check
+        if not hasattr(cls, '_patterns_validated'):
+            cls._patterns_validated = cls.validate_patterns()
+            if not cls._patterns_validated:
+                logger.warning("Skill patterns validation failed")
+
         patterns = cls.SKILL_PATTERNS.get(skill_area, {})
         if patterns:
             patterns['progression_metrics'] = cls.DEFAULT_PROGRESSION_METRICS
