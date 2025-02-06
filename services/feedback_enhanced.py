@@ -114,6 +114,89 @@ def evaluate_response_enhanced(lesson_id: str, response_text: str, user_id: int)
     except Exception as e:
         logger.error(f"Error evaluating response for lesson {lesson_id}: {e}", exc_info=True)
         return ["An error occurred while evaluating your response. Please try again."]
+    
+
+class LearningPatternAnalyzer:
+    """Analyzes learning patterns in user responses"""
+    
+    # Indicators of critical thinking
+    CRITICAL_THINKING_PATTERNS = {
+        'analysis': [
+            r'\banalyze\b', r'\bcompare\b', r'\bexamine\b', r'\bevaluate\b',
+            r'\bwhy\b', r'\bhow\b', r'\brelate\b', r'\bimpact\b'
+        ],
+        'reasoning': [
+            r'\bbecause\b', r'\btherefore\b', r'\bconsequently\b',
+            r'\bthis means\b', r'\bas a result\b'
+        ],
+        'evidence': [
+            r'\bexample\b', r'\binstance\b', r'\bcase\b', r'\bproof\b',
+            r'\bdata\b', r'\bshows\b', r'\bdemonstrates\b'
+        ]
+    }
+    
+    # Indicators of concept understanding
+    CONCEPT_PATTERNS = {
+        'explanation': [
+            r'\bmeans\b', r'\bis when\b', r'\bis about\b', r'\bdefine\b',
+            r'\bconcept\b', r'\bunderstand\b'
+        ],
+        'application': [
+            r'\bapply\b', r'\buse\b', r'\bimplement\b', r'\bpractice\b',
+            r'\btry\b', r'\btest\b'
+        ],
+        'connection': [
+            r'\bconnect\b', r'\brelate\b', r'\blink\b', r'\bsimilar\b',
+            r'\bdifferent\b', r'\blike\b'
+        ]
+    }
+    
+    @classmethod
+    def analyze_learning_patterns(cls, response_text: str) -> Dict[str, Any]:
+        """Analyze response for learning patterns."""
+        text = response_text.lower()
+        
+        # Analyze critical thinking patterns
+        critical_thinking = {
+            category: sum(1 for pattern in patterns if re.search(pattern, text))
+            for category, patterns in cls.CRITICAL_THINKING_PATTERNS.items()
+        }
+        
+        # Analyze concept understanding patterns
+        concept_understanding = {
+            category: sum(1 for pattern in patterns if re.search(pattern, text))
+            for category, patterns in cls.CONCEPT_PATTERNS.items()
+        }
+        
+        # Calculate overall scores (0-100)
+        ct_score = min(100, sum(critical_thinking.values()) * 20)
+        cu_score = min(100, sum(concept_understanding.values()) * 20)
+        
+        return {
+            'critical_thinking': {
+                'score': ct_score,
+                'patterns': critical_thinking
+            },
+            'concept_understanding': {
+                'score': cu_score,
+                'patterns': concept_understanding
+            },
+            'learning_style': cls._determine_learning_style(critical_thinking, concept_understanding)
+        }
+    
+    @staticmethod
+    def _determine_learning_style(ct_patterns: Dict[str, int], 
+                                cu_patterns: Dict[str, int]) -> str:
+        """Determine the user's learning style based on pattern analysis."""
+        if ct_patterns['analysis'] > cu_patterns['explanation']:
+            return 'analytical'
+        elif cu_patterns['application'] > ct_patterns['evidence']:
+            return 'practical'
+        elif ct_patterns['reasoning'] > cu_patterns['connection']:
+            return 'logical'
+        else:
+            return 'balanced'
+
 
 def analyze_response_quality(response_text: str) -> Dict[str, Any]:
     """
@@ -139,6 +222,10 @@ def analyze_response_quality(response_text: str) -> Dict[str, Any]:
             'has_punctuation': bool(re.search(r'[.!?]', clean_text)),
             'includes_details': len(words) > 30
         }
+
+        #Add learning pattern analysis
+        pattern_analysis = LearningPatternAnalyzer.analyze_learning_patterns(clean_text)
+        metrics.update(pattern_analysis)
         
         return metrics
         
@@ -172,6 +259,27 @@ def format_feedback_message(feedback_list: List[str], quality_metrics: Dict[str,
     
     # Add main feedback from lesson
     message += "\n*Feedback:*\n" + "\n".join(feedback_list)
+
+    #Add learning pattern insights if available
+    if 'critical_thinking' in quality_metrics:
+        ct_score = quality_metrics['critical_thinking']['score']
+        message += f"\n\n🧠 *Thinking Patterns:*\n"
+        message += f"• Critical Thinking: {ct_score}/100\n"
+        
+        if ct_score > 80:
+            message += "Excellent analytical thinking!\n"
+        elif ct_score > 60:
+            message += "Good critical analysis. Try adding more supporting evidence.\n"
+        elif ct_score > 40:
+            message += "Consider explaining your reasoning more deeply.\n"
+    
+    if 'concept_understanding' in quality_metrics:
+        cu_score = quality_metrics['concept_understanding']['score']
+        message += f"\n📚 *Concept Understanding:*\n"
+        message += f"• Understanding Score: {cu_score}/100\n"
+        
+        learning_style = quality_metrics.get('learning_style', 'balanced')
+        message += f"• Learning Style: {learning_style.title()}\n"
     
     # Add basic stats
     message += f"\n\n📊 *Response Stats:*\n"
