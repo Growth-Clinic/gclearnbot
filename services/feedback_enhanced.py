@@ -4,6 +4,7 @@ from typing import Dict, List, Any, Optional
 from datetime import datetime, timedelta
 import logging
 from services.feedback_config import LESSON_FEEDBACK_RULES
+from services.feedback_enhanced import db
 
 logger = logging.getLogger(__name__)
 
@@ -132,3 +133,106 @@ def analyze_response_quality(response_text: str) -> Dict[str, Any]:
         'has_punctuation': bool(re.search(r'[.!?]', response_text)),
         'sentence_count': len(re.split(r'[.!?]+', response_text))
     }
+
+
+def format_feedback_message(feedback_list: List[str], quality_metrics: Dict[str, Any]) -> str:
+    """
+    Format feedback into an engaging, well-structured message.
+    
+    Args:
+        feedback_list: List of feedback messages
+        quality_metrics: Dictionary containing response quality metrics
+        
+    Returns:
+        Formatted feedback message with emojis and markdown
+    """
+    message = "📝 *Feedback on Your Response*\n\n"
+    
+    # Add quality indicators
+    if quality_metrics['word_count'] > 30:
+        message += "✨ *Great Detail!* Your response is thorough.\n"
+    if quality_metrics['has_punctuation']:
+        message += "📖 *Well Structured!* Good use of punctuation.\n"
+    if quality_metrics['sentence_count'] >= 3:
+        message += "🎯 *Clear Expression!* Multiple points covered.\n"
+    
+    # Add main feedback
+    message += "\n*Key Observations:*\n"
+    message += "\n".join(feedback_list)
+    
+    # Add response statistics
+    message += f"\n\n📊 *Response Stats:*\n"
+    message += f"• Words: {quality_metrics['word_count']}\n"
+    message += f"• Sentences: {quality_metrics['sentence_count']}\n"
+    
+    return message
+
+
+def get_progress_indicator(user_id: int, lesson_key: str) -> str:
+    """
+    Generate a simple progress indicator based on user's journey.
+    
+    Args:
+        user_id: The user's ID
+        lesson_key: Current lesson identifier
+        
+    Returns:
+        Progress message
+    """
+    try:
+        # Get user's journal entries
+        journal = db.journals.find_one({"user_id": user_id})
+        if not journal or 'entries' not in journal:
+            return ""
+            
+        entries = journal['entries']
+        total_entries = len(entries)
+        current_streak = calculate_streak(entries)
+        
+        # Create progress bar (10 segments)
+        completed_lessons = len(set(entry['lesson'] for entry in entries))
+        total_lessons = 24  # Total number of lesson steps
+        progress_percentage = min(completed_lessons / total_lessons * 10, 10)
+        progress_bar = "▓" * int(progress_percentage) + "░" * (10 - int(progress_percentage))
+        
+        progress = f"\n\n🎯 *Your Progress*\n"
+        progress += f"• Progress: |{progress_bar}| {int(progress_percentage*10)}%\n"
+        progress += f"• Total Entries: {total_entries}\n"
+        
+        if current_streak > 1:
+            streak_message = "Amazing streak!" if current_streak > 5 else "Keep it up!"
+            progress += f"• Current Streak: {current_streak} days 🔥 {streak_message}\n"
+            
+        return progress
+        
+    except Exception as e:
+        logger.error(f"Error generating progress indicator: {e}")
+        return ""
+
+
+def calculate_streak(entries: List[Dict[str, Any]]) -> int:
+    """Calculate the user's current streak of consecutive days with entries."""
+    if not entries:
+        return 0
+        
+    try:
+        # Sort entries by timestamp
+        sorted_entries = sorted(entries, key=lambda x: x['timestamp'], reverse=True)
+        
+        # Get current streak
+        streak = 1
+        last_date = datetime.fromisoformat(sorted_entries[0]['timestamp'].replace('Z', '+00:00')).date()
+        
+        for entry in sorted_entries[1:]:
+            entry_date = datetime.fromisoformat(entry['timestamp'].replace('Z', '+00:00')).date()
+            if (last_date - entry_date).days == 1:
+                streak += 1
+                last_date = entry_date
+            elif (last_date - entry_date).days > 1:
+                break
+                
+        return streak
+        
+    except Exception as e:
+        logger.error(f"Error calculating streak: {e}")
+        return 0

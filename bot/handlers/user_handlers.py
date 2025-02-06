@@ -1,7 +1,7 @@
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import ContextTypes
 from services.database import JournalManager, UserManager, FeedbackManager, TaskManager, db, FeedbackAnalyticsManager, AnalyticsManager
-from services.feedback_enhanced import evaluate_response_enhanced, analyze_response_quality
+from services.feedback_enhanced import evaluate_response_enhanced, analyze_response_quality, format_feedback_message, get_progress_indicator
 from services.lesson_manager import LessonService
 from services.content_loader import content_loader
 from services.feedback_config import LESSON_FEEDBACK_RULES
@@ -275,16 +275,20 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         quality_metrics = analyze_response_quality(user_response)
 
         if feedback:
-            # Format feedback message
-            feedback_message = "📝 Feedback on your response:\n\n"
-            feedback_message += "\n\n".join(feedback)
-
-            if quality_metrics['word_count'] < 20:
-                feedback_message += "\n\n💡 Tip: Consider expanding your response with more details."
-            elif not quality_metrics['has_punctuation']:
-                feedback_message += "\n\n💡 Tip: Using proper punctuation can help express your ideas more clearly."
-
-            await update.message.reply_text(feedback_message)
+            # Format feedback message using the new formatting function
+            feedback_message = format_feedback_message(feedback, quality_metrics)
+            
+            # Add progress indicator
+            progress_info = get_progress_indicator(chat_id, current_lesson)
+            if progress_info:
+                feedback_message += progress_info
+            
+            # Send the formatted feedback with Markdown parsing
+            await context.bot.send_message(
+                chat_id=chat_id,
+                text=feedback_message,
+                parse_mode='Markdown'
+            )
 
         # Save feedback analytics
         feedback_results = {
@@ -307,8 +311,10 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await update.message.reply_text("✅ Response saved! You've completed all lessons.")
 
     except Exception as e:
-        logger.error(f"Error handling message from user {chat_id}: {e}", exc_info=True)
-        await update.message.reply_text("An error occurred. Please try again later.")
+        logger.error(f"Error handling message: {e}", exc_info=True)
+        await update.message.reply_text(
+            "An error occurred. Please try again later."
+        )
 
 
 
