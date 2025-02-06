@@ -35,8 +35,12 @@ import re
 from typing import Dict, List, Any, Optional
 from datetime import datetime, timedelta
 import logging
+import math
+import warnings
+from collections import Counter
 from services.feedback_config import LESSON_FEEDBACK_RULES
 from services.database import db
+from services.learning_insights import LearningInsightsManager
 
 logger = logging.getLogger(__name__)
 
@@ -53,6 +57,423 @@ def get_feedback_rules(lesson_id: str) -> Dict[str, Any]:
         Dictionary containing feedback rules
     """
     return LESSON_FEEDBACK_RULES.get(lesson_id, {})
+
+class DynamicSkillAnalyzer:
+    """
+    Analyzes user responses dynamically to identify skills and learning patterns
+    without relying on predefined lesson mappings.
+    """
+    
+    # Core skill indicators that can be detected from language patterns
+    SKILL_INDICATORS = {
+        'analytical_thinking': {
+            'patterns': [
+                r'because', r'therefore', r'consequently', r'analyze', 
+                r'compare', r'evaluate', r'conclude', r'investigate'
+            ],
+            'weight': 1.2  # Higher weight for important skills
+        },
+        'problem_solving': {
+            'patterns': [
+                r'solve', r'solution', r'approach', r'method', 
+                r'strategy', r'tackle', r'handle', r'resolve'
+            ],
+            'weight': 1.2
+        },
+        'creativity': {
+            'patterns': [
+                r'create', r'design', r'innovative', r'novel',
+                r'unique', r'original', r'imagine', r'develop'
+            ],
+            'weight': 1.1
+        },
+        'communication': {
+            'patterns': [
+                r'explain', r'describe', r'articulate', r'convey',
+                r'express', r'present', r'share', r'discuss'
+            ],
+            'weight': 1.0
+        },
+        'research': {
+            'patterns': [
+                r'research', r'investigate', r'study', r'explore',
+                r'examine', r'analyze', r'review', r'understand'
+            ],
+            'weight': 1.0
+        }
+    }
+    
+    # Contextual indicators that suggest skill application
+    CONTEXT_INDICATORS = {
+        'real_world_application': [
+            r'in practice', r'real.world', r'applied', r'implemented',
+            r'used.in', r'practical', r'actually', r'experience'
+        ],
+        'depth_of_understanding': [
+            r'deeper', r'underlying', r'fundamental', r'core',
+            r'essential', r'key', r'critical', r'important'
+        ],
+        'learning_progression': [
+            r'learned', r'improved', r'better.understanding',
+            r'now.i.can', r'progress', r'growth', r'development'
+        ]
+    }
+
+    @classmethod
+    def analyze_response(cls, response_text: str) -> Dict[str, Any]:
+        """
+        Analyzes a response to identify skills and their application levels.
+        """
+        text = response_text.lower()
+        
+        # Analyze core skills
+        skills = {}
+        for skill, config in cls.SKILL_INDICATORS.items():
+            matches = sum(1 for pattern in config['patterns'] 
+                        if re.search(pattern, text))
+            if matches:
+                # Calculate weighted score (0-100)
+                base_score = min(100, (matches / len(config['patterns'])) * 100)
+                weighted_score = base_score * config['weight']
+                skills[skill] = {
+                    'score': round(weighted_score, 2),
+                    'matches': matches,
+                    'level': cls._determine_skill_level(weighted_score)
+                }
+        
+        # Analyze contextual application
+        context_scores = {}
+        for context, patterns in cls.CONTEXT_INDICATORS.items():
+            matches = sum(1 for pattern in patterns if re.search(pattern, text))
+            if matches:
+                context_scores[context] = min(100, (matches / len(patterns)) * 100)
+        
+        return {
+            'skills': skills,
+            'context': context_scores,
+            'overall_score': cls._calculate_overall_score(skills, context_scores)
+        }
+
+    @staticmethod
+    def _determine_skill_level(score: float) -> str:
+        """Determine skill level based on score."""
+        if score >= 80:
+            return 'advanced'
+        elif score >= 60:
+            return 'intermediate'
+        return 'beginner'
+
+    @staticmethod
+    def _calculate_overall_score(skills: Dict[str, Any], 
+                               context: Dict[str, float]) -> float:
+        """Calculate overall skill application score."""
+        if not skills:
+            return 0.0
+            
+        skill_avg = sum(s['score'] for s in skills.values()) / len(skills)
+        context_avg = (sum(context.values()) / len(context)) if context else 0
+        
+        # Weight skill scores higher than context
+        return round((skill_avg * 0.7 + context_avg * 0.3), 2)
+
+class LearningTrajectoryAnalyzer:
+    """
+    Analyzes learning trajectories and patterns across multiple responses.
+    """
+    
+    def __init__(self):
+        self.topic_clusters = {
+            'technical': [
+                'code', 'programming', 'software', 'data', 'algorithm',
+                'system', 'technical', 'development', 'engineering'
+            ],
+            'business': [
+                'strategy', 'business', 'market', 'customer', 'revenue',
+                'product', 'service', 'value', 'growth'
+            ],
+            'design': [
+                'design', 'user', 'interface', 'experience', 'prototype',
+                'visual', 'creative', 'aesthetic', 'usability'
+            ],
+            'leadership': [
+                'lead', 'team', 'manage', 'coordinate', 'organize',
+                'direct', 'guide', 'mentor', 'facilitate'
+            ]
+        }
+
+    def analyze_trajectory(self, responses: List[Dict[str, Any]]) -> Dict[str, Any]:
+        """
+        Analyze learning trajectory from a series of responses.
+        """
+        if not responses:
+            return {}
+            
+        try:
+            # Sort responses by timestamp
+            sorted_responses = sorted(responses, 
+                                   key=lambda x: x['timestamp'])
+            
+            # Analyze topic progression
+            topic_progression = self._analyze_topic_progression(sorted_responses)
+            
+            # Analyze complexity progression
+            complexity_scores = self._analyze_complexity_progression(sorted_responses)
+            
+            # Identify knowledge gaps
+            knowledge_gaps = self._identify_knowledge_gaps(sorted_responses)
+            
+            # Calculate learning velocity
+            velocity = self._calculate_learning_velocity(sorted_responses)
+            
+            return {
+                'topic_progression': topic_progression,
+                'complexity_progression': complexity_scores,
+                'knowledge_gaps': knowledge_gaps,
+                'learning_velocity': velocity
+            }
+            
+        except Exception as e:
+            logger.error(f"Error analyzing learning trajectory: {e}")
+            return {}
+
+    def _analyze_topic_progression(self, responses: List[Dict[str, Any]]) -> Dict[str, List[float]]:
+        """Analyze how topic focus changes over time."""
+        progression = {topic: [] for topic in self.topic_clusters}
+        
+        for response in responses:
+            text = response['response'].lower()
+            for topic, keywords in self.topic_clusters.items():
+                # Calculate topic relevance score
+                matches = sum(1 for kw in keywords if kw in text)
+                score = min(100, (matches / len(keywords)) * 100)
+                progression[topic].append(score)
+        
+        return progression
+
+    def _analyze_complexity_progression(self, responses: List[Dict[str, Any]]) -> List[float]:
+        """Analyze how response complexity changes over time."""
+        complexity_scores = []
+        
+        for response in responses:
+            text = response['response']
+            
+            # Calculate complexity score based on multiple factors
+            words = text.split()
+            unique_words = len(set(words))
+            avg_word_length = sum(len(word) for word in words) / len(words) if words else 0
+            
+            # Complex sentence indicators
+            complex_indicators = sum(1 for pattern in [
+                r'because', r'therefore', r'however', r'although',
+                r'nevertheless', r'furthermore', r'consequently'
+            ] if re.search(pattern, text.lower()))
+            
+            # Combine factors into complexity score
+            complexity = (
+                (unique_words / len(words) if words else 0) * 40 +  # Vocabulary diversity
+                min(avg_word_length * 10, 30) +                     # Word sophistication
+                min(complex_indicators * 10, 30)                    # Structural complexity
+            )
+            
+            complexity_scores.append(min(100, complexity))
+        
+        return complexity_scores
+
+    def _identify_knowledge_gaps(self, responses: List[Dict[str, Any]]) -> List[str]:
+        """Identify potential knowledge gaps from response patterns."""
+        gaps = []
+        
+        # Combine all responses
+        all_text = ' '.join(r['response'].lower() for r in responses)
+        
+        # Check for uncertainty indicators
+        uncertainty_patterns = [
+            (r'not.sure.about', 'conceptual understanding'),
+            (r'confused.by', 'clarity'),
+            (r'difficult.to.understand', 'comprehension'),
+            (r'need.help.with', 'skill application'),
+            (r'unclear', 'concept clarity')
+        ]
+        
+        for pattern, gap_type in uncertainty_patterns:
+            if re.search(pattern, all_text):
+                gaps.append(gap_type)
+        
+        return gaps
+
+    def _calculate_learning_velocity(self, responses: List[Dict[str, Any]]) -> Dict[str, float]:
+        """Calculate the rate of learning progress."""
+        if len(responses) < 2:
+            return {'velocity': 0, 'acceleration': 0}
+            
+        # Calculate complexity scores over time
+        complexity_scores = self._analyze_complexity_progression(responses)
+        
+        # Calculate velocity (change in complexity over time)
+        time_periods = len(complexity_scores) - 1
+        velocity = (complexity_scores[-1] - complexity_scores[0]) / time_periods
+        
+        # Calculate acceleration (change in velocity)
+        if len(complexity_scores) > 2:
+            first_half = (complexity_scores[time_periods//2] - complexity_scores[0]) / (time_periods//2)
+            second_half = (complexity_scores[-1] - complexity_scores[time_periods//2]) / (time_periods - time_periods//2)
+            acceleration = second_half - first_half
+        else:
+            acceleration = 0
+            
+        return {
+            'velocity': round(velocity, 2),
+            'acceleration': round(acceleration, 2)
+        }
+
+class SemanticAnalyzer:
+    """
+    Performs semantic analysis on user responses to understand meaning and context.
+    """
+    
+    def __init__(self):
+        self.semantic_markers = {
+            'understanding': [
+                (r'i.understand', 1.0),
+                (r'now.i.see', 1.0),
+                (r'makes.sense', 0.8),
+                (r'i.learned', 0.9)
+            ],
+            'application': [
+                (r'i.applied', 1.0),
+                (r'i.tried', 0.8),
+                (r'in.practice', 0.9),
+                (r'when.i.used', 0.9)
+            ],
+            'synthesis': [
+                (r'combining', 1.0),
+                (r'connecting', 0.9),
+                (r'relating.to', 0.8),
+                (r'integrating', 1.0)
+            ],
+            'evaluation': [
+                (r'i.think', 0.7),
+                (r'in.my.opinion', 0.8),
+                (r'i.believe', 0.7),
+                (r'analyzing', 0.9)
+            ]
+        }
+
+    def analyze_response(self, text: str) -> Dict[str, Any]:
+        """
+        Perform semantic analysis on a response.
+        """
+        text = text.lower()
+        
+        # Analyze semantic markers
+        semantic_scores = {}
+        for category, markers in self.semantic_markers.items():
+            matches = []
+            for pattern, weight in markers:
+                if re.search(pattern, text):
+                    matches.append(weight)
+            
+            if matches:
+                semantic_scores[category] = round(sum(matches) / len(markers) * 100, 2)
+        
+        # Analyze semantic coherence
+        coherence_score = self._analyze_coherence(text)
+        
+        # Analyze conceptual depth
+        depth_score = self._analyze_depth(text)
+        
+        return {
+            'semantic_categories': semantic_scores,
+            'coherence': coherence_score,
+            'depth': depth_score,
+            'overall_understanding': self._calculate_understanding_score(
+                semantic_scores, coherence_score, depth_score
+            )
+        }
+
+    def _analyze_coherence(self, text: str) -> float:
+        """Analyze the coherence of the response."""
+        # Check for logical connectors
+        connectors = [
+            'because', 'therefore', 'however', 'although',
+            'furthermore', 'moreover', 'consequently', 'thus'
+        ]
+        
+        connector_count = sum(1 for c in connectors if c in text)
+        
+        # Check for paragraph structure
+        has_paragraphs = len(text.split('\n\n')) > 1
+        
+        # Check for topic consistency
+        sentences = text.split('.')
+        word_sets = [set(s.split()) for s in sentences if s.strip()]
+        
+        # Calculate overlap between adjacent sentences
+        overlaps = []
+        for i in range(len(word_sets) - 1):
+            overlap = len(word_sets[i] & word_sets[i + 1]) / len(word_sets[i] | word_sets[i + 1])
+            overlaps.append(overlap)
+        
+        avg_overlap = sum(overlaps) / len(overlaps) if overlaps else 0
+        
+        # Combine factors
+        coherence_score = (
+            min(connector_count * 10, 40) +  # Logical connection (40%)
+            (30 if has_paragraphs else 0) +  # Structure (30%)
+            avg_overlap * 30                 # Topic consistency (30%)
+        )
+        
+        return min(100, coherence_score)
+
+    def _analyze_depth(self, text: str) -> float:
+        """Analyze the conceptual depth of the response."""
+        # Check for explanation patterns
+        explanation_patterns = [
+            (r'because', 10),
+            (r'means.that', 8),
+            (r'in.other.words', 8),
+            (r'for.example', 7),
+            (r'specifically', 9)
+        ]
+        
+        explanation_score = sum(weight for pattern, weight in explanation_patterns 
+                              if re.search(pattern, text))
+        
+        # Check for conceptual vocabulary
+        concept_indicators = [
+            'concept', 'principle', 'theory', 'framework',
+            'approach', 'methodology', 'system', 'process'
+        ]
+        
+        concept_score = sum(10 for word in concept_indicators if word in text)
+        
+        # Calculate final depth score
+        depth_score = (
+            min(explanation_score, 60) +  # Explanation quality (60%)
+            min(concept_score, 40)        # Conceptual vocabulary (40%)
+        )
+        
+        return min(100, depth_score)
+    
+
+    def _calculate_understanding_score(self, semantic_scores: Dict[str, float],
+                                    coherence_score: float, depth_score: float) -> float:
+        """Calculate overall understanding score."""
+        if not semantic_scores:
+            return 0.0
+        
+        # Weighted average of semantic categories
+        semantic_avg = sum(semantic_scores.values()) / len(semantic_scores)
+
+        # Combine semantic analysis with coherence and depth
+        overall_score = (
+            semantic_avg * 0.5 +  # Semantic categories (50%)
+            coherence_score * 0.3 +  # Coherence (30%)
+            depth_score * 0.2        # Depth (20%)
+        )
+        
+        return round(overall_score, 2)
+
 
 class FeedbackCache:
     """Manages caching of user responses and feedback"""
@@ -372,6 +793,17 @@ class SkillProgressTracker:
 
 class LearningPatternAnalyzer:
     """Analyzes learning patterns in user responses"""
+
+    """
+    Deprecated: This class is no longer needed as its functionality has been replaced by
+    DynamicSkillAnalyzer and SemanticAnalyzer.
+    """
+    def __init__(self):
+        warnings.warn(
+            "LearningPatternAnalyzer is deprecated. Use DynamicSkillAnalyzer and SemanticAnalyzer instead.",
+            DeprecationWarning,
+            stacklevel=2
+        )
     
     @classmethod
     def analyze_learning_patterns(cls, response_text: str) -> Dict[str, Any]:
@@ -579,22 +1011,13 @@ def calculate_streak(entries: List[Dict[str, Any]]) -> int:
         return 0
 
 def analyze_response_quality(response_text: str) -> Dict[str, Any]:
-    """
-    Analyze the quality of a user's response.
-    
-    Args:
-        response_text: User's response text
-        
-    Returns:
-        Dictionary containing quality metrics
-    """
+    """Enhanced response quality analysis."""
     try:
-        # Basic text cleanup
+        # Basic metrics (keep existing code)
         clean_text = response_text.strip()
         words = clean_text.split()
         sentences = re.split(r'[.!?]+', clean_text)
         
-        # Core metrics
         metrics = {
             'length': len(clean_text),
             'word_count': len(words),
@@ -603,13 +1026,21 @@ def analyze_response_quality(response_text: str) -> Dict[str, Any]:
             'includes_details': len(words) > 30
         }
 
-        #Add learning pattern analysis
-        pattern_analysis = LearningPatternAnalyzer.analyze_learning_patterns(clean_text)
-        metrics.update(pattern_analysis)
+        # Add new dynamic analysis
+        skill_analyzer = DynamicSkillAnalyzer()
+        trajectory_analyzer = LearningTrajectoryAnalyzer()
+        semantic_analyzer = SemanticAnalyzer()
 
-        # Add enhanced skill analysis
-        skill_analysis = LearningPatternAnalyzer.analyze_skills(clean_text)
-        metrics['skills'] = skill_analysis
+        # Perform analysis
+        skill_analysis = skill_analyzer.analyze_response(clean_text)
+        semantic_analysis = semantic_analyzer.analyze_response(clean_text)
+        
+        # Add analyses to metrics
+        metrics.update({
+            'skill_analysis': skill_analysis,
+            'semantic_analysis': semantic_analysis,
+            'emerging_interests': trajectory_analyzer.topic_clusters 
+        })
         
         return metrics
         

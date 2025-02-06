@@ -8,7 +8,7 @@ from bot.handlers.user_handlers import (
     start, resume_command, get_journal, help_command, handle_response, 
     handle_message, handle_start_choice, progress_command
 )
-from bot.handlers.admin_handlers import adminhelp_command, list_users, analytics_command, user_analytics_command, lesson_analytics_command
+from bot.handlers.admin_handlers import adminhelp_command, list_users, analytics_command, user_analytics_command, lesson_analytics_command, learning_insights_command
 from services.error_handler import error_handler
 import logging
 import validators
@@ -66,6 +66,7 @@ async def initialize_application() -> Application:
         application.add_handler(CommandHandler("analytics", analytics_command))
         application.add_handler(CommandHandler("useranalytics", user_analytics_command))
         application.add_handler(CommandHandler("lessonanalytics", lesson_analytics_command))
+        application.add_handler(CommandHandler("learninginsights", learning_insights_command))
 
         # Message handlers
         application.add_handler(CallbackQueryHandler(handle_start_choice, pattern='^start_'))

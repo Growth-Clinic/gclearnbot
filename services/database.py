@@ -51,8 +51,18 @@ def init_mongodb(max_retries=3, retry_delay=2):
                 db.create_collection("user_skills")
                 db.user_skills.create_index("user_id", unique=True)
                 logger.info("Created user_skills collection with index")
+            
+            if "learning_insights" not in db.list_collection_names():
+                db.create_collection("learning_insights")
+                db.learning_insights.create_index("user_id", unique=True)
+                logger.info("Created learning_insights collection with index")
+            
             # Ensure an index on user_id for journals collection
             db.journals.create_index("user_id")
+
+            # Add indices for analytics
+            db.journals.create_index([("entries.timestamp", -1)])
+            db.learning_insights.create_index([("insights.timestamp", -1)])
             
             logger.info("MongoDB connection successful")
             return db

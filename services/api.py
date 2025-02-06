@@ -1,5 +1,6 @@
 from quart import Quart, request, jsonify, ResponseReturnValue
 from services.database import db, AnalyticsManager
+from services.learning_insights import LearningInsightsManager
 from datetime import datetime, timezone
 import asyncio
 import logging
@@ -62,8 +63,6 @@ def setup_routes(app: Quart, application: Application) -> None:
             journal.pop('_id', None)
         return jsonify(journals)
 
-
-
     @app.route('/health')
     async def health_check():
         """Health check endpoint"""
@@ -81,7 +80,6 @@ def setup_routes(app: Quart, application: Application) -> None:
                 "error": str(e)
             }, 500
         
-
     async def keep_warm():
         """Periodic warm-up check"""
         try:
@@ -120,3 +118,25 @@ def setup_routes(app: Quart, application: Application) -> None:
                 "status": "error",
                 "message": "Error generating analytics"
             }), 500
+        
+    @app.route('/admin/insights/<user_id>')
+    async def user_insights(user_id: int):
+        """Get learning insights for specific user"""
+        try:
+            insights = await LearningInsightsManager.get_user_insights(int(user_id))
+            if insights:
+                return jsonify(insights)
+            return jsonify({"error": "No insights found"}), 404
+        except Exception as e:
+            logger.error(f"Error getting user insights: {e}")
+            return jsonify({"error": str(e)}), 500
+
+    @app.route('/admin/insights/dashboard')
+    async def insights_dashboard():
+        """Get aggregated learning insights dashboard"""
+        try:
+            dashboard_data = await LearningInsightsManager.get_admin_dashboard_data()
+            return jsonify(dashboard_data)
+        except Exception as e:
+            logger.error(f"Error getting insights dashboard: {e}")
+            return jsonify({"error": str(e)}), 500

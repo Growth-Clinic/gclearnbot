@@ -2,6 +2,7 @@ from telegram import Update
 from telegram.ext import ContextTypes
 from services.database import TaskManager, FeedbackManager, UserManager, init_mongodb, AnalyticsManager
 from services.content_loader import content_loader
+from services.learning_insights import LearningInsightsManager
 from config.settings import Config
 import logging
 
@@ -31,6 +32,7 @@ async def adminhelp_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     /useranalytics <user_id> - View analytics for a specific user
     /lessonanalytics <lesson_key> - View analytics for a specific lesson
     /users - View a list of all users
+    /learninginsights - View learning insights dashboard
     /adminhelp - Show this help message
     """
     await update.message.reply_text(help_text)
@@ -188,6 +190,36 @@ async def lesson_analytics_command(update: Update, context: ContextTypes.DEFAULT
         logger.error(f"Error generating lesson analytics: {e}")
         await update.message.reply_text("Error generating analytics. Please try again later.")
 
+
+async def learning_insights_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Admin command to view learning insights dashboard."""
+    if not await is_admin(update.message.from_user.id):
+        await update.message.reply_text("This command is only available to admins.")
+        return
+
+    try:
+        dashboard_data = await LearningInsightsManager.get_admin_dashboard_data()
+        
+        report = "📊 Learning Insights Dashboard\n\n"
+        
+        # Overall Statistics
+        report += f"👥 Total Users Analyzed: {dashboard_data['total_users_analyzed']}\n\n"
+        
+        # Common Support Areas
+        report += "🎯 Common Support Areas:\n"
+        for area in dashboard_data['common_support_areas']:
+            report += f"- {area['area']}: {area['count']} users\n"
+            
+        # Emerging Trends
+        report += "\n📈 Emerging Trends:\n"
+        for trend in dashboard_data['emerging_trends']:
+            report += f"- {trend['trend']}: {trend['count']} occurrences\n"
+        
+        await update.message.reply_text(report)
+        
+    except Exception as e:
+        logger.error(f"Error generating learning insights: {e}")
+        await update.message.reply_text("Error generating insights. Please try again later.")
 
 
 def format_task_report(task):

@@ -8,6 +8,7 @@ from services.content_loader import content_loader
 from services.feedback_config import LESSON_FEEDBACK_RULES
 from services.utils import extract_keywords_from_response
 from services.lesson_helpers import get_lesson_structure, is_actual_lesson, get_total_lesson_steps
+from services.learning_insights import LearningInsightsManager
 import logging
 from datetime import datetime, timezone
 import re
@@ -289,6 +290,22 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         # Generate response feedback
         feedback = evaluate_response_enhanced(current_lesson, user_response, chat_id)
         quality_metrics = analyze_response_quality(user_response)
+
+        quality_metrics = analyze_response_quality(user_response)
+        
+        # Add learning insights storage
+        insights = {
+            "emerging_interests": quality_metrics.get('emerging_interests', []),
+            "unplanned_skills": quality_metrics.get('skill_analysis', {}).get('skills', []),
+            "support_areas": quality_metrics.get('semantic_analysis', {}).get('needs_support', []),
+            "learning_trajectory": {
+                "velocity": quality_metrics.get('semantic_analysis', {}).get('understanding_velocity', 0),
+                "suggested_paths": []  # Will be populated based on analysis
+            }
+        }
+        
+        # Store insights
+        await LearningInsightsManager.store_learning_insights(chat_id, insights)
 
         # Get journal entries for streak tracking
         journal = await JournalManager.get_user_journal(chat_id)
