@@ -115,6 +115,32 @@ def evaluate_response_enhanced(lesson_id: str, response_text: str, user_id: int)
         logger.error(f"Error evaluating response for lesson {lesson_id}: {e}", exc_info=True)
         return ["An error occurred while evaluating your response. Please try again."]
     
+def calculate_streak(entries: List[Dict[str, Any]]) -> int:
+    """Calculate the user's current streak of consecutive days with entries."""
+    if not entries:
+        return 0
+        
+    try:
+        # Sort entries by timestamp
+        sorted_entries = sorted(entries, key=lambda x: x['timestamp'], reverse=True)
+        
+        # Get current streak
+        streak = 1
+        last_date = datetime.fromisoformat(sorted_entries[0]['timestamp'].replace('Z', '+00:00')).date()
+        
+        for entry in sorted_entries[1:]:
+            entry_date = datetime.fromisoformat(entry['timestamp'].replace('Z', '+00:00')).date()
+            if (last_date - entry_date).days == 1:
+                streak += 1
+                last_date = entry_date
+            elif (last_date - entry_date).days > 1:
+                break
+                
+        return streak
+        
+    except Exception as e:
+        logger.error(f"Error calculating streak: {e}")
+        return 0
 
 class LearningPatternAnalyzer:
     """Analyzes learning patterns in user responses"""
@@ -151,6 +177,30 @@ class LearningPatternAnalyzer:
         ]
     }
     
+    # Add skill patterns based on pathways
+    SKILL_PATTERNS = {
+        'design_thinking': [
+            r'\bempathy\b', r'\buser\b', r'\bprototype\b', r'\btest\b',
+            r'\bfeedback\b', r'\biterate\b', r'\bsolve\b', r'\bdesign\b'
+        ],
+        'business_modeling': [
+            r'\bvalue\b', r'\bcustomer\b', r'\brevenue\b', r'\bmodel\b',
+            r'\bmarket\b', r'\bprofit\b', r'\bcost\b', r'\bstrategy\b'
+        ],
+        'market_thinking': [
+            r'\bscale\b', r'\bgrowth\b', r'\bchannel\b', r'\bfit\b',
+            r'\buser acquisition\b', r'\bretention\b', r'\bmetrics\b'
+        ],
+        'user_thinking': [
+            r'\bbehavior\b', r'\bemotion\b', r'\bjourney\b', r'\bexperience\b',
+            r'\bpersona\b', r'\bneed\b', r'\bwant\b', r'\bfeeling\b'
+        ],
+        'agile_thinking': [
+            r'\bsprint\b', r'\biterate\b', r'\bscrum\b', r'\bbacklog\b',
+            r'\bprioritize\b', r'\btask\b', r'\bresource\b', r'\bplan\b'
+        ]
+    }
+    
     @classmethod
     def analyze_learning_patterns(cls, response_text: str) -> Dict[str, Any]:
         """Analyze response for learning patterns."""
@@ -183,6 +233,25 @@ class LearningPatternAnalyzer:
             },
             'learning_style': cls._determine_learning_style(critical_thinking, concept_understanding)
         }
+    
+    @classmethod
+    def analyze_skills(cls, response_text: str) -> Dict[str, Any]:
+        """Analyze response for skill indicators."""
+        text = response_text.lower()
+        
+        # Track skills found in response
+        skills = {}
+        for skill_area, patterns in cls.SKILL_PATTERNS.items():
+            matches = [pattern for pattern in patterns if re.search(pattern, text)]
+            if matches:
+                # Calculate skill score (0-100)
+                score = min(100, (len(matches) / len(patterns)) * 100)
+                skills[skill_area] = {
+                    'score': score,
+                    'indicators': matches
+                }
+        
+        return skills
     
     @staticmethod
     def _determine_learning_style(ct_patterns: Dict[str, int], 
@@ -226,6 +295,10 @@ def analyze_response_quality(response_text: str) -> Dict[str, Any]:
         #Add learning pattern analysis
         pattern_analysis = LearningPatternAnalyzer.analyze_learning_patterns(clean_text)
         metrics.update(pattern_analysis)
+
+        # Add skill analysis
+        skill_analysis = LearningPatternAnalyzer.analyze_skills(clean_text)
+        metrics['skills'] = skill_analysis
         
         return metrics
         
@@ -287,31 +360,3 @@ def format_feedback_message(feedback_list: List[str], quality_metrics: Dict[str,
     message += f"• Sentences: {quality_metrics['sentence_count']}\n"
     
     return message
-
-
-def calculate_streak(entries: List[Dict[str, Any]]) -> int:
-    """Calculate the user's current streak of consecutive days with entries."""
-    if not entries:
-        return 0
-        
-    try:
-        # Sort entries by timestamp
-        sorted_entries = sorted(entries, key=lambda x: x['timestamp'], reverse=True)
-        
-        # Get current streak
-        streak = 1
-        last_date = datetime.fromisoformat(sorted_entries[0]['timestamp'].replace('Z', '+00:00')).date()
-        
-        for entry in sorted_entries[1:]:
-            entry_date = datetime.fromisoformat(entry['timestamp'].replace('Z', '+00:00')).date()
-            if (last_date - entry_date).days == 1:
-                streak += 1
-                last_date = entry_date
-            elif (last_date - entry_date).days > 1:
-                break
-                
-        return streak
-        
-    except Exception as e:
-        logger.error(f"Error calculating streak: {e}")
-        return 0
