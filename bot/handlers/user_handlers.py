@@ -245,12 +245,12 @@ def extract_rating_from_response(response: str) -> str:
 
 
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Handle user input and responses, including feedback and lesson responses."""
+    """Handle user input and responses with enhanced streak feedback."""
     chat_id = update.message.chat_id
     user_response = update.message.text
 
     try:
-        # Check if the user is sending feedback
+        # Handle feedback collection
         if context.user_data.get('expecting_feedback'):
             success = await FeedbackManager.save_feedback(chat_id, user_response)
             if success:
@@ -260,7 +260,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             context.user_data['expecting_feedback'] = False
             return
 
-        # Get user's current position in the lessons
+        # Get user's current lesson status
         user_data = await UserManager.get_user_info(chat_id)
         if not user_data or not user_data.get("current_lesson"):
             await update.message.reply_text("Please use /start to begin your learning journey.")
@@ -269,49 +269,43 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         current_lesson = user_data["current_lesson"]
         lessons = content_loader.load_content('lessons')
 
-        # If we're on a main lesson, find its first step
+        # Handle main lesson to first step transition
         if not '_step_' in current_lesson:
             steps = content_loader.get_lesson_steps(current_lesson)
             if steps:
                 current_lesson = list(steps.keys())[0]
-                # Update the current lesson to this step
                 await UserManager.update_user_progress(chat_id, current_lesson)
 
-        # Save the response to the user's journal
+        # Save journal entry
         save_success = await save_journal_entry(chat_id, current_lesson, user_response)
         if not save_success:
             await update.message.reply_text("There was an error saving your response. Please try again.")
             return
 
-        # Get lesson data and next step
+        # Get lesson data
         lesson_data = lessons.get(current_lesson, {})
         next_step = lesson_data.get("next")
 
-        # Evaluate response and generate feedback
+        # Generate response feedback
         feedback = evaluate_response_enhanced(current_lesson, user_response, chat_id)
         quality_metrics = analyze_response_quality(user_response)
 
-        # Get user's journal entries for progress tracking
+        # Get journal entries for streak tracking
         journal = await JournalManager.get_user_journal(chat_id)
         entries = journal.get('entries', []) if journal else []
         
-        # Create progress tracker instance and generate progress message
+        # Create progress tracker and generate messages
         progress_tracker = ProgressTracker()
         progress_message = progress_tracker.format_progress_message(entries, quality_metrics)
         
         if feedback:
-            # Format feedback message
-            feedback_message = format_feedback_message(feedback, quality_metrics)
+            # Format feedback message with streak information
+            feedback_message = await format_feedback_message(feedback, quality_metrics)
             
-            # Add progress message
+            # Add progress and streak information
             feedback_message += "\n\n" + progress_message
             
-            # Add encouragement based on streak
-            streak = progress_tracker.calculate_streak(entries)
-            encouragement = progress_tracker.get_encouragement_message(streak, len(entries))
-            feedback_message += f"\n\n{encouragement}"
-            
-            # Send the formatted feedback with Markdown parsing
+            # Send the formatted feedback
             await context.bot.send_message(
                 chat_id=chat_id,
                 text=feedback_message,
@@ -343,7 +337,6 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text(
             "An error occurred. Please try again later."
         )
-
 
 
 async def handle_response(update: Update, context: ContextTypes.DEFAULT_TYPE):
