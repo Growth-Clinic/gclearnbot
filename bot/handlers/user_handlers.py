@@ -1,7 +1,8 @@
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import ContextTypes
 from services.database import JournalManager, UserManager, FeedbackManager, TaskManager, db, FeedbackAnalyticsManager, AnalyticsManager
-from services.feedback_enhanced import evaluate_response_enhanced, analyze_response_quality, format_feedback_message, get_progress_indicator
+from services.feedback_enhanced import evaluate_response_enhanced, analyze_response_quality, format_feedback_message
+from services.progress_tracker import ProgressTracker
 from services.lesson_manager import LessonService
 from services.content_loader import content_loader
 from services.feedback_config import LESSON_FEEDBACK_RULES
@@ -234,7 +235,6 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     try:
         # Check if the user is sending feedback
         if context.user_data.get('expecting_feedback'):
-            # Handle feedback submission
             success = await FeedbackManager.save_feedback(chat_id, user_response)
             if success:
                 await update.message.reply_text("Thank you for your feedback! Our team will review it. 🙏")
@@ -274,14 +274,25 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         feedback = evaluate_response_enhanced(current_lesson, user_response, chat_id)
         quality_metrics = analyze_response_quality(user_response)
 
+        # Get user's journal entries for progress tracking
+        journal = await JournalManager.get_user_journal(chat_id)
+        entries = journal.get('entries', []) if journal else []
+        
+        # Create progress tracker instance and generate progress message
+        progress_tracker = ProgressTracker()
+        progress_message = progress_tracker.format_progress_message(entries, quality_metrics)
+        
         if feedback:
-            # Format feedback message using the new formatting function
+            # Format feedback message
             feedback_message = format_feedback_message(feedback, quality_metrics)
             
-            # Add progress indicator
-            progress_info = get_progress_indicator(chat_id, current_lesson)
-            if progress_info:
-                feedback_message += progress_info
+            # Add progress message
+            feedback_message += "\n\n" + progress_message
+            
+            # Add encouragement based on streak
+            streak = progress_tracker.calculate_streak(entries)
+            encouragement = progress_tracker.get_encouragement_message(streak, len(entries))
+            feedback_message += f"\n\n{encouragement}"
             
             # Send the formatted feedback with Markdown parsing
             await context.bot.send_message(

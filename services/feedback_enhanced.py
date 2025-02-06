@@ -168,48 +168,6 @@ def format_feedback_message(feedback_list: List[str], quality_metrics: Dict[str,
     return message
 
 
-def get_progress_indicator(user_id: int, lesson_key: str) -> str:
-    """
-    Generate a simple progress indicator based on user's journey.
-    
-    Args:
-        user_id: The user's ID
-        lesson_key: Current lesson identifier
-        
-    Returns:
-        Progress message
-    """
-    try:
-        # Get user's journal entries
-        journal = db.journals.find_one({"user_id": user_id})
-        if not journal or 'entries' not in journal:
-            return ""
-            
-        entries = journal['entries']
-        total_entries = len(entries)
-        current_streak = calculate_streak(entries)
-        
-        # Create progress bar (10 segments)
-        completed_lessons = len(set(entry['lesson'] for entry in entries))
-        total_lessons = 24  # Total number of lesson steps
-        progress_percentage = min(completed_lessons / total_lessons * 10, 10)
-        progress_bar = "▓" * int(progress_percentage) + "░" * (10 - int(progress_percentage))
-        
-        progress = f"\n\n🎯 *Your Progress*\n"
-        progress += f"• Progress: |{progress_bar}| {int(progress_percentage*10)}%\n"
-        progress += f"• Total Entries: {total_entries}\n"
-        
-        if current_streak > 1:
-            streak_message = "Amazing streak!" if current_streak > 5 else "Keep it up!"
-            progress += f"• Current Streak: {current_streak} days 🔥 {streak_message}\n"
-            
-        return progress
-        
-    except Exception as e:
-        logger.error(f"Error generating progress indicator: {e}")
-        return ""
-
-
 def calculate_streak(entries: List[Dict[str, Any]]) -> int:
     """Calculate the user's current streak of consecutive days with entries."""
     if not entries:
