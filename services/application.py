@@ -6,7 +6,7 @@ from telegram.ext import Application, CommandHandler, MessageHandler, CallbackQu
 from telegram import BotCommand
 from bot.handlers.user_handlers import (
     start, resume_command, get_journal, help_command, handle_response, 
-    handle_message, handle_start_choice, progress_command
+    handle_message, handle_start_choice, progress_command, handle_journal_navigation
 )
 from bot.handlers.admin_handlers import adminhelp_command, list_users, analytics_command, user_analytics_command, lesson_analytics_command, learning_insights_command
 from services.error_handler import error_handler
@@ -70,6 +70,7 @@ async def initialize_application() -> Application:
 
         # Message handlers
         application.add_handler(CallbackQueryHandler(handle_start_choice, pattern='^start_'))
+        application.add_handler(CallbackQueryHandler(handle_journal_navigation, pattern='^journal_'))
         application.add_handler(CallbackQueryHandler(handle_response))
         application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
         application.add_error_handler(error_handler)

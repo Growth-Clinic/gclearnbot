@@ -154,14 +154,16 @@ class DynamicSkillAnalyzer:
             'overall_score': cls._calculate_overall_score(skills, context_scores)
         }
 
-    @staticmethod
-    def _determine_skill_level(score: float) -> str:
+    @classmethod
+    def _determine_skill_level(cls, score: float) -> str:
         """Determine skill level based on score."""
-        if score >= 80:
-            return 'advanced'
-        elif score >= 60:
-            return 'intermediate'
-        return 'beginner'
+        if isinstance(score, (int, float)):
+            if score >= 80:
+                return 'advanced'
+            elif score >= 60:
+                return 'intermediate'
+            return 'beginner'
+        return 'beginner'  # Default if score is invalid
 
     @staticmethod
     def _calculate_overall_score(skills: Dict[str, Any], 

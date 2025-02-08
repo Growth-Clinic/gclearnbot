@@ -172,39 +172,87 @@ Your responses are automatically saved to your learning journal.
 
 
 async def get_journal(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    """
-    Send the user's learning journal.
-
-    Args:
-        update (Update): Incoming update from Telegram.
-        context (ContextTypes.DEFAULT_TYPE): Context object containing bot data.
-
-    Returns:
-        None
-    """
-    """Send user their learning journal"""
+    """Send user their learning journal with pagination"""
     chat_id = update.message.chat_id
+    
+    # Initialize page number in user data if not exists
+    if 'journal_page' not in context.user_data:
+        context.user_data['journal_page'] = 0
     
     # Fetch journal from MongoDB
     journal = db.journals.find_one({"user_id": chat_id})
     
     if journal and journal.get("entries"):
-        # Format journal entries as text
-        entries_text = "📚 Your Learning Journal:\n\n"
-        for entry in journal["entries"]:
-            entries_text += f"📝 {entry['lesson']}\n"
-            entries_text += f"💭 Your response: {entry['response']}\n"
+        entries = journal["entries"]
+        entries_per_page = 5  # Number of entries per page
+        total_pages = (len(entries) + entries_per_page - 1) // entries_per_page
+        current_page = context.user_data['journal_page']
+        
+        # Get entries for current page
+        start_idx = current_page * entries_per_page
+        end_idx = start_idx + entries_per_page
+        page_entries = entries[start_idx:end_idx]
+        
+        # Format entries for current page
+        entries_text = f"📚 Your Learning Journal (Page {current_page + 1}/{total_pages}):\n\n"
+        
+        for entry in page_entries:
+            # Truncate response if too long
+            response = entry['response'][:200] + "..." if len(entry['response']) > 200 else entry['response']
+            entries_text += f"📝 Lesson: {entry['lesson']}\n"
+            entries_text += f"💭 Response: {response}\n"
             entries_text += f"⏰ {entry['timestamp']}\n\n"
         
-        await context.bot.send_message(
-            chat_id=chat_id,
-            text=entries_text
-        )
+        # Create navigation buttons
+        keyboard = []
+        navigation_buttons = []
+        
+        if current_page > 0:
+            navigation_buttons.append(
+                InlineKeyboardButton("◀️ Previous", callback_data="journal_prev")
+            )
+        
+        if current_page < total_pages - 1:
+            navigation_buttons.append(
+                InlineKeyboardButton("Next ▶️", callback_data="journal_next")
+            )
+        
+        if navigation_buttons:
+            keyboard.append(navigation_buttons)
+        
+        reply_markup = InlineKeyboardMarkup(keyboard) if keyboard else None
+        
+        try:
+            await context.bot.send_message(
+                chat_id=chat_id,
+                text=entries_text,
+                reply_markup=reply_markup
+            )
+        except Exception as e:
+            logger.error(f"Error sending journal page: {e}")
+            await context.bot.send_message(
+                chat_id=chat_id,
+                text="Error retrieving journal entries. Please try again."
+            )
     else:
         await context.bot.send_message(
             chat_id=chat_id,
             text="No journal entries found yet. Complete some lessons first!"
         )
+
+# Add this new handler for journal navigation
+async def handle_journal_navigation(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Handle journal navigation button clicks"""
+    query = update.callback_query
+    await query.answer()
+    
+    if query.data == "journal_prev":
+        context.user_data['journal_page'] = max(0, context.user_data.get('journal_page', 0) - 1)
+    elif query.data == "journal_next":
+        context.user_data['journal_page'] = context.user_data.get('journal_page', 0) + 1
+    
+    # Re-render journal page
+    await get_journal(update, context)
 
 
 
@@ -325,7 +373,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         
         if feedback:
             # Format feedback message with streak information
-            feedback_message = await format_feedback_message(feedback, quality_metrics)
+            feedback_message = await format_feedback_message(feedback, quality_metrics, chat_id)
             
             # Add progress and streak information
             feedback_message += "\n\n" + progress_message
