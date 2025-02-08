@@ -54,6 +54,64 @@ class ContentLoader:
         except Exception as e:
             logger.error(f"Error loading {content_type}: {e}")
             return {}
+        
+    def format_for_platform(self, content: Dict[str, Any], platform: str = 'telegram') -> Dict[str, Any]:
+        """Format content based on platform requirements."""
+        if not content:
+            return {}
+
+        try:
+            if platform == 'slack':
+                return self._format_for_slack(content)
+            return self._format_for_telegram(content)  # Default to Telegram formatting
+            
+        except Exception as e:
+            logger.error(f"Error formatting content for {platform}: {e}")
+            return content  # Return original content on error
+
+    def _format_for_slack(self, content: Dict[str, Any]) -> Dict[str, Any]:
+        """Format content specifically for Slack."""
+        formatted = content.copy()
+        
+        # Convert Telegram markdown to Slack mrkdwn
+        if 'text' in formatted:
+            text = formatted['text']
+            # Convert Telegram markdown to Slack mrkdwn
+            text = text.replace('*', '*')  # Bold remains the same
+            text = text.replace('_', '_')  # Italic remains the same
+            text = text.replace('`', '`')  # Code remains the same
+            text = text.replace('\n', '\n')  # Newlines remain the same
+            formatted['text'] = text
+            
+            # Add Slack-specific blocks if needed
+            formatted['blocks'] = [{
+                "type": "section",
+                "text": {
+                    "type": "mrkdwn",
+                    "text": text
+                }
+            }]
+            
+            # Add button if 'next' is present
+            if 'next' in formatted:
+                formatted['blocks'].append({
+                    "type": "actions",
+                    "elements": [{
+                        "type": "button",
+                        "text": {
+                            "type": "plain_text",
+                            "text": "Continue"
+                        },
+                        "value": formatted['next'],
+                        "action_id": f"lesson_next_{formatted['next']}"
+                    }]
+                })
+        
+        return formatted
+
+    def _format_for_telegram(self, content: Dict[str, Any]) -> Dict[str, Any]:
+        """Format content specifically for Telegram (maintains existing format)."""
+        return content  # Current format is already Telegram-compatible
 
     def get_all_tasks(self) -> Dict[str, Any]:
         """Get all available tasks, regardless of type"""
@@ -74,33 +132,26 @@ class ContentLoader:
         '''
 
 
-    def get_full_lessons(self) -> Dict[str, Any]:
-        """Get main lessons (not steps)"""
+    def get_full_lessons(self, platform: str = 'telegram') -> Dict[str, Any]:
+        """Get main lessons (not steps) formatted for specified platform."""
         lessons = self.load_content('lessons')
-        return {
+        full_lessons = {
             lesson_id: lesson for lesson_id, lesson in lessons.items()
             if not '_step_' in lesson_id
         }
+        return self.format_for_platform(full_lessons, platform)
 
-    def get_lesson_steps(self, lesson_id: str) -> Dict[str, Any]:
-        """Get all steps for a specific lesson"""
+    def get_lesson_steps(self, lesson_id: str, platform: str = 'telegram') -> Dict[str, Any]:
+        """Get all steps for a specific lesson formatted for specified platform."""
         lessons = self.load_content('lessons')
-        return {
+        steps = {
             step_id: step for step_id, step in lessons.items()
             if step_id.startswith(f"{lesson_id}_step_")
         }
+        return self.format_for_platform(steps, platform)
 
-    def get_related_content(self, content_id: str, content_type: str) -> Dict[str, Any]:
-        """
-        Get related content for a specific item.
-        
-        Args:
-            content_id: ID of the content item
-            content_type: Type of the content ('lessons', 'tasks', 'guides')
-            
-        Returns:
-            Dictionary with related content
-        """
+    def get_related_content(self, content_id: str, content_type: str, platform: str = 'telegram') -> Dict[str, Any]:
+        """Get related content formatted for specified platform."""
         content = self.load_content(content_type)
         item = content.get(content_id, {})
         
@@ -110,7 +161,7 @@ class ContentLoader:
             'pathways': []
         }
         
-        # Get related tasks
+        # Get related content
         if 'related_tasks' in item:
             tasks = self.load_content('tasks')
             related['tasks'] = [
@@ -118,7 +169,6 @@ class ContentLoader:
                 if task_id in tasks
             ]
             
-        # Get related guides
         if 'related_guides' in item:
             guides = self.load_content('guides')
             related['guides'] = [
@@ -126,7 +176,6 @@ class ContentLoader:
                 if guide_id in guides
             ]
             
-        # Get related pathways
         if 'pathways' in item:
             pathways = self.load_content('pathways')
             related['pathways'] = [
@@ -134,10 +183,10 @@ class ContentLoader:
                 if pathway_id in pathways
             ]
             
-        return related
-    
+        return self.format_for_platform(related, platform)
+
     def validate_content_structure(self) -> None:
-        """Validate the structure of loaded content files and log any issues"""
+        """Validate the structure of loaded content files and log any issues."""
         content = self.load_content('tasks')
         logger.info("Validating content structure...")
         

@@ -43,7 +43,7 @@ async def handle_start_command(body, say, client):
         })
 
         # Get main lessons
-        lessons = content_loader.get_full_lessons()
+        lessons = content_loader.get_full_lessons(platform='slack')
         
         # Create lesson buttons
         blocks = [{
@@ -95,6 +95,7 @@ async def handle_lesson_choice(body, say, ack):
         if success:
             # Get lesson content
             lessons = content_loader.load_content('lessons')
+            lessons = content_loader.format_for_platform(lessons, platform='slack')
             lesson = lessons.get(lesson_id)
             
             if lesson:
@@ -190,6 +191,7 @@ async def handle_message(message, say):
         
         # Progress to next lesson if available
         lessons = content_loader.load_content('lessons')
+        lessons = content_loader.format_for_platform(lessons, platform='slack')
         lesson_data = lessons.get(current_lesson, {})
         next_step = lesson_data.get("next")
         
