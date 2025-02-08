@@ -1,3 +1,13 @@
+"""
+Content loader for bot resources.
+
+Note: Task processing is temporarily disabled. To re-enable:
+1. Uncomment original get_all_tasks() code below
+2. Remove temporary return {}
+3. Uncomment original handle_start_choice() code in user_handlers.py
+4. Restart the bot
+"""
+
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import ContextTypes
 from services.database import JournalManager, UserManager, FeedbackManager, TaskManager, db, FeedbackAnalyticsManager, AnalyticsManager
@@ -79,7 +89,13 @@ async def handle_start_choice(update: Update, context: ContextTypes.DEFAULT_TYPE
     choice = query.data
     
     if choice == "start_tasks":
-        content_loader.load_content.cache_clear()  # Ensure fresh data
+        # Temporarily disable task processing
+        await query.edit_message_text("Tasks are currently disabled.")
+        return
+        
+        # Original code commented out but preserved
+        '''
+        content_loader.load_content.cache_clear()
 
         logger.info("Loading all tasks...")
         tasks = content_loader.get_all_tasks()
@@ -93,11 +109,11 @@ async def handle_start_choice(update: Update, context: ContextTypes.DEFAULT_TYPE
             return
             
         for task_id, task in tasks.items():
-            logger.info(f"Mapping task: {task_id} -> {task.get('title')}")  # ✅ Log task ID
+            logger.info(f"Mapping task: {task_id} -> {task.get('title')}")
             keyboard.append([
                 InlineKeyboardButton(
                     f"⚡ {task.get('title', task_id)} ({task.get('estimated_time', 'N/A')})",
-                    callback_data=f"task_{task_id}"  # ✅ Ensure format matches tasks.json
+                    callback_data=f"task_{task_id}"
                 )
             ])
         
@@ -105,6 +121,7 @@ async def handle_start_choice(update: Update, context: ContextTypes.DEFAULT_TYPE
             "Choose a task to begin:",
             reply_markup=InlineKeyboardMarkup(keyboard)
         )
+        '''
 
 
 

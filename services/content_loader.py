@@ -47,6 +47,11 @@ class ContentLoader:
 
     def get_all_tasks(self) -> Dict[str, Any]:
         """Get all available tasks, regardless of type"""
+        # Temporarily return empty dict to disable task loading
+        return {}
+        
+        # Original code commented out but preserved for easy re-enabling
+        '''
         content = self.load_content('tasks')
         tasks_dict = content.get('tasks', {})
 
@@ -56,6 +61,7 @@ class ContentLoader:
 
         logger.info(f"Total tasks found: {len(tasks_dict)}")
         return tasks_dict
+        '''
 
 
     def get_full_lessons(self) -> Dict[str, Any]:
