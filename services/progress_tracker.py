@@ -58,6 +58,127 @@ class ProgressTracker:
             logger.error(f"Error calculating streak details: {e}")
             return {"current_streak": 0, "longest_streak": 0, "total_days": 0}
 
+    def format_progress_message(self, journal_entries: List[Dict[str, Any]], 
+                              quality_metrics: Dict[str, Any],
+                              platform: str = 'telegram',
+                              total_lessons: int = 24) -> Dict[str, Any]:
+        """Format progress information with platform-specific formatting."""
+        try:
+            if not journal_entries:
+                base_message = "No entries yet! Start your learning journey with your first entry! 🌱"
+                return self._format_for_platform(base_message, platform)
+
+            # Get comprehensive streak information
+            streak_info = self.calculate_streak(journal_entries)
+            
+            # Calculate completion metrics
+            completed_lessons = len(set(entry['lesson'] for entry in journal_entries))
+            completion_rate = (completed_lessons / total_lessons * 100) if total_lessons > 0 else 0
+            
+            # Create progress bar
+            filled = int(completion_rate / 10)
+            progress_bar = "▰" * filled + "▱" * (10 - filled)
+            
+            # Build base message
+            message = "*📊 Progress Dashboard*\n\n"
+            message += f"*Progress:* {completion_rate:.1f}%\n"
+            message += f"{progress_bar}\n"
+            message += f"• Completed: {completed_lessons}/{total_lessons} lessons\n"
+            
+            # Add streak section
+            message += "\n*🔥 Streak Stats:*\n"
+            message += f"• Current Streak: {streak_info['current_streak']} days\n"
+            message += f"• Longest Streak: {streak_info['longest_streak']} days\n"
+            message += f"• Total Active Days: {streak_info['total_days']}\n"
+            
+            # Add milestone message if applicable
+            milestone_msg = self.get_streak_milestone_message(streak_info)
+            if milestone_msg:
+                message += f"\n{milestone_msg}\n"
+            
+            # Add quality metrics if available
+            if quality_metrics and quality_metrics.get('word_count', 0) > 0:
+                message += f"\n*📝 Latest Response:*\n"
+                message += f"• Length: {quality_metrics['word_count']} words\n"
+                if quality_metrics.get('word_count', 0) >= 50:
+                    message += "• Excellent detail! ⭐\n"
+                elif quality_metrics.get('word_count', 0) >= 30:
+                    message += "• Good length! ✨\n"
+            
+            return self._format_for_platform(message, platform)
+            
+        except Exception as e:
+            logger.error(f"Error formatting progress message: {e}")
+            error_msg = "Error generating progress update. Please try again."
+            return self._format_for_platform(error_msg, platform)
+
+    def _format_for_platform(self, message: str, platform: str) -> Dict[str, Any]:
+        """Format message based on platform."""
+        if platform == 'slack':
+            # Format for Slack blocks
+            return {
+                "blocks": [
+                    {
+                        "type": "section",
+                        "text": {
+                            "type": "mrkdwn",
+                            "text": message
+                        }
+                    }
+                ]
+            }
+        else:
+            # Default Telegram format (just return the text)
+            return {"text": message}
+
+    async def get_complete_progress(self, user_id: int, platform: str = 'telegram') -> Dict[str, Any]:
+        """Generate a complete progress summary."""
+        try:
+            # Get user metrics
+            metrics = await AnalyticsManager.calculate_user_metrics(user_id)
+            if not metrics:
+                base_msg = "No progress data available yet. Start your learning journey! 🌱"
+                return self._format_for_platform(base_msg, platform)
+
+            # Build message
+            message = "*📊 Complete Progress Report*\n\n"
+
+            # Overall Progress
+            message += "*Overall Progress*\n"
+            message += f"• Completion: {metrics.get('completion_rate', 0):.1f}%\n"
+            message += f"• Total Responses: {metrics.get('total_responses', 0)}\n"
+            message += f"• Learning Duration: {metrics.get('learning_duration_days', 0)} days\n"
+
+            # Engagement Stats
+            message += "\n*Engagement*\n"
+            message += f"• Engagement Score: {metrics.get('engagement_score', 0):.1f}/100\n"
+            message += f"• Avg Response Length: {metrics.get('average_response_length', 0)} words\n"
+            
+            # Get streak info if available
+            journal = await JournalManager.get_user_journal(user_id)
+            if journal and journal.get('entries'):
+                streak_info = self.calculate_streak(journal['entries'])
+                if streak_info.get('current_streak', 0) > 0:
+                    message += f"• Current Streak: {streak_info['current_streak']} days 🔥\n"
+
+            # Learning Pattern
+            message += "\n*Learning Pattern*\n"
+            if avg_days := metrics.get('avg_days_between_lessons'):
+                message += f"• Learning Pace: {avg_days:.1f} days between lessons\n"
+            
+            # Add encouragement
+            message += "\n" + self.get_encouragement_message(
+                metrics.get('completion_rate', 0),
+                metrics.get('engagement_score', 0)
+            )
+
+            return self._format_for_platform(message, platform)
+
+        except Exception as e:
+            logger.error(f"Error generating complete progress: {e}")
+            error_msg = "Error generating progress report. Please try again later."
+            return self._format_for_platform(error_msg, platform)
+
     @staticmethod
     def get_streak_milestone_message(streak_info: Dict[str, Any]) -> Optional[str]:
         """Generate milestone messages for significant streak achievements."""
@@ -80,107 +201,6 @@ class ProgressTracker:
                 return "🌟 *New Record!* This is your longest streak yet!"
         
         return None
-
-    @staticmethod
-    def format_progress_message(journal_entries: List[Dict[str, Any]], 
-                              quality_metrics: Dict[str, Any],
-                              total_lessons: int = 24) -> str:
-        """Format progress information with enhanced streak details."""
-        try:
-            if not journal_entries:
-                return "📊 *No entries yet!*\nStart your learning journey with your first entry! 🌱"
-
-            # Get comprehensive streak information
-            streak_info = ProgressTracker.calculate_streak(journal_entries)
-            
-            # Calculate completion metrics
-            completed_lessons = len(set(entry['lesson'] for entry in journal_entries))
-            completion_rate = (completed_lessons / total_lessons * 100) if total_lessons > 0 else 0
-            
-            # Create progress bar
-            filled = int(completion_rate / 10)
-            progress_bar = "▰" * filled + "▱" * (10 - filled)
-            
-            # Format message
-            message = "*📊 Progress Dashboard*\n\n"
-            
-            # Progress section
-            message += f"*Progress:* {completion_rate:.1f}%\n"
-            message += f"{progress_bar}\n"
-            message += f"• Completed: {completed_lessons}/{total_lessons} lessons\n"
-            
-            # Enhanced streak section
-            message += "\n*🔥 Streak Stats:*\n"
-            message += f"• Current Streak: {streak_info['current_streak']} days\n"
-            message += f"• Longest Streak: {streak_info['longest_streak']} days\n"
-            message += f"• Total Active Days: {streak_info['total_days']}\n"
-            
-            # Add milestone message if applicable
-            milestone_msg = ProgressTracker.get_streak_milestone_message(streak_info)
-            if milestone_msg:
-                message += f"\n{milestone_msg}\n"
-            
-            # Response quality section
-            if quality_metrics and quality_metrics.get('word_count', 0) > 0:
-                message += f"\n*📝 Latest Response:*\n"
-                message += f"• Length: {quality_metrics['word_count']} words\n"
-                if quality_metrics.get('word_count', 0) >= 50:
-                    message += "• Excellent detail! ⭐\n"
-                elif quality_metrics.get('word_count', 0) >= 30:
-                    message += "• Good length! ✨\n"
-                    
-            return message
-            
-        except Exception as e:
-            logger.error(f"Error formatting progress message: {e}")
-            return "Error generating progress update. Please try again."
-
-    @staticmethod
-    async def get_complete_progress(user_id: int) -> str:
-        """Generate a complete progress summary."""
-        try:
-            # Get user metrics
-            metrics = await AnalyticsManager.calculate_user_metrics(user_id)
-            if not metrics:
-                return "No progress data available yet. Start your learning journey! 🌱"
-
-            # Format message with Telegram markdown
-            message = "*📊 Complete Progress Report*\n\n"
-
-            # Overall Progress
-            message += "*Overall Progress*\n"
-            message += f"• Completion: {metrics.get('completion_rate', 0):.1f}%\n"
-            message += f"• Total Responses: {metrics.get('total_responses', 0)}\n"
-            message += f"• Learning Duration: {metrics.get('learning_duration_days', 0)} days\n"
-
-            # Engagement Stats
-            message += "\n*Engagement*\n"
-            message += f"• Engagement Score: {metrics.get('engagement_score', 0):.1f}/100\n"
-            message += f"• Avg Response Length: {metrics.get('average_response_length', 0)} words\n"
-            
-            # Get journal entries for streak
-            journal = await JournalManager.get_user_journal(user_id)
-            if journal and journal.get('entries'):
-                streak_info = ProgressTracker.calculate_streak(journal['entries'])
-                if streak_info.get('current_streak', 0) > 0:
-                    message += f"• Current Streak: {streak_info['current_streak']} days 🔥\n"
-
-            # Learning Pattern Analysis
-            message += "\n*Learning Pattern*\n"
-            if avg_days := metrics.get('avg_days_between_lessons'):
-                message += f"• Learning Pace: {avg_days:.1f} days between lessons\n"
-            
-            # Add encouragement based on metrics
-            message += "\n" + ProgressTracker.get_encouragement_message(
-                metrics.get('completion_rate', 0),
-                metrics.get('engagement_score', 0)
-            )
-
-            return message
-
-        except Exception as e:
-            logger.error(f"Error generating complete progress: {e}")
-            return "Error generating progress report. Please try again later."
 
     @staticmethod
     def get_encouragement_message(completion_rate: float, engagement_score: float) -> str:

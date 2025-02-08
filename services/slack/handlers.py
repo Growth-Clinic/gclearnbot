@@ -178,13 +178,8 @@ async def handle_message(message, say):
         
         # Get user progress for additional context
         progress_tracker = ProgressTracker()
-        journal = await JournalManager.get_user_journal(user_id)
-        if journal and journal.get('entries'):
-            progress_message = progress_tracker.format_progress_message(
-                journal['entries'],
-                quality_metrics
-            )
-            feedback_message += f"\n\n{progress_message}"
+        progress_data = await progress_tracker.get_complete_progress(user_id, platform='slack')
+        await say(**progress_data)
         
         # Send enhanced feedback
         await say(feedback_message)
