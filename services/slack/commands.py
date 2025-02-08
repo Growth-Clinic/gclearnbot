@@ -1,13 +1,66 @@
 from slack_bolt import App
-from services.database import UserManager, JournalManager
+from services.database import UserManager, JournalManager, TaskManager
 from services.progress_tracker import ProgressTracker
+from services.content_loader import content_loader
 import logging
+from datetime import datetime, timezone
 
 logger = logging.getLogger(__name__)
 
 def init_slack_commands(app: App) -> None:
     """Initialize Slack command handlers"""
     
+    @app.command("/start")
+    async def handle_start(ack, say, command):
+        """Handle the /start command"""
+        await ack()
+        try:
+            user_id = command["user_id"]
+            
+            # Save user info
+            await UserManager.save_user_info({
+                'user_id': user_id,
+                'platform': 'slack'
+            })
+
+            # Get main lessons
+            lessons = content_loader.get_full_lessons(platform='slack')
+            
+            blocks = [{
+                "type": "section",
+                "text": {
+                    "type": "mrkdwn",
+                    "text": "Welcome to Growth Clinic! 🌱\n\nReady to future-proof your career? Choose your learning path:"
+                }
+            }]
+            
+            for lesson_id, lesson in lessons.items():
+                if (lesson_id != "lesson_1" and 
+                    not "congratulations" in lesson_id.lower() and 
+                    lesson.get("type") == "full_lesson"):
+                    blocks.append({
+                        "type": "section",
+                        "text": {
+                            "type": "mrkdwn",
+                            "text": f"*{lesson.get('description')}*"
+                        },
+                        "accessory": {
+                            "type": "button",
+                            "text": {
+                                "type": "plain_text",
+                                "text": "Start"
+                            },
+                            "value": lesson_id,
+                            "action_id": f"lesson_choice_{lesson_id}"
+                        }
+                    })
+
+            await say(blocks=blocks)
+            
+        except Exception as e:
+            logger.error(f"Error in start command: {e}")
+            await say("Sorry, something went wrong. Please try again.")
+
     @app.command("/resume")
     async def handle_resume(ack, say, command):
         """Handle the /resume command"""
@@ -25,7 +78,34 @@ def init_slack_commands(app: App) -> None:
                     }
                 }]
                 await say(blocks=blocks)
-                # Main resume logic handled in handlers.py
+                
+                # Get lesson content
+                lessons = content_loader.load_content('lessons')
+                lesson = lessons.get(user_data["current_lesson"])
+                if lesson:
+                    blocks = [{
+                        "type": "section",
+                        "text": {
+                            "type": "mrkdwn",
+                            "text": lesson['text']
+                        }
+                    }]
+                    
+                    if lesson.get('next'):
+                        blocks.append({
+                            "type": "actions",
+                            "elements": [{
+                                "type": "button",
+                                "text": {
+                                    "type": "plain_text",
+                                    "text": "Continue"
+                                },
+                                "value": lesson['next'],
+                                "action_id": f"lesson_next_{lesson['next']}"
+                            }]
+                        })
+                    
+                    await say(blocks=blocks)
             else:
                 await say("No previous progress found. Use `/start` to begin!")
                 
@@ -50,12 +130,13 @@ def init_slack_commands(app: App) -> None:
                     }
                 }]
                 
-                for entry in journal["entries"][-5:]:  # Show last 5 entries
+                # Show last 5 entries
+                for entry in journal["entries"][-5:]:
                     blocks.append({
                         "type": "section",
                         "text": {
                             "type": "mrkdwn",
-                            "text": f"*Lesson:* {entry['lesson']}\n*Response:* {entry['response']}\n*Date:* {entry['timestamp']}\n"
+                            "text": f"*Lesson:* {entry['lesson']}\n*Response:* {entry['response'][:200]}...\n*Date:* {entry['timestamp']}\n"
                         }
                     })
                 
@@ -73,55 +154,11 @@ def init_slack_commands(app: App) -> None:
         await ack()
         try:
             user_id = command["user_id"]
-            progress_data = await ProgressTracker.get_complete_progress(user_id)
+            progress_tracker = ProgressTracker()
+            progress_data = await progress_tracker.get_complete_progress(user_id, platform='slack')
             
-            if progress_data:
-                blocks = [{
-                    "type": "section",
-                    "text": {
-                        "type": "mrkdwn",
-                        "text": "📊 *Learning Progress Report*"
-                    }
-                }]
-
-                # Overall Progress
-                blocks.append({
-                    "type": "section",
-                    "text": {
-                        "type": "mrkdwn",
-                        "text": f"""
-*Overall Progress*
-• Completion: {progress_data.get('completion_rate', 0)}%
-• Total Responses: {progress_data.get('total_responses', 0)}
-• Learning Duration: {progress_data.get('learning_duration_days', 0)} days
-"""
-                    }
-                })
-
-                # Engagement Stats
-                blocks.append({
-                    "type": "section",
-                    "text": {
-                        "type": "mrkdwn",
-                        "text": f"""
-*Engagement*
-• Engagement Score: {progress_data.get('engagement_score', 0)}/100
-• Avg Response Length: {progress_data.get('average_response_length', 0)} words
-"""
-                    }
-                })
-
-                # Add streak info if available
-                if progress_data.get('current_streak'):
-                    blocks.append({
-                        "type": "section",
-                        "text": {
-                            "type": "mrkdwn",
-                            "text": f"🔥 Current Streak: {progress_data.get('current_streak')} days"
-                        }
-                    })
-
-                await say(blocks=blocks)
+            if progress_data.get('blocks'):
+                await say(blocks=progress_data['blocks'])
             else:
                 await say("No progress data available yet. Start your learning journey! 🌱")
                 
@@ -144,6 +181,7 @@ def init_slack_commands(app: App) -> None:
 • `/start` - Start or restart the learning journey
 • `/resume` - Continue from your last lesson
 • `/journal` - View your learning journal entries
+• `/progress` - Get a complete progress report
 • `/help` - Show this help message
 
 To progress through lessons:
@@ -161,3 +199,9 @@ Your responses are automatically saved to your learning journal.
         except Exception as e:
             logger.error(f"Error handling help command: {e}")
             await say("Error displaying help. Please try again.")
+
+    # Add error handler for commands
+    @app.error
+    async def handle_errors(error, logger):
+        """Global error handler for Slack commands"""
+        logger.error(f"Error in Slack command: {error}")
