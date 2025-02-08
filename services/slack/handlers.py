@@ -26,10 +26,14 @@ lesson_service = LessonService(
     user_manager=UserManager()
 )
 
-async def handle_start_command(body, say, client):
-    """Handle the /start command"""
+@app.command("/start")
+async def handle_start_command(ack, say, body, client):  # Added client parameter
+    """Handle the /start command in Slack"""
+    # Acknowledge command received
+    await ack()
+    
     try:
-        user_id = body['user_id']
+        user_id = body["user_id"]
         
         # Save user info
         user_info = await client.users_info(user=user_id)
@@ -39,13 +43,14 @@ async def handle_start_command(body, say, client):
             'username': user.get('name'),
             'first_name': user.get('real_name'),
             'language_code': 'en',  # Slack doesn't provide language, default to English
-            'joined_date': user.get('updated')
+            'joined_date': user.get('updated'),
+            'platform': 'slack'  # Add platform identifier
         })
-
+        
         # Get main lessons
         lessons = content_loader.get_full_lessons(platform='slack')
         
-        # Create lesson buttons
+        # Create welcome message
         blocks = [{
             "type": "section",
             "text": {
@@ -69,17 +74,18 @@ async def handle_start_command(body, say, client):
                         "type": "button",
                         "text": {
                             "type": "plain_text",
-                            "text": "Start"
+                            "text": "Start",
+                            "emoji": True
                         },
                         "value": lesson_id,
-                        "action_id": f"lesson_choice_{lesson_id}"
+                        "action_id": f"start_lesson_{lesson_id}"
                     }
                 })
 
         await say(blocks=blocks)
         
     except Exception as e:
-        logger.error(f"Error in start command: {e}")
+        logger.error(f"Error handling start command: {e}")
         await say("Sorry, something went wrong. Please try again.")
 
 async def handle_lesson_choice(body, say, ack):

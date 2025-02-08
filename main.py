@@ -56,9 +56,10 @@ async def async_main():
             await start_app(app)
             
             # Start Slack bot if configured
-            if Config.SLACK_BOT_TOKEN:
+            if Config.SLACK_BOT_TOKEN and Config.SLACK_APP_TOKEN:
                 try:
                     logger.info("Starting Slack bot...")
+                    from services.slack.handlers import start_slack_bot
                     start_slack_bot()
                     logger.info("Slack bot started successfully")
                 except Exception as e:
