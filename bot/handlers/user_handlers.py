@@ -166,6 +166,7 @@ async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 /start - Start or restart the learning journey
 /resume - Continue from your last lesson
 /journal - View your learning journal entries
+/progress - Get a complete progress report
 /help - Show this help message
 
 To progress through lessons:
