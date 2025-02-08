@@ -6,7 +6,9 @@ from services.application import create_app, start_app
 from services.lesson_manager import LessonService
 from services.content_loader import content_loader
 from services.database import TaskManager, UserManager
-from services.slack.handlers import start_slack_bot  # Add this import
+from services.slack.handlers import start_slack_bot
+from hypercorn.config import Config as HypercornConfig
+from hypercorn.asyncio import serve
 
 # Setup logging
 logging.basicConfig(
@@ -22,7 +24,20 @@ async def async_main():
                 logger.error("Could not acquire lock, exiting")
                 return 1
 
-            # Validate content structure before initializing services
+            # Create Quart app first for immediate port binding
+            logger.info("Initializing web application...")
+            app = await create_app()
+
+            # Configure Hypercorn
+            hypercorn_config = HypercornConfig()
+            hypercorn_config.bind = [f"0.0.0.0:{int(Config.PORT)}"]
+            hypercorn_config.worker_class = "asyncio"
+
+            # Start the web server in the background
+            server = asyncio.create_task(serve(app, hypercorn_config))
+            logger.info(f"Web server starting on port {Config.PORT}")
+
+            # Validate content structure
             logger.info("Validating content structure...")
             content_loader.validate_content_structure()
 
@@ -36,10 +51,9 @@ async def async_main():
                 logger.error(f"Service initialization failed: {e}")
                 return 1
 
-            # Create and start Telegram bot first
+            # Start Telegram bot
             logger.info("Starting Telegram bot...")
-            app = await create_app()
-            telegram_started = True
+            await start_app(app)
             
             # Start Slack bot if configured
             if Config.SLACK_BOT_TOKEN:
@@ -49,9 +63,11 @@ async def async_main():
                     logger.info("Slack bot started successfully")
                 except Exception as e:
                     logger.error(f"Slack bot initialization failed: {e}")
-                    logger.info("Continuing with Telegram bot only") # Continue with Telegram bot only if Slack bot fails
+                    logger.info("Continuing with Telegram bot only")
             
-            await start_app(app)
+            # Keep the application running
+            await server
+
             return 0
                 
     except Exception as e:
