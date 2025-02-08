@@ -59,3 +59,10 @@ htmlcov/
 
 # Render
 render.yaml
+
+# Ignore planning docs
+docs/*
+
+# Ignore slack credentials
+slack credentials.txt
+
