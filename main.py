@@ -36,17 +36,20 @@ async def async_main():
                 logger.error(f"Service initialization failed: {e}")
                 return 1
 
-            # Create and start the Quart app
+            # Create and start Telegram bot first
+            logger.info("Starting Telegram bot...")
             app = await create_app()
+            telegram_started = True
             
             # Start Slack bot if configured
             if Config.SLACK_BOT_TOKEN:
                 try:
                     logger.info("Starting Slack bot...")
                     start_slack_bot()
+                    logger.info("Slack bot started successfully")
                 except Exception as e:
                     logger.error(f"Slack bot initialization failed: {e}")
-                    # Continue even if Slack fails - don't stop Telegram bot
+                    logger.info("Continuing with Telegram bot only") # Continue with Telegram bot only if Slack bot fails
             
             await start_app(app)
             return 0

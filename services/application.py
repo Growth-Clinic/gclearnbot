@@ -139,4 +139,8 @@ async def create_app() -> Quart:
 async def start_app(app):
     """Start the Quart application"""
     port = int(os.getenv('PORT', 8080))
-    await app.run_task(host='0.0.0.0', port=port)
+    # For Render.com, we need to bind to 0.0.0.0
+    await app.run_task(
+        host='0.0.0.0',  # Important: bind to all interfaces
+        port=port
+    )
