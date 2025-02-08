@@ -149,38 +149,38 @@ class ProgressTracker:
 
             # Overall Progress
             message += "*Overall Progress*\n"
-            message += f"• Completion: {metrics['completion_rate']}%\n"
-            message += f"• Total Responses: {metrics['total_responses']}\n"
-            message += f"• Learning Duration: {metrics['learning_duration_days']} days\n"
+            message += f"• Completion: {metrics.get('completion_rate', 0):.1f}%\n"
+            message += f"• Total Responses: {metrics.get('total_responses', 0)}\n"
+            message += f"• Learning Duration: {metrics.get('learning_duration_days', 0)} days\n"
 
             # Engagement Stats
             message += "\n*Engagement*\n"
-            message += f"• Engagement Score: {metrics['engagement_score']}/100\n"
-            message += f"• Avg Response Length: {metrics['average_response_length']} words\n"
+            message += f"• Engagement Score: {metrics.get('engagement_score', 0):.1f}/100\n"
+            message += f"• Avg Response Length: {metrics.get('average_response_length', 0)} words\n"
             
             # Get journal entries for streak
             journal = await JournalManager.get_user_journal(user_id)
             if journal and journal.get('entries'):
-                streak = ProgressTracker.calculate_streak(journal['entries'])
-                if streak > 0:
-                    message += f"• Current Streak: {streak} days 🔥\n"
+                streak_info = ProgressTracker.calculate_streak(journal['entries'])
+                if streak_info.get('current_streak', 0) > 0:
+                    message += f"• Current Streak: {streak_info['current_streak']} days 🔥\n"
 
             # Learning Pattern Analysis
             message += "\n*Learning Pattern*\n"
-            if metrics.get('avg_days_between_lessons'):
-                message += f"• Learning Pace: {metrics['avg_days_between_lessons']:.1f} days between lessons\n"
+            if avg_days := metrics.get('avg_days_between_lessons'):
+                message += f"• Learning Pace: {avg_days:.1f} days between lessons\n"
             
             # Add encouragement based on metrics
             message += "\n" + ProgressTracker.get_encouragement_message(
-                metrics['completion_rate'],
-                metrics['engagement_score']
+                metrics.get('completion_rate', 0),
+                metrics.get('engagement_score', 0)
             )
 
             return message
 
         except Exception as e:
             logger.error(f"Error generating complete progress: {e}")
-            return "Error generating progress report. Please try again."
+            return "Error generating progress report. Please try again later."
 
     @staticmethod
     def get_encouragement_message(completion_rate: float, engagement_score: float) -> str:

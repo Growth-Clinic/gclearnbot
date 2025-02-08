@@ -262,15 +262,7 @@ class DataValidator:
 class UserManager:
     @staticmethod
     async def save_user_info(user) -> Dict[str, Any]:
-        """
-        Save comprehensive user information when they start using the bot.
-        
-        Args:
-            user: Telegram user object
-            
-        Returns:
-            Dict containing saved user data
-        """
+        """Save comprehensive user information when they start using the bot."""
         try:
             user_data = {
                 "user_id": user.id,
@@ -282,16 +274,17 @@ class UserManager:
                 "current_lesson": "lesson_1",
                 "completed_lessons": [],
                 "last_active": datetime.now(timezone.utc).isoformat(),
-                # New fields for better tracking
-                "learning_preferences": {
-                    "preferred_language": user.language_code or "en",
-                    "notification_enabled": True
-                },
+                # Initialize progress metrics
                 "progress_metrics": {
                     "total_responses": 0,
                     "average_response_length": 0,
                     "completion_rate": 0,
                     "last_lesson_date": None
+                },
+                # Learning preferences remain unchanged
+                "learning_preferences": {
+                    "preferred_language": user.language_code or "en",
+                    "notification_enabled": True
                 }
             }
 
@@ -316,7 +309,7 @@ class UserManager:
                 
             logger.info(f"User data saved/updated for user {user.id}")
             return user_data
-            
+                
         except OperationFailure as e:
             logger.error(f"Database error saving user {user.id}: {e}")
             raise
@@ -971,21 +964,7 @@ class AnalyticsManager:
 
     @staticmethod
     async def calculate_user_metrics(user_id: int) -> Dict[str, Any]:
-        """
-        Calculate comprehensive metrics for a single user.
-        
-        This method analyzes:
-        - Lesson completion rates
-        - Response patterns
-        - Engagement levels
-        - Time-based progress
-        
-        Args:
-            user_id: The user's ID
-            
-        Returns:
-            Dictionary containing user metrics
-        """
+        """Calculate comprehensive metrics for a single user."""
         try:
             # Get user data and journal entries using asyncio
             user_data = await asyncio.to_thread(
@@ -1003,7 +982,7 @@ class AnalyticsManager:
             
             # Get all entries and sort by timestamp
             entries = sorted(journal['entries'], 
-                           key=lambda x: x['timestamp'])
+                        key=lambda x: x['timestamp'])
             
             # Calculate basic metrics with safe access
             total_responses = len(entries)
@@ -1014,6 +993,8 @@ class AnalyticsManager:
                 avg_response_length = sum(response_lengths) / total_responses
             
             # Calculate time-based metrics
+            learning_duration = 0
+            avg_days_between_lessons = 0
             if len(entries) >= 2:
                 start_time = datetime.fromisoformat(entries[0]['timestamp'].replace('Z', '+00:00'))
                 end_time = datetime.fromisoformat(entries[-1]['timestamp'].replace('Z', '+00:00'))
@@ -1023,31 +1004,32 @@ class AnalyticsManager:
                     end_time = end_time.replace(tzinfo=timezone.utc)
                 learning_duration = (end_time - start_time).days
                 avg_days_between_lessons = learning_duration / (len(entries) - 1) if len(entries) > 1 else 0
-            else:
-                learning_duration = 0
-                avg_days_between_lessons = 0
+            
+            # Safely get progress metrics with defaults
+            progress_metrics = user_data.get('progress_metrics', {})
+            completion_rate = progress_metrics.get('completion_rate', 0)
             
             # Calculate engagement score (0-100)
             engagement_factors = {
                 'response_length': min(avg_response_length / 100, 1) * 30,  # 30% weight
-                'completion_rate': user_data['progress_metrics']['completion_rate'],  # 40% weight
+                'completion_rate': completion_rate,  # 40% weight
                 'consistency': min(7 / (avg_days_between_lessons if avg_days_between_lessons > 0 else 7), 1) * 30  # 30% weight
             }
             engagement_score = sum(engagement_factors.values())
             
-            # Compile metrics
+            # Compile metrics with safe defaults
             return {
                 "total_responses": total_responses,
                 "average_response_length": round(avg_response_length, 2),
                 "completed_lessons": len(user_data.get('completed_lessons', [])),
-                "completion_rate": round(user_data['progress_metrics']['completion_rate'], 2),
+                "completion_rate": round(completion_rate, 2),
                 "learning_duration_days": learning_duration,
                 "avg_days_between_lessons": round(avg_days_between_lessons, 2),
                 "engagement_score": round(engagement_score, 2),
-                "last_active": user_data.get('last_active'),
-                "current_lesson": user_data.get('current_lesson')
+                "last_active": user_data.get('last_active', 'Never'),
+                "current_lesson": user_data.get('current_lesson', 'None')
             }
-            
+                
         except Exception as e:
             logger.error(f"Error calculating metrics for user {user_id}: {e}", exc_info=True)
             return {}
