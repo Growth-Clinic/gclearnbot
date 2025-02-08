@@ -10,3 +10,5 @@ validators>=0.22.0         # For URL validation
 motor>=3.1.1               # Async MongoDB driver (optional, but recommended)
 pydantic>=2.0.0            # For configuration and input validation (optional, but recommended)
 pytz>=2023.3               # For timezone handling
+slack-bolt>=1.18.0         # Slack Bolt for Slack apps
+slack-sdk>=3.21.3          # Slack SDK for Slack apps

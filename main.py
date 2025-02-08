@@ -6,6 +6,7 @@ from services.application import create_app, start_app
 from services.lesson_manager import LessonService
 from services.content_loader import content_loader
 from services.database import TaskManager, UserManager
+from services.slack.handlers import start_slack_bot  # Add this import
 
 # Setup logging
 logging.basicConfig(
@@ -37,6 +38,16 @@ async def async_main():
 
             # Create and start the Quart app
             app = await create_app()
+            
+            # Start Slack bot if configured
+            if Config.SLACK_BOT_TOKEN:
+                try:
+                    logger.info("Starting Slack bot...")
+                    start_slack_bot()
+                except Exception as e:
+                    logger.error(f"Slack bot initialization failed: {e}")
+                    # Continue even if Slack fails - don't stop Telegram bot
+            
             await start_app(app)
             return 0
                 
