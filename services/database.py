@@ -47,6 +47,8 @@ def init_mongodb(max_retries=3, retry_delay=2):
             # Test connection with longer timeout
             client.admin.command('ping', serverSelectionTimeoutMS=10000)
             db = client['telegram_bot']
+
+            # Ensure indices and collections exist
             if "user_skills" not in db.list_collection_names():
                 db.create_collection("user_skills")
                 db.user_skills.create_index("user_id", unique=True)
@@ -63,6 +65,9 @@ def init_mongodb(max_retries=3, retry_delay=2):
             # Add indices for analytics
             db.journals.create_index([("entries.timestamp", -1)])
             db.learning_insights.create_index([("insights.timestamp", -1)])
+
+            # Add platform support indices
+            db.users.create_index([("user_id", 1), ("platform", 1)], unique=True)
             
             logger.info("MongoDB connection successful")
             return db
@@ -98,11 +103,12 @@ class DataValidator:
             bool: True if valid, False otherwise
         """
         required_fields = {
-            "user_id": int,
+            "user_id": str,
             "username": str,
             "first_name": str,
             "language_code": str,
-            "joined_date": str
+            "joined_date": str,
+            "platform": str
         }
         
         try:
@@ -118,6 +124,11 @@ class DataValidator:
             # Validate timestamps
             if not isinstance(user_data.get("joined_date"), str):
                 logger.error("Invalid joined_date format")
+                return False
+            
+            # Validate platform field
+            if user_data['platform'] not in ['telegram', 'slack']:
+                logger.error("Invalid platform specified")
                 return False
                 
             return True
@@ -261,20 +272,23 @@ class DataValidator:
 
 class UserManager:
     @staticmethod
-    async def save_user_info(user) -> Dict[str, Any]:
+    async def save_user_info(user, platform: str = 'telegram') -> Dict[str, Any]:
         """Save comprehensive user information when they start using the bot."""
         try:
+            # Convert user_id to string for consistency across platforms
+            user_id = str(user.id if platform == 'telegram' else user)
+            
             user_data = {
-                "user_id": user.id,
-                "username": user.username or "",
-                "first_name": user.first_name or "",
+                "user_id": user_id,
+                "username": user.username if platform == 'telegram' else user.get('name', ''),
+                "first_name": user.first_name if platform == 'telegram' else user.get('real_name', ''),
                 "last_name": user.last_name or "",
                 "language_code": user.language_code or "en",
                 "joined_date": datetime.now(timezone.utc).isoformat(),
                 "current_lesson": "lesson_1",
                 "completed_lessons": [],
                 "last_active": datetime.now(timezone.utc).isoformat(),
-                # Initialize progress metrics
+                "platform": platform,
                 "progress_metrics": {
                     "total_responses": 0,
                     "average_response_length": 0,
@@ -293,12 +307,12 @@ class UserManager:
                 return None
             
             result = db.users.update_one(
-                {"user_id": user.id},
+                {"user_id": user_id, "platform": platform},
                 {
                     "$set": user_data,
                     "$setOnInsert": {
                         "created_at": datetime.now(timezone.utc).isoformat(),
-                        "source": "telegram"
+                        "source": platform
                     }
                 },
                 upsert=True
@@ -315,7 +329,7 @@ class UserManager:
             raise
 
     @staticmethod
-    async def get_user_info(user_id: int) -> Optional[Dict[str, Any]]:
+    async def get_user_info(user_id: str, platform: str = 'telegram') -> Optional[Dict[str, Any]]:
         """
         Get user information from the database, including current lesson progress.
         
@@ -326,9 +340,12 @@ class UserManager:
             Dictionary containing user information or None if not found
         """
         try:
+            # Convert user_id to string if it's not already
+            user_id = str(user_id)
+
             user_data = await asyncio.to_thread(
                 db.users.find_one,
-                {"user_id": user_id}
+                {"user_id": user_id, "platform": platform}
             )
             
             if user_data:
@@ -465,7 +482,7 @@ class JournalManager:
     """Manages journal operations in MongoDB with improved data quality and validation"""
     
     @staticmethod
-    async def save_journal_entry(user_id: int, lesson_key: str, response: str) -> bool:
+    async def save_journal_entry(user_id: str, lesson_key: str, response: str) -> bool:
         """
         Save a user's response to their journal with validation and error handling.
         
@@ -477,6 +494,9 @@ class JournalManager:
         Returns:
             bool: True if save successful, False otherwise
         """
+
+        user_id = str(user_id)
+
         try:
             # Validate inputs
             if not response or not response.strip():
@@ -637,8 +657,11 @@ class FeedbackManager:
     """Manages feedback operations in MongoDB"""
 
     @staticmethod
-    async def save_feedback(user_id: int, feedback_text: str) -> bool:
+    async def save_feedback(user_id: str, feedback_text: str) -> bool:
         """Save user feedback with validation and error handling."""
+
+        user_id = str(user_id)
+
         try:
             # Get the current max ID and increment it
             current_max_id = await asyncio.to_thread(
@@ -963,8 +986,11 @@ class AnalyticsManager:
     """Manages learning analytics and user progress tracking in MongoDB."""
 
     @staticmethod
-    async def calculate_user_metrics(user_id: int) -> Dict[str, Any]:
+    async def calculate_user_metrics(user_id: str) -> Dict[str, Any]:
         """Calculate comprehensive metrics for a single user."""
+
+        user_id = str(user_id)
+
         try:
             # Get user data and journal entries using asyncio
             user_data = await asyncio.to_thread(
