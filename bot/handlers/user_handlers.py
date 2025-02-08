@@ -173,7 +173,8 @@ Your responses are automatically saved to your learning journal.
 
 async def get_journal(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Send user their learning journal with pagination"""
-    chat_id = update.message.chat_id
+    # Get chat_id from either message or callback query
+    chat_id = update.effective_chat.id  # This works for both message and callback query
     
     # Initialize page number in user data if not exists
     if 'journal_page' not in context.user_data:

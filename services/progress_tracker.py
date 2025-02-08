@@ -65,18 +65,19 @@ class ProgressTracker:
         longest_streak = streak_info["longest_streak"]
         
         # Check for new milestones
-        if current_streak >= 30:
-            return "🏆 *Incredible Achievement!* You've maintained your reflection practice for 30 days!"
-        elif current_streak >= 21:
-            return "⭐ *Major Milestone!* Three weeks of consistent reflection!"
-        elif current_streak >= 14:
-            return "💫 *Fantastic Progress!* You've completed two weeks of regular practice!"
-        elif current_streak >= 7:
-            return "🔥 *Wonderful Work!* A full week of daily reflections!"
-        elif current_streak >= 3:
-            return "✨ *Great Start!* Three days of consistent practice!"
-        elif current_streak > longest_streak:
-            return "🌟 *New Record!* This is your longest streak yet!"
+        if isinstance(current_streak, (int, float)):  # Add type checking
+            if current_streak >= 30:
+                return "🏆 *Incredible Achievement!* You've maintained your reflection practice for 30 days!"
+            elif current_streak >= 21:
+                return "⭐ *Major Milestone!* Three weeks of consistent reflection!"
+            elif current_streak >= 14:
+                return "💫 *Fantastic Progress!* You've completed two weeks of regular practice!"
+            elif current_streak >= 7:
+                return "🔥 *Wonderful Work!* A full week of daily reflections!"
+            elif current_streak >= 3:
+                return "✨ *Great Start!* Three days of consistent practice!"
+            elif isinstance(longest_streak, (int, float)) and current_streak > longest_streak:  # Add type checking
+                return "🌟 *New Record!* This is your longest streak yet!"
         
         return None
 
