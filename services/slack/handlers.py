@@ -1,6 +1,8 @@
 from slack_bolt import App
 from slack_bolt.adapter.socket_mode import SocketModeHandler
 import logging
+from datetime import datetime, timezone
+from services.progress_tracker import ProgressTracker
 from services.database import UserManager, JournalManager, TaskManager
 from services.lesson_manager import LessonService
 from services.content_loader import content_loader
@@ -131,31 +133,59 @@ async def handle_lesson_choice(body, say, ack):
         await say("Sorry, something went wrong. Please try again.")
 
 async def handle_message(message, say):
-    """Handle regular messages (lesson responses)"""
+    """Enhanced message handling with better error handling and feedback"""
     try:
         user_id = message['user']
         text = message['text']
         
-        # Get user's current lesson
+        # Get user's current lesson with explicit error handling
         user_data = await UserManager.get_user_info(user_id)
-        if not user_data or not user_data.get("current_lesson"):
+        if not user_data:
+            logger.warning(f"No user data found for user {user_id}")
             await say("Please use /start to begin your learning journey.")
             return
             
-        current_lesson = user_data["current_lesson"]
+        current_lesson = user_data.get("current_lesson")
+        if not current_lesson:
+            logger.warning(f"No current lesson found for user {user_id}")
+            await say("Please use /start to begin your learning journey.")
+            return
+            
+        # Add request logging
+        logger.info(f"Processing message from user {user_id} for lesson {current_lesson}")
         
-        # Save journal entry
+        # Save journal entry with timestamp
+        entry_data = {
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "lesson": current_lesson,
+            "response": text,
+            "response_length": len(text)
+        }
+        
         save_success = await JournalManager.save_journal_entry(user_id, current_lesson, text)
         if not save_success:
+            logger.error(f"Failed to save journal entry for user {user_id}")
             await say("There was an error saving your response. Please try again.")
             return
             
-        # Get feedback
+        # Enhanced response evaluation
         feedback = evaluate_response_enhanced(current_lesson, text, user_id)
         quality_metrics = analyze_response_quality(text)
         
-        # Format and send feedback
-        feedback_message = await format_feedback_message(feedback, quality_metrics)
+        # Format feedback with progress information
+        feedback_message = await format_feedback_message(feedback, quality_metrics, user_id)
+        
+        # Get user progress for additional context
+        progress_tracker = ProgressTracker()
+        journal = await JournalManager.get_user_journal(user_id)
+        if journal and journal.get('entries'):
+            progress_message = progress_tracker.format_progress_message(
+                journal['entries'],
+                quality_metrics
+            )
+            feedback_message += f"\n\n{progress_message}"
+        
+        # Send enhanced feedback
         await say(feedback_message)
         
         # Progress to next lesson if available
@@ -191,14 +221,18 @@ async def handle_message(message, say):
                         })
                     
                     await say(blocks=blocks)
+                else:
+                    logger.error(f"Next lesson {next_step} not found")
+                    await say("Error loading next lesson. Please use /resume to continue.")
             else:
-                await say("Error updating progress. Please try /resume to continue.")
+                logger.error(f"Failed to update progress for user {user_id}")
+                await say("Error updating progress. Please use /resume to continue.")
         else:
             await say("✅ Response saved! You've completed all lessons.")
             
     except Exception as e:
-        logger.error(f"Error handling message: {e}")
-        await say("Sorry, something went wrong. Please try again.")
+        logger.error(f"Error processing message: {e}", exc_info=True)
+        await say("I encountered an error processing your response. Please try again.")
 
 # Register command handlers
 app.command("/start")(handle_start_command)

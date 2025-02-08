@@ -1,13 +1,3 @@
-"""
-Content loader for bot resources.
-
-Note: Task processing is temporarily disabled. To re-enable:
-1. Uncomment original get_all_tasks() code below
-2. Remove temporary return {}
-3. Uncomment original handle_start_choice() code in user_handlers.py
-4. Restart the bot
-"""
-
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import ContextTypes
 from services.database import JournalManager, UserManager, FeedbackManager, TaskManager, db, FeedbackAnalyticsManager, AnalyticsManager
