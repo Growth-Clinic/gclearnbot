@@ -174,15 +174,11 @@ async def handle_message(message, say):
         quality_metrics = analyze_response_quality(text)
         
         # Format feedback with progress information
-        feedback_message = await format_feedback_message(feedback, quality_metrics, user_id)
-        
-        # Get user progress for additional context
         progress_tracker = ProgressTracker()
+        feedback_message = await format_feedback_message(feedback, quality_metrics, user_id)
         progress_data = await progress_tracker.get_complete_progress(user_id, platform='slack')
         await say(**progress_data)
-        
-        # Send enhanced feedback
-        await say(feedback_message)
+        await say(feedback_message) # Send enhanced feedback
         
         # Progress to next lesson if available
         lessons = content_loader.load_content('lessons')
