@@ -1,4 +1,4 @@
-from quart import Quart, request, jsonify, ResponseReturnValue
+from quart import Quart, request, jsonify, ResponseReturnValue, send_from_directory
 from services.database import db, AnalyticsManager, UserManager, JournalManager
 from services.lesson_manager import LessonService
 from services.progress_tracker import ProgressTracker
