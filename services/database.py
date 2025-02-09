@@ -9,10 +9,8 @@ from typing import Dict, Optional, Any, List
 from services.content_loader import content_loader
 from services.utils import extract_keywords_from_response
 from services.lesson_helpers import get_lesson_structure, is_actual_lesson, get_total_lesson_steps
-from services.database import db
 import time
 import asyncio
-
 
 # Configure logging
 logging.basicConfig(
@@ -1245,3 +1243,5 @@ class AnalyticsManager:
         except Exception as e:
             logger.error(f"Error calculating lesson analytics for {lesson_key}: {e}", exc_info=True)
             return {}
+        
+db = init_mongodb()
