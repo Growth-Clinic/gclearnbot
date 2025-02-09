@@ -1,4 +1,5 @@
 from slack_bolt import App
+from slack_bolt.async_app import AsyncApp
 from slack_bolt.adapter.socket_mode import SocketModeHandler
 import logging
 from datetime import datetime, timezone
@@ -16,27 +17,30 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-# Initialize Slack app
-app = App(token=Config.SLACK_BOT_TOKEN)
+# Initialize Slack app with all required scopes
+app = AsyncApp(
+    token=Config.SLACK_BOT_TOKEN,
+    signing_secret=Config.SLACK_SIGNING_SECRET
+)
 logger.info("Initializing Slack bot...")
 
 # Add the middleware for debugging - place this after app initialization
 @app.middleware
-def log_request(logger, body, next):
+async def log_request(logger, body, next):
     logger.debug(f"Incoming request: {body}")
-    return next()
+    return await next()
 
 # Add event handlers - place these after middleware
 @app.event("app_mention")
-def handle_app_mentions(body, say):
+async def handle_app_mentions(body, say):
     logger.info(f"Got app mention: {body}")
-    say("Hello! I'm here!")
+    await say("Hello! I'm here!")
 
 @app.event("message")
-def handle_message(body, say):
+async def handle_message(body, say):
     logger.info(f"Got message: {body}")
     if 'bot_id' not in body['event']:  # Ignore bot messages
-        say("I got your message!")
+        await say("I got your message!")
 
 # Initialize services
 lesson_service = LessonService(
@@ -251,22 +255,18 @@ async def handle_message(message, say):
         logger.error(f"Error processing message: {e}", exc_info=True)
         await say("I encountered an error processing your response. Please try again.")
 
-# Register command handlers
-app.command("/start")(handle_start_command)
-
-# Register action handlers
-app.action("lesson_choice_.*")(handle_lesson_choice)
-app.action("lesson_next_.*")(handle_lesson_choice)
-
-# Register message handler
-app.message("")(handle_message)
 
 def start_slack_bot():
-    """Start the Slack bot with Socket Mode"""
+    """Start the Slack bot"""
     try:
-        handler = SocketModeHandler(app, Config.SLACK_APP_TOKEN)
+        # Use AsyncSocketModeHandler instead
+        from slack_bolt.adapter.socket_mode.async_handler import AsyncSocketModeHandler
+        
+        handler = AsyncSocketModeHandler(app, Config.SLACK_APP_TOKEN)
         logger.info("Starting Slack bot in Socket Mode...")
-        handler.start()
+        # Use .start_async() instead of .start()
+        handler.start_async()
+        logger.info("Slack bot started successfully")
     except Exception as e:
-        logger.error(f"Error starting Slack bot: {e}")
+        logger.error(f"Failed to start Slack bot: {e}")
         raise
