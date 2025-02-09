@@ -59,17 +59,25 @@ def setup_routes(app: Quart, application: Application) -> None:
     
     @app.route('/login', methods=['POST'])
     async def login():
-        """User login"""
+        """User login & sync progress from Telegram"""
         try:
             data = await request.json
             email = data.get("email")
             password = data.get("password")
 
             user = await db.users.find_one({"email": email})
-            if not user or not bcrypt.checkpw(password.encode(), user["password"].encode()):
-                return jsonify({"status": "error", "message": "Invalid email or password"}), 401
+            if not user:
+                return jsonify({"status": "error", "message": "User not found"}), 401
 
-            # Generate JWT token (valid for 24 hours)
+            if "password" in user:
+                # Web user: Check password
+                if not bcrypt.checkpw(password.encode(), user["password"].encode()):
+                    return jsonify({"status": "error", "message": "Invalid password"}), 401
+            else:
+                # Telegram-only user: Allow login without password
+                await db.users.update_one({"email": email}, {"$set": {"password": bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode()}})
+            
+            # Generate JWT token
             access_token = create_access_token(identity=email, expires_delta=datetime.timedelta(days=1))
 
             return jsonify({"status": "success", "token": access_token}), 200
@@ -159,9 +167,9 @@ def setup_routes(app: Quart, application: Application) -> None:
     @app.route('/progress', methods=['GET'])
     @jwt_required()
     async def get_progress():
-        """Fetch the logged-in user's progress"""
+        """Fetch user progress based on email"""
         try:
-            email = get_jwt_identity()  # Get user email from token
+            email = get_jwt_identity()  # Get email from JWT token
             user_data = await db.users.find_one({"email": email})
 
             if not user_data:

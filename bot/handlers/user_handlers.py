@@ -28,6 +28,37 @@ lesson_service = LessonService(
     user_manager=UserManager()
 )
 
+async def ask_for_email(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Prompt user for email if not provided yet"""
+    chat_id = update.message.chat_id
+    user_data = await UserManager.get_user_info(chat_id)
+
+    if user_data and "email" in user_data:
+        await context.bot.send_message(chat_id, "✅ Your email is already linked!")
+    else:
+        await context.bot.send_message(chat_id, "📩 Please enter your email to link your account:")
+        return
+
+async def save_email(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Save the user's email after they provide it"""
+    chat_id = update.message.chat_id
+    email = update.message.text.strip()
+
+    # Validate email format
+    if "@" not in email or "." not in email:
+        await context.bot.send_message(chat_id, "❌ Invalid email format. Please enter a valid email:")
+        return
+
+    # Check if email is already linked to another user
+    existing_user = await UserManager.get_user_by_email(email)
+    if existing_user and existing_user["chat_id"] != chat_id:
+        await context.bot.send_message(chat_id, "❌ This email is already linked to another account. Please use a different one.")
+        return
+
+    # Save email to user profile
+    await UserManager.update_user_info(chat_id, {"email": email})
+    await context.bot.send_message(chat_id, f"✅ Your email {email} has been linked successfully!")
+
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Start command handler with lesson choices"""

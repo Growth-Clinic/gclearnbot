@@ -9,6 +9,7 @@ from typing import Dict, Optional, Any, List
 from services.content_loader import content_loader
 from services.utils import extract_keywords_from_response
 from services.lesson_helpers import get_lesson_structure, is_actual_lesson, get_total_lesson_steps
+from services.database import db
 import time
 import asyncio
 
@@ -272,12 +273,12 @@ class DataValidator:
 
 class UserManager:
     @staticmethod
-    async def save_user_info(user, platform: str = 'telegram') -> Dict[str, Any]:
-        """Save comprehensive user information when they start using the bot."""
+    async def save_user_info(user, platform: str = 'telegram', email: str = None) -> Dict[str, Any]:
+        """Save comprehensive user information when they start using the bot or link their email."""
         try:
             # Convert user_id to string for consistency across platforms
             user_id = str(user.id if platform == 'telegram' else user)
-            
+
             user_data = {
                 "user_id": user_id,
                 "username": user.username if platform == 'telegram' else user.get('name', ''),
@@ -295,35 +296,35 @@ class UserManager:
                     "completion_rate": 0,
                     "last_lesson_date": None
                 },
-                # Learning preferences remain unchanged
                 "learning_preferences": {
                     "preferred_language": user.language_code or "en",
                     "notification_enabled": True
                 }
             }
 
+            # If the user provided an email, add it to their profile
+            update_fields = {"$set": user_data}
+
+            if email:
+                update_fields["$set"]["email"] = email  # Store email
+                update_fields["$set"]["chat_id"] = user_id  # Ensure chat_id is saved
+
             if not DataValidator.validate_user_data(user_data):
                 logger.error(f"Invalid user data for user {user.id}")
                 return None
-            
+
             result = db.users.update_one(
                 {"user_id": user_id, "platform": platform},
-                {
-                    "$set": user_data,
-                    "$setOnInsert": {
-                        "created_at": datetime.now(timezone.utc).isoformat(),
-                        "source": platform
-                    }
-                },
+                update_fields,
                 upsert=True
             )
-            
+
             if not result.acknowledged:
                 raise OperationFailure("Failed to save user data")
-                
+
             logger.info(f"User data saved/updated for user {user.id}")
             return user_data
-                
+
         except OperationFailure as e:
             logger.error(f"Database error saving user {user.id}: {e}")
             raise
@@ -349,13 +350,12 @@ class UserManager:
             )
             
             if user_data:
-                # Ensure we have the required fields
-                if 'current_lesson' not in user_data:
-                    # If no current lesson is set, default to lesson_1
-                    user_data['current_lesson'] = 'lesson_1'
+                # Ensure `current_lesson` exists, default to lesson_1
+                if "current_lesson" not in user_data:
+                    user_data["current_lesson"] = "lesson_1"
                     await asyncio.to_thread(
                         db.users.update_one,
-                        {"user_id": user_id},
+                        {"user_id": user_id, "platform": platform},
                         {"$set": {"current_lesson": "lesson_1"}}
                     )
                 
@@ -368,6 +368,59 @@ class UserManager:
             logger.error(f"Error retrieving user info: {e}", exc_info=True)
             return None
         
+    @staticmethod
+    async def get_user_by_email(email: str) -> Optional[Dict[str, Any]]:
+        """
+        Get user information by email.
+
+        Args:
+            email: The user's email
+
+        Returns:
+            Dictionary containing user information or None if not found
+        """
+        try:
+            user_data = await asyncio.to_thread(
+                db.users.find_one,
+                {"email": email}
+            )
+            if user_data:
+                user_data.pop("_id", None)  # Remove MongoDB ID
+                return user_data
+            return None
+
+        except Exception as e:
+            logger.error(f"Error retrieving user by email: {e}", exc_info=True)
+            return None
+        
+    @staticmethod
+    async def update_user_info(user_id: str, data: Dict[str, Any]) -> bool:
+        """
+        Update user data (e.g., email, progress, preferences).
+
+        Args:
+            user_id: The user's ID (Telegram chat_id or web user_id)
+            data: The data to update
+
+        Returns:
+            True if update was successful, False otherwise
+        """
+        try:
+            user_id = str(user_id)  # Ensure it's a string
+
+            result = await asyncio.to_thread(
+                db.users.update_one,
+                {"user_id": user_id},
+                {"$set": data},
+                upsert=True
+            )
+
+            return result.modified_count > 0 or result.upserted_id is not None
+
+        except Exception as e:
+            logger.error(f"Error updating user {user_id}: {e}", exc_info=True)
+            return False
+
     @staticmethod
     def get_lesson_structure():
         """Helper method to understand lesson hierarchy"""
