@@ -5,6 +5,7 @@ from services.progress_tracker import ProgressTracker
 from services.learning_insights import LearningInsightsManager
 from services.content_loader import content_loader
 from datetime import datetime, timezone
+import os
 import asyncio
 import logging
 from telegram import Update
