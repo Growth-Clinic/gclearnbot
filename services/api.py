@@ -6,11 +6,13 @@ import asyncio
 import logging
 from telegram import Update
 from telegram.ext import Application
+import json
 
 logger = logging.getLogger(__name__)
 
 
 def setup_routes(app: Quart, application: Application) -> None:
+
     @app.route('/webhook', methods=['POST'])
     async def webhook() -> ResponseReturnValue:
         """Handle incoming webhook updates"""
@@ -22,16 +24,36 @@ def setup_routes(app: Quart, application: Application) -> None:
             if not application.bot:
                 logger.error("Bot not initialized")
                 return jsonify({"status": "error", "message": "Bot not initialized"}), 500
+            
+            # Check content type
+            if request.headers.get('content-type') != 'application/json':
+                logger.error(f"Invalid content type: {request.headers.get('content-type')}")
+                return jsonify({"status": "error", "message": "Invalid content type"}), 400
                 
-            json_data = await request.get_json(force=True)
-            logger.info(f"Received webhook data: {json_data}")  # Log incoming data
-            
-            update = Update.de_json(json_data, application.bot)
-            await application.process_update(update)
-            return jsonify({"status": "ok"})
-            
+            # Get raw data first
+            raw_data = await request.get_data()
+            if not raw_data:
+                logger.error("Empty request body")
+                return jsonify({"status": "error", "message": "Empty request body"}), 400
+                
+            try:
+                json_data = await request.get_json(force=True)
+                if not json_data:
+                    logger.error("Empty JSON data")
+                    return jsonify({"status": "error", "message": "Empty JSON data"}), 400
+                    
+                logger.info(f"Received webhook data: {json_data}")
+                
+                update = Update.de_json(json_data, application.bot)
+                await application.process_update(update)
+                return jsonify({"status": "ok"})
+                
+            except json.JSONDecodeError as e:
+                logger.error(f"JSON decode error: {e}")
+                return jsonify({"status": "error", "message": "Invalid JSON format"}), 400
+                
         except Exception as e:
-            logger.error(f"Error processing update: {e}", exc_info=True)  # Added exc_info for stack trace
+            logger.error(f"Error processing update: {e}", exc_info=True)
             return jsonify({"status": "error", "message": str(e)}), 500
 
 
