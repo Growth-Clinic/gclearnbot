@@ -20,6 +20,24 @@ logger = logging.getLogger(__name__)
 app = App(token=Config.SLACK_BOT_TOKEN)
 logger.info("Initializing Slack bot...")
 
+# Add the middleware for debugging - place this after app initialization
+@app.middleware
+def log_request(logger, body, next):
+    logger.debug(f"Incoming request: {body}")
+    return next()
+
+# Add event handlers - place these after middleware
+@app.event("app_mention")
+def handle_app_mentions(body, say):
+    logger.info(f"Got app mention: {body}")
+    say("Hello! I'm here!")
+
+@app.event("message")
+def handle_message(body, say):
+    logger.info(f"Got message: {body}")
+    if 'bot_id' not in body['event']:  # Ignore bot messages
+        say("I got your message!")
+
 # Initialize services
 lesson_service = LessonService(
     task_manager=TaskManager(),
@@ -244,6 +262,11 @@ app.action("lesson_next_.*")(handle_lesson_choice)
 app.message("")(handle_message)
 
 def start_slack_bot():
-    """Start the Slack bot"""
-    handler = SocketModeHandler(app, Config.SLACK_APP_TOKEN)
-    handler.start()
+    """Start the Slack bot with Socket Mode"""
+    try:
+        handler = SocketModeHandler(app, Config.SLACK_APP_TOKEN)
+        logger.info("Starting Slack bot in Socket Mode...")
+        handler.start()
+    except Exception as e:
+        logger.error(f"Error starting Slack bot: {e}")
+        raise
