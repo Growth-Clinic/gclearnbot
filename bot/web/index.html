@@ -9,6 +9,19 @@
 </head>
 <body class="bg-light">
 
+    <div id="loginSection">
+        <h2>Login</h2>
+        <input type="email" id="email" placeholder="Enter email">
+        <input type="password" id="password" placeholder="Enter password">
+        <button onclick="loginUser()">Login</button>
+    </div>
+    
+    <div id="dashboardSection" style="display: none;">
+        <h2>Welcome to Your Learning Dashboard</h2>
+        <button onclick="fetchLessons()">Load Lessons</button>
+        <div id="lessons"></div>
+    </div>
+
     <div class="container py-4">
         <h1 class="text-center">📚 Learning Dashboard</h1>
 

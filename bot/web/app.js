@@ -86,42 +86,80 @@ async function fetchLessons() {
     });
 
     let data = await response.json();
-    console.log(data);
+    if (data.status === "success") {
+        let lessonsContainer = document.getElementById("lessons");
+        lessonsContainer.innerHTML = "";
+        
+        data.lessons.forEach(lesson => {
+            let lessonDiv = document.createElement("div");
+            lessonDiv.innerHTML = `<h3>${lesson.title}</h3>
+                <p>${lesson.text}</p>
+                <button onclick="loadLesson('${lesson.lesson_id}')">Start</button>`;
+            lessonsContainer.appendChild(lessonDiv);
+        });
+    }
 }
 
 // Submit user response
 async function submitResponse() {
     const lessonId = document.getElementById("lessonSelect").value;
     const responseText = document.getElementById("responseText").value;
+    const token = getAuthToken(); // Get stored JWT token
+
+    if (!token) {
+        alert("Please log in first.");
+        return;
+    }
 
     try {
         let response = await fetch(`${API_BASE_URL}/lessons/${lessonId}/response`, {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ user_id: USER_ID, response: responseText })
+            headers: {
+                "Authorization": `Bearer ${token}`,
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({ response: responseText })
         });
 
         let data = await response.json();
         if (data.status === "success") {
             document.getElementById("responseMessage").classList.remove("d-none");
             setTimeout(() => document.getElementById("responseMessage").classList.add("d-none"), 3000);
+        } else {
+            alert(`Error: ${data.message}`);
         }
     } catch (error) {
         console.error("Error submitting response:", error);
+        alert("Something went wrong. Please try again.");
     }
 }
 
 // Fetch user progress
 async function fetchProgress() {
+    const token = getAuthToken();
+
+    if (!token) {
+        alert("Please log in first.");
+        return;
+    }
+
     try {
-        let response = await fetch(`${API_BASE_URL}/progress/${USER_ID}`);
+        let response = await fetch(`${API_BASE_URL}/progress`, {
+            method: "GET",
+            headers: { "Authorization": `Bearer ${token}` }
+        });
+
         let data = await response.json();
 
         if (data.status === "success") {
-            document.getElementById("progressText").textContent = `Completed ${data.progress.completed_lessons.length} lessons.`;
+            document.getElementById("progressText").textContent = 
+                `Completed ${data.progress.completed_lessons.length} lessons.`;
+        } else {
+            alert(`Error: ${data.message}`);
         }
     } catch (error) {
         console.error("Error fetching progress:", error);
+        alert("Could not load progress. Please try again.");
     }
 }
 
