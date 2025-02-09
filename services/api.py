@@ -247,11 +247,18 @@ def setup_routes(app: Quart, application: Application) -> None:
             return jsonify({"status": "error", "message": str(e)}), 500
 
 
-    # Flask routes for viewing journals
+
     @app.route('/')
-    def home():
+    async def serve_frontend():
+        """Serve index.html when users visit the base URL."""
+        return await send_from_directory(os.path.join(os.getcwd(), "web"), "index.html")
+
+    @app.route('/status')
+    def bot_status():
+        """Check if the bot is running."""
         return "Bot is running!"
 
+    # Flask routes for viewing journals
     @app.route('/journals/<user_id>')
     def view_journal(user_id):
         # Convert user_id to int since it comes as string from URL
