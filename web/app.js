@@ -28,6 +28,12 @@ async function loginUser(email, password) {
     }
 }
 
+function logoutUser() {
+    localStorage.removeItem("token");  // ✅ Remove token from local storage
+    alert("You have been logged out.");
+    window.location.reload();  // ✅ Refresh the page to go back to login screen
+}
+
 function getAuthToken() {
     return localStorage.getItem("token");
 }
