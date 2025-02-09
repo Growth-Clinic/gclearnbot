@@ -3,15 +3,22 @@ from services.database import db, AnalyticsManager, UserManager, JournalManager
 from services.lesson_manager import LessonService
 from services.progress_tracker import ProgressTracker
 from services.learning_insights import LearningInsightsManager
+from services.content_loader import content_loader
 from datetime import datetime, timezone
 import asyncio
 import logging
 from telegram import Update
 from telegram.ext import Application
 import json
+import bcrypt
+from flask_jwt_extended import JWTManager, create_access_token, jwt_required, get_jwt_identity
+import jwt
 
 logger = logging.getLogger(__name__)
 
+app = Quart(__name__)
+app.config["JWT_SECRET_KEY"] = os.getenv("JWT_SECRET_KEY")  # Use Render environment variable
+jwt = JWTManager(app)  # Initialize JWT authentication
 
 def setup_routes(app: Quart, application: Application) -> None:
 
@@ -20,14 +27,107 @@ def setup_routes(app: Quart, application: Application) -> None:
     lesson_service = LessonService(task_manager=None, user_manager=UserManager())  # Adjust as needed
     progress_tracker = ProgressTracker()
 
+    @app.route('/register', methods=['POST'])
+    async def register():
+        """User registration"""
+        try:
+            data = await request.json
+            email = data.get("email")
+            password = data.get("password")
+
+            if not email or not password:
+                return jsonify({"status": "error", "message": "Email and password required"}), 400
+
+            # Check if user exists
+            existing_user = await db.users.find_one({"email": email})
+            if existing_user:
+                return jsonify({"status": "error", "message": "User already exists"}), 400
+
+            # Hash password before storing
+            hashed_pw = bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode()
+
+            # Save user in MongoDB
+            await db.users.insert_one({"email": email, "password": hashed_pw})
+
+            return jsonify({"status": "success", "message": "User registered successfully"}), 201
+
+        except Exception as e:
+            logger.error(f"Registration error: {e}")
+            return jsonify({"status": "error", "message": "Server error"}), 500
+
+    
+    @app.route('/login', methods=['POST'])
+    async def login():
+        """User login"""
+        try:
+            data = await request.json
+            email = data.get("email")
+            password = data.get("password")
+
+            user = await db.users.find_one({"email": email})
+            if not user or not bcrypt.checkpw(password.encode(), user["password"].encode()):
+                return jsonify({"status": "error", "message": "Invalid email or password"}), 401
+
+            # Generate JWT token (valid for 24 hours)
+            access_token = create_access_token(identity=email, expires_delta=datetime.timedelta(days=1))
+
+            return jsonify({"status": "success", "token": access_token}), 200
+
+        except Exception as e:
+            logger.error(f"Login error: {e}")
+            return jsonify({"status": "error", "message": "Server error"}), 500
+        
+
+    @app.route('/protected', methods=['GET'])
+    @jwt_required()
+    async def protected():
+        """Example protected route"""
+        current_user = get_jwt_identity()
+        return jsonify(logged_in_as=current_user), 200
+    
+    @app.route('/lessons', methods=['GET'])
+    async def list_lessons():
+        """Return a list of all available lessons"""
+        try:
+            lessons = content_loader.load_content('lessons')  # Load from JSON
+            lesson_list = [{"lesson_id": key, "title": value.get("title", f"Lesson {key}")} for key, value in lessons.items()]
+            
+            return jsonify({"status": "success", "lessons": lesson_list}), 200
+
+        except Exception as e:
+            logger.error(f"Error listing lessons: {e}")
+            return jsonify({"status": "error", "message": "Server error"}), 500
+
     @app.route('/lessons/<lesson_id>', methods=['GET'])
     async def get_lesson(lesson_id):
-        """Fetch a specific lesson"""
+        """Fetch a lesson with progress details (similar to bot)."""
         try:
-            lesson = await db.lessons.find_one({"lesson_id": lesson_id}, {"_id": 0})
-            if lesson:
-                return jsonify({"status": "success", "lesson": lesson}), 200
-            return jsonify({"status": "error", "message": "Lesson not found"}), 404
+            lessons = content_loader.load_content('lessons')
+            lesson = lessons.get(lesson_id)
+
+            if not lesson:
+                return jsonify({"status": "error", "message": "Lesson not found"}), 404
+
+            # Extract progress details
+            parts = lesson_id.split('_')
+            lesson_num = parts[1] if len(parts) > 1 else '1'
+            step_num = parts[3] if len(parts) > 3 and 'step' in parts else None
+
+            # Format progress header
+            header = f"📚 Lesson {lesson_num} of 6"
+            if step_num:
+                header += f"\nStep {step_num}"
+
+            return jsonify({
+                "status": "success",
+                "lesson": {
+                    "lesson_id": lesson_id,
+                    "title": lesson.get("title", f"Lesson {lesson_num}"),
+                    "text": f"{header}\n\n{lesson['text']}",
+                    "next": lesson.get("next", None)  # Next lesson ID
+                }
+            }), 200
+
         except Exception as e:
             logger.error(f"Error fetching lesson {lesson_id}: {e}")
             return jsonify({"status": "error", "message": "Server error"}), 500
@@ -55,16 +155,21 @@ def setup_routes(app: Quart, application: Application) -> None:
             logger.error(f"Error submitting response for lesson {lesson_id}: {e}")
             return jsonify({"status": "error", "message": "Server error"}), 500
 
-    @app.route('/progress/<user_id>', methods=['GET'])
-    async def get_progress(user_id):
-        """Fetch user progress"""
+    @app.route('/progress', methods=['GET'])
+    @jwt_required()
+    async def get_progress():
+        """Fetch the logged-in user's progress"""
         try:
-            user_data = await UserManager.get_user_info(user_id)
-            if user_data:
-                return jsonify({"status": "success", "progress": user_data.get("progress_metrics", {})}), 200
-            return jsonify({"status": "error", "message": "User not found"}), 404
+            email = get_jwt_identity()  # Get user email from token
+            user_data = await db.users.find_one({"email": email})
+
+            if not user_data:
+                return jsonify({"status": "error", "message": "User not found"}), 404
+
+            return jsonify({"status": "success", "progress": user_data.get("progress", {})}), 200
+
         except Exception as e:
-            logger.error(f"Error fetching progress for user {user_id}: {e}")
+            logger.error(f"Error fetching progress for user {email}: {e}")
             return jsonify({"status": "error", "message": "Server error"}), 500
 
     @app.route('/progress/complete/<user_id>', methods=['GET'])
