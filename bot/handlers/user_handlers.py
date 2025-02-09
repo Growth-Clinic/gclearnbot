@@ -134,11 +134,11 @@ async def resume_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
 async def progress_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Send complete progress report on /progress command"""
     try:
-        user_id = update.message.from_user.id
-        progress_message = await ProgressTracker.get_complete_progress(user_id)
+        user_id = update.effective_user.id  # Get user ID from update
+        progress_message = await ProgressTracker().get_complete_progress(user_id)
         
         await update.message.reply_text(
-            progress_message,
+            progress_message["text"] if isinstance(progress_message, dict) else progress_message,
             parse_mode='Markdown'
         )
     except Exception as e:
