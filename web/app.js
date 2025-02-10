@@ -87,25 +87,30 @@ async function fetchUserProgress() {
 }
 
 // Load available lessons into the dropdown
-async function loadLessons() {
-    const lessonSelect = document.getElementById("lessonSelect");
-    lessonSelect.innerHTML = '<option>Loading...</option>';
+async function loadLesson(lessonId) {
+    let token = getAuthToken();
+    if (!token) {
+        alert("Please log in first.");
+        return;
+    }
 
     try {
-        let response = await fetch(`${API_BASE_URL}/lessons`);
-        let data = await response.json();
+        let response = await fetch(`${API_BASE_URL}/lessons/${lessonId}`, {
+            method: "GET",
+            headers: { "Authorization": `Bearer ${token}` },
+        });
 
+        let data = await response.json();
         if (data.status === "success") {
-            lessonSelect.innerHTML = "";
-            data.lessons.forEach(lesson => {
-                let option = document.createElement("option");
-                option.value = lesson.lesson_id;
-                option.textContent = lesson.title;
-                lessonSelect.appendChild(option);
-            });
+            document.getElementById("lessonContent").innerHTML = `
+                <h3>${data.lesson.title}</h3>
+                <p>${data.lesson.text}</p>
+            `;
+        } else {
+            alert(`Error: ${data.message}`);
         }
     } catch (error) {
-        console.error("Error fetching lessons:", error);
+        console.error("Error loading lesson:", error);
     }
 }
 
@@ -197,14 +202,21 @@ async function fetchProgress() {
         console.log("Progress API Response:", data);  // ✅ Log full API response
 
         if (data.status === "success") {
-            document.getElementById("progressText").textContent = 
-                `Completed ${data.progress.completed_lessons.length} lessons.`;
+            let progressDiv = document.getElementById("progressText");
+            progressDiv.innerHTML = `<p>Completed Lessons: ${data.progress.completed_lessons.length}</p>`;
+
+            let lessonList = "<ul>";
+            data.progress.completed_lessons.forEach(lesson => {
+                lessonList += `<li>${lesson}</li>`;
+            });
+            lessonList += "</ul>";
+
+            progressDiv.innerHTML += lessonList;
         } else {
             alert(`Error: ${data.message}`);
         }
     } catch (error) {
         console.error("Error fetching progress:", error);
-        alert("Could not load progress. Please try again.");
     }
 }
 
