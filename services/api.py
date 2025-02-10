@@ -5,7 +5,7 @@ from services.progress_tracker import ProgressTracker
 from services.learning_insights import LearningInsightsManager
 from services.content_loader import content_loader
 from services.utils import verify_password
-from config.settings import JWT_SECRET_KEY
+from config.settings import Config
 from datetime import datetime, timezone
 import os
 import asyncio
@@ -20,6 +20,7 @@ import jwt
 logger = logging.getLogger(__name__)
 
 app = Quart(__name__)
+JWT_SECRET_KEY = Config.JWT_SECRET_KEY
 app.config["JWT_SECRET_KEY"] = os.getenv("JWT_SECRET_KEY")  # Use Render environment variable
 jwt = JWTManager(app)  # Initialize JWT authentication
 
