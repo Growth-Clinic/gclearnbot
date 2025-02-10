@@ -94,6 +94,11 @@ def setup_routes(app: Quart, application: Application) -> None:
         current_user = get_jwt_identity()
         return jsonify(logged_in_as=current_user), 200
     
+    # ✅ Serve static files from the web directory
+    @app.route('/web/<path:filename>')
+    async def serve_static(filename):
+        return await send_from_directory(os.path.join(os.getcwd(), "web"), filename)
+    
     @app.route('/lessons', methods=['GET'])
     async def list_lessons():
         """Return a list of all available lessons"""

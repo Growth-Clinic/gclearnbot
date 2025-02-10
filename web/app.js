@@ -16,19 +16,24 @@ async function loginUser() {
     let email = document.getElementById("email").value;
     let password = document.getElementById("password").value;
 
-    let response = await fetch(`${API_BASE_URL}/login`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password })
-    });
+    try {
+        let response = await fetch(`${API_BASE_URL}/login`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ email, password })
+        });
 
-    let data = await response.json();
-    if (data.status === "success") {
-        localStorage.setItem("token", data.token);
-        alert("Login successful!");
-        window.location.reload();
-    } else {
-        alert("Login failed: " + data.message);
+        let data = await response.json();
+        if (data.status === "success") {
+            localStorage.setItem("token", data.token);
+            alert("Login successful!");
+            window.location.reload();
+        } else {
+            alert("Login failed: " + data.message);
+        }
+    } catch (error) {
+        console.error("Error logging in:", error);
+        alert("Login failed. Please try again.");
     }
 }
 
