@@ -16,6 +16,7 @@ import json
 import bcrypt
 from flask_jwt_extended import decode_token, verify_jwt_in_request, JWTManager, create_access_token, jwt_required, get_jwt_identity
 import jwt
+from werkzeug.security import generate_password_hash
 
 logger = logging.getLogger(__name__)
 
@@ -41,30 +42,32 @@ def setup_routes(app: Quart, application: Application) -> None:
 
     @app.route('/register', methods=['POST'])
     async def register():
-        """User registration"""
+        """Register a new user and return a JWT token"""
         try:
-            data = await request.json
+            data = await request.get_json()
             email = data.get("email")
             password = data.get("password")
 
             if not email or not password:
                 return jsonify({"status": "error", "message": "Email and password required"}), 400
 
-            # Check if user exists
             existing_user = await db.users.find_one({"email": email})
             if existing_user:
-                return jsonify({"status": "error", "message": "User already exists"}), 400
+                return jsonify({"status": "error", "message": "User already exists"}), 409
 
-            # Hash password before storing
-            hashed_pw = bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode()
+            hashed_password = generate_password_hash(password)  # ✅ Hash password for security
+            user_data = {
+                "email": email,
+                "password": hashed_password,
+                "progress": {"completed_lessons": []},  # ✅ Initialize progress
+            }
 
-            # Save user in MongoDB
-            await db.users.insert_one({"email": email, "password": hashed_pw})
+            await db.users.insert_one(user_data)  # ✅ Save user to MongoDB
+            token = jwt.encode({"sub": email}, JWT_SECRET_KEY, algorithm="HS256")
 
-            return jsonify({"status": "success", "message": "User registered successfully"}), 201
+            return jsonify({"status": "success", "token": token}), 201
 
         except Exception as e:
-            logger.error(f"Registration error: {e}")
             return jsonify({"status": "error", "message": "Server error"}), 500
 
     
