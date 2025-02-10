@@ -1,4 +1,4 @@
-const API_BASE_URL = "https://gclearnbot.onrender.com";  // Change this to your Render URL when deployed
+const API_BASE_URL = "https://gclearnbot.onrender.com"; 
 
 
 async function registerUser(email, password) {
@@ -12,17 +12,21 @@ async function registerUser(email, password) {
     alert(data.message);
 }
 
-async function loginUser(email, password) {
+async function loginUser() {
+    let email = document.getElementById("email").value;
+    let password = document.getElementById("password").value;
+
     let response = await fetch(`${API_BASE_URL}/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ email, password })
     });
 
     let data = await response.json();
     if (data.status === "success") {
         localStorage.setItem("token", data.token);
         alert("Login successful!");
+        window.location.reload();
     } else {
         alert("Login failed: " + data.message);
     }
@@ -81,6 +85,8 @@ async function loadLessons() {
 // Fetch and display lesson content
 async function fetchLessons() {
     let token = getAuthToken();
+    console.log("Using Token:", token);  // ✅ Check if the token is set
+
     if (!token) {
         alert("Please log in first.");
         return;
@@ -92,10 +98,12 @@ async function fetchLessons() {
     });
 
     let data = await response.json();
+    console.log("API Response:", data);  // ✅ Log full API response
+
     if (data.status === "success") {
         let lessonsContainer = document.getElementById("lessons");
         lessonsContainer.innerHTML = "";
-        
+
         data.lessons.forEach(lesson => {
             let lessonDiv = document.createElement("div");
             lessonDiv.innerHTML = `<h3>${lesson.title}</h3>
@@ -103,6 +111,8 @@ async function fetchLessons() {
                 <button onclick="loadLesson('${lesson.lesson_id}')">Start</button>`;
             lessonsContainer.appendChild(lessonDiv);
         });
+    } else {
+        alert(`Error: ${data.message}`);
     }
 }
 
@@ -143,6 +153,7 @@ async function submitResponse() {
 // Fetch user progress
 async function fetchProgress() {
     const token = getAuthToken();
+    console.log("Fetching progress with token:", token);  // ✅ Log the token
 
     if (!token) {
         alert("Please log in first.");
@@ -156,6 +167,7 @@ async function fetchProgress() {
         });
 
         let data = await response.json();
+        console.log("Progress API Response:", data);  // ✅ Log full API response
 
         if (data.status === "success") {
             document.getElementById("progressText").textContent = 
@@ -168,6 +180,7 @@ async function fetchProgress() {
         alert("Could not load progress. Please try again.");
     }
 }
+
 
 // Fetch journal entries
 async function fetchJournal() {

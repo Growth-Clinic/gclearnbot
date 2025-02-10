@@ -167,18 +167,28 @@ def setup_routes(app: Quart, application: Application) -> None:
     @app.route('/progress', methods=['GET'])
     @jwt_required()
     async def get_progress():
-        """Fetch user progress based on email"""
+        """Fetch user progress based on JWT identity"""
         try:
-            email = get_jwt_identity()  # Get email from JWT token
-            user_data = await db.users.find_one({"email": email})
+            user_email = get_jwt_identity()  # ✅ Get email from JWT token
+            logger.info(f"Fetching progress for {user_email}")
+
+            user_data = await db.users.find_one({"email": user_email})  # ✅ Use `await` for async MongoDB query
 
             if not user_data:
                 return jsonify({"status": "error", "message": "User not found"}), 404
 
-            return jsonify({"status": "success", "progress": user_data.get("progress", {})}), 200
+            progress = user_data.get("progress", {})
+            completed_lessons = progress.get("completed_lessons", [])
+
+            return jsonify({
+                "status": "success",
+                "progress": {
+                    "completed_lessons": completed_lessons
+                }
+            }), 200
 
         except Exception as e:
-            logger.error(f"Error fetching progress for user {email}: {e}")
+            logger.error(f"Error fetching progress: {e}", exc_info=True)
             return jsonify({"status": "error", "message": "Server error"}), 500
 
     @app.route('/progress/complete/<user_id>', methods=['GET'])
