@@ -45,6 +45,8 @@ def setup_routes(app: Quart, application: Application) -> None:
         """Register a new user and return a JWT token"""
         try:
             data = await request.get_json()
+            logger.info(f"Received registration data: {data}")  # ✅ Log incoming request data
+
             email = data.get("email")
             password = data.get("password")
 
@@ -55,19 +57,20 @@ def setup_routes(app: Quart, application: Application) -> None:
             if existing_user:
                 return jsonify({"status": "error", "message": "User already exists"}), 409
 
-            hashed_password = generate_password_hash(password)  # ✅ Hash password for security
+            hashed_password = generate_password_hash(password)  # ✅ Secure password
             user_data = {
                 "email": email,
                 "password": hashed_password,
-                "progress": {"completed_lessons": []},  # ✅ Initialize progress
+                "progress": {"completed_lessons": []},
             }
 
-            await db.users.insert_one(user_data)  # ✅ Save user to MongoDB
+            await db.users.insert_one(user_data)  # ✅ Save to MongoDB
             token = jwt.encode({"sub": email}, JWT_SECRET_KEY, algorithm="HS256")
 
             return jsonify({"status": "success", "token": token}), 201
 
         except Exception as e:
+            logger.error(f"Register error: {e}", exc_info=True)
             return jsonify({"status": "error", "message": "Server error"}), 500
 
     

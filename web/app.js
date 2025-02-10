@@ -2,20 +2,25 @@ const API_BASE_URL = "https://gclearnbot.onrender.com";
 
 
 async function registerUser() {
-    let email = document.getElementById("registerEmail").value;
-    let password = document.getElementById("registerPassword").value;
+    let email = document.getElementById("registerEmail").value.trim();
+    let password = document.getElementById("registerPassword").value.trim();
 
-    console.log("Registering user:", { email });
+    console.log("Registering user:", { email, password });  // ✅ Debugging log
+
+    if (!email || !password) {
+        alert("Please enter a valid email and password.");
+        return;
+    }
 
     try {
         let response = await fetch(`${API_BASE_URL}/register`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ email, password })
+            body: JSON.stringify({ email, password })  // ✅ Send JSON correctly
         });
 
         let data = await response.json();
-        console.log("Register API Response:", data);
+        console.log("Register API Response:", data);  // ✅ Log API response
 
         if (data.status === "success") {
             localStorage.setItem("token", data.token);
@@ -29,6 +34,7 @@ async function registerUser() {
         alert("Registration failed. Please try again.");
     }
 }
+
 
 async function loginUser() {
     let email = document.getElementById("email").value;
