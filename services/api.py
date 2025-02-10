@@ -12,7 +12,7 @@ from telegram import Update
 from telegram.ext import Application
 import json
 import bcrypt
-from flask_jwt_extended import verify_jwt_in_request, JWTManager, create_access_token, jwt_required, get_jwt_identity
+from flask_jwt_extended import decode_token, verify_jwt_in_request, JWTManager, create_access_token, jwt_required, get_jwt_identity
 import jwt
 
 logger = logging.getLogger(__name__)
@@ -166,11 +166,20 @@ def setup_routes(app: Quart, application: Application) -> None:
 
     @app.route('/progress', methods=['GET'])
     async def get_progress():
-        """Fetch user progress based on JWT identity"""
+        """Fetch user progress based on JWT token"""
         try:
-            # ✅ Manually verify the JWT token since @jwt_required() does not work well with async
-            verify_jwt_in_request()  
-            user_email = get_jwt_identity()  # ✅ Get email from JWT token
+            # ✅ Manually extract the token from the Authorization header
+            auth_header = request.headers.get("Authorization")
+            if not auth_header or not auth_header.startswith("Bearer "):
+                return jsonify({"status": "error", "message": "Missing or invalid token"}), 401
+
+            token = auth_header.split(" ")[1]  # Extract the token
+            decoded_token = decode_token(token)  # ✅ Manually decode JWT
+            user_email = decoded_token.get("sub")  # ✅ Get user identity from token
+
+            if not user_email:
+                return jsonify({"status": "error", "message": "Invalid token"}), 401
+
             logger.info(f"Fetching progress for {user_email}")
 
             user_data = await db.users.find_one({"email": user_email})  # ✅ Use `await` for async MongoDB query
