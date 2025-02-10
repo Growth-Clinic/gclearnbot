@@ -1,5 +1,5 @@
 from quart import Quart, request, jsonify, ResponseReturnValue, send_from_directory
-from services.database import db, AnalyticsManager, UserManager, JournalManager
+from services.database import get_db, AnalyticsManager, UserManager, JournalManager
 from services.lesson_manager import LessonService
 from services.progress_tracker import ProgressTracker
 from services.learning_insights import LearningInsightsManager
@@ -20,9 +20,17 @@ import jwt
 logger = logging.getLogger(__name__)
 
 app = Quart(__name__)
+db = None
 JWT_SECRET_KEY = Config.JWT_SECRET_KEY
 app.config["JWT_SECRET_KEY"] = os.getenv("JWT_SECRET_KEY")  # Use Render environment variable
 jwt = JWTManager(app)  # Initialize JWT authentication
+
+@app.before_serving
+async def before_serving():
+    """Initialize database connection before serving"""
+    global db
+    db = await get_db()
+    logger.info("Database initialized")
 
 def setup_routes(app: Quart, application: Application) -> None:
 
@@ -65,7 +73,7 @@ def setup_routes(app: Quart, application: Application) -> None:
         """Authenticate user and return JWT"""
         try:
             data = await request.get_json()
-            logger.info(f"Login request received: {data}")  # ✅ Log incoming data
+            logger.info(f"Login request received: {data}")  # Log incoming data
 
             email = data.get("email")
             password = data.get("password")
@@ -73,15 +81,17 @@ def setup_routes(app: Quart, application: Application) -> None:
             if not email or not password:
                 return jsonify({"status": "error", "message": "Missing email or password"}), 400
 
-            user = await db.users.find_one({"email": email})  # ✅ Use `await` to fetch user
+            # Get database instance
+            db = await get_db()
+            user = await db.users.find_one({"email": email})
 
             if not user:
                 return jsonify({"status": "error", "message": "User not found"}), 404
 
-            if not verify_password(password, user["password"]):  # ✅ Check password
+            if not verify_password(password, user["password"]):
                 return jsonify({"status": "error", "message": "Invalid credentials"}), 401
 
-            token = jwt.encode({"sub": email}, JWT_SECRET_KEY, algorithm="HS256")  # ✅ Generate JWT
+            token = jwt.encode({"sub": email}, JWT_SECRET_KEY, algorithm="HS256")
 
             return jsonify({"status": "success", "token": token}), 200
 

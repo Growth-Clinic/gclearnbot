@@ -1,3 +1,4 @@
+from motor.motor_asyncio import AsyncIOMotorClient
 from pymongo import MongoClient
 from pymongo.errors import ServerSelectionTimeoutError, OperationFailure
 import certifi
@@ -24,49 +25,52 @@ lessons = content_loader.load_content('lessons')
 
 
 # Create directories for storage
-def init_mongodb(max_retries=3, retry_delay=2):
+async def init_mongodb(max_retries=3, retry_delay=2):
     """Initialize MongoDB connection with retry mechanism"""
     for attempt in range(max_retries):
         try:
-            MONGODB_URI = os.getenv('MONGODB_URI')
+            MONGODB_URI = Config.MONGODB_URI
             if not MONGODB_URI:
                 raise ValueError("MONGODB_URI environment variable not set!")
 
-            client = MongoClient(
+            # Use Motor for async MongoDB operations
+            client = AsyncIOMotorClient(
                 MONGODB_URI,
                 tlsCAFile=certifi.where(),
-                tls=True,
-                retryWrites=True,
-                serverSelectionTimeoutMS=10000,    # Increased timeout
-                connectTimeoutMS=30000,            # Increased timeout
-                maxPoolSize=1,                     # Reduced connections
-                minPoolSize=1
+                serverSelectionTimeoutMS=5000
             )
             
-            # Test connection with longer timeout
-            client.admin.command('ping', serverSelectionTimeoutMS=10000)
-            db = client['telegram_bot']
-
+            # Test connection
+            await client.admin.command('ping')
+            
+            # Get database
+            db = client.get_database()
+            
+            # Create essential indices
+            await db.users.create_index("email", unique=True)
+            
             # Ensure indices and collections exist
-            if "user_skills" not in db.list_collection_names():
-                db.create_collection("user_skills")
-                db.user_skills.create_index("user_id", unique=True)
+            collections = await db.list_collection_names()
+            
+            if "user_skills" not in collections:
+                await db.create_collection("user_skills")
+                await db.user_skills.create_index("user_id", unique=True)
                 logger.info("Created user_skills collection with index")
             
-            if "learning_insights" not in db.list_collection_names():
-                db.create_collection("learning_insights")
-                db.learning_insights.create_index("user_id", unique=True)
+            if "learning_insights" not in collections:
+                await db.create_collection("learning_insights")
+                await db.learning_insights.create_index("user_id", unique=True)
                 logger.info("Created learning_insights collection with index")
             
             # Ensure an index on user_id for journals collection
-            db.journals.create_index("user_id")
+            await db.journals.create_index("user_id")
 
             # Add indices for analytics
-            db.journals.create_index([("entries.timestamp", -1)])
-            db.learning_insights.create_index([("insights.timestamp", -1)])
+            await db.journals.create_index([("entries.timestamp", -1)])
+            await db.learning_insights.create_index([("insights.timestamp", -1)])
 
             # Add platform support indices
-            db.users.create_index([("user_id", 1), ("platform", 1)], unique=True)
+            await db.users.create_index([("user_id", 1), ("platform", 1)], unique=True)
             
             logger.info("MongoDB connection successful")
             return db
@@ -1244,4 +1248,11 @@ class AnalyticsManager:
             logger.error(f"Error calculating lesson analytics for {lesson_key}: {e}", exc_info=True)
             return {}
         
-db = init_mongodb()
+db = None
+
+async def get_db():
+    """Get database instance, initializing if necessary"""
+    global db
+    if db is None:
+        db = await init_mongodb()
+    return db
