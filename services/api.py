@@ -4,6 +4,8 @@ from services.lesson_manager import LessonService
 from services.progress_tracker import ProgressTracker
 from services.learning_insights import LearningInsightsManager
 from services.content_loader import content_loader
+from services.utils import verify_password
+from config.settings import JWT_SECRET_KEY
 from datetime import datetime, timezone
 import os
 import asyncio
@@ -59,31 +61,31 @@ def setup_routes(app: Quart, application: Application) -> None:
     
     @app.route('/login', methods=['POST'])
     async def login():
-        """User login & sync progress from Telegram"""
+        """Authenticate user and return JWT"""
         try:
-            data = await request.json
+            data = await request.get_json()
+            logger.info(f"Login request received: {data}")  # ✅ Log incoming data
+
             email = data.get("email")
             password = data.get("password")
 
-            user = await db.users.find_one({"email": email})
+            if not email or not password:
+                return jsonify({"status": "error", "message": "Missing email or password"}), 400
+
+            user = await db.users.find_one({"email": email})  # ✅ Use `await` to fetch user
+
             if not user:
-                return jsonify({"status": "error", "message": "User not found"}), 401
+                return jsonify({"status": "error", "message": "User not found"}), 404
 
-            if "password" in user:
-                # Web user: Check password
-                if not bcrypt.checkpw(password.encode(), user["password"].encode()):
-                    return jsonify({"status": "error", "message": "Invalid password"}), 401
-            else:
-                # Telegram-only user: Allow login without password
-                await db.users.update_one({"email": email}, {"$set": {"password": bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode()}})
-            
-            # Generate JWT token
-            access_token = create_access_token(identity=email, expires_delta=datetime.timedelta(days=1))
+            if not verify_password(password, user["password"]):  # ✅ Check password
+                return jsonify({"status": "error", "message": "Invalid credentials"}), 401
 
-            return jsonify({"status": "success", "token": access_token}), 200
+            token = jwt.encode({"sub": email}, JWT_SECRET_KEY, algorithm="HS256")  # ✅ Generate JWT
+
+            return jsonify({"status": "success", "token": token}), 200
 
         except Exception as e:
-            logger.error(f"Login error: {e}")
+            logger.error(f"Login error: {e}", exc_info=True)
             return jsonify({"status": "error", "message": "Server error"}), 500
         
 

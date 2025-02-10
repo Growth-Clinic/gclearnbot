@@ -16,6 +16,8 @@ async function loginUser() {
     let email = document.getElementById("email").value;
     let password = document.getElementById("password").value;
 
+    console.log("Sending login request:", { email, password });  // ✅ Debug log
+
     try {
         let response = await fetch(`${API_BASE_URL}/login`, {
             method: "POST",
@@ -24,6 +26,8 @@ async function loginUser() {
         });
 
         let data = await response.json();
+        console.log("Login API Response:", data);  // ✅ Log API response
+
         if (data.status === "success") {
             localStorage.setItem("token", data.token);
             alert("Login successful!");
