@@ -12,7 +12,7 @@ from telegram import Update
 from telegram.ext import Application
 import json
 import bcrypt
-from flask_jwt_extended import JWTManager, create_access_token, jwt_required, get_jwt_identity
+from flask_jwt_extended import verify_jwt_in_request, JWTManager, create_access_token, jwt_required, get_jwt_identity
 import jwt
 
 logger = logging.getLogger(__name__)
@@ -165,10 +165,11 @@ def setup_routes(app: Quart, application: Application) -> None:
             return jsonify({"status": "error", "message": "Server error"}), 500
 
     @app.route('/progress', methods=['GET'])
-    @jwt_required()
     async def get_progress():
         """Fetch user progress based on JWT identity"""
         try:
+            # ✅ Manually verify the JWT token since @jwt_required() does not work well with async
+            verify_jwt_in_request()  
             user_email = get_jwt_identity()  # ✅ Get email from JWT token
             logger.info(f"Fetching progress for {user_email}")
 
