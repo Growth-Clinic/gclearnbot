@@ -44,7 +44,7 @@ async def init_mongodb(max_retries=3, retry_delay=2):
             await client.admin.command('ping')
             
             # Get database
-            db = client.get_database()
+            db = client["gclearnbot"]  # Using a specific database name
             
             # Create essential indices
             await db.users.create_index("email", unique=True)
