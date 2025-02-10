@@ -52,6 +52,8 @@ def setup_routes(app: Quart, application: Application) -> None:
 
             if not email or not password:
                 return jsonify({"status": "error", "message": "Email and password required"}), 400
+            
+            db = await get_db()  # ✅ Ensure db is initialized
 
             existing_user = await db.users.find_one({"email": email})
             if existing_user:
@@ -206,6 +208,7 @@ def setup_routes(app: Quart, application: Application) -> None:
 
             logger.info(f"Fetching progress for {user_email}")
 
+            db = await get_db()  # ✅ Ensure db is initialized
             user_data = await db.users.find_one({"email": user_email})  # ✅ Use `await` for async MongoDB query
 
             if not user_data:
