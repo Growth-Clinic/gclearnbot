@@ -102,72 +102,96 @@ async function fetchUserProgress() {
 }
 
 // Load available lessons into the dropdown
-async function loadLesson(lessonId) {
-    let token = getAuthToken();
-    if (!token) {
-        alert("Please log in first.");
+async function loadLesson() {
+    const lessonSelect = document.getElementById("lessonSelect");
+    const lessonId = lessonSelect.value;
+    
+    if (!lessonId) {
+        alert("Please select a lesson first");
         return;
     }
 
+    const token = getAuthToken();
     try {
-        let response = await fetch(`${API_BASE_URL}/lessons/${lessonId}`, {
-            method: "GET",
-            headers: { "Authorization": `Bearer ${token}` },
+        const response = await fetch(`${API_BASE_URL}/lessons/${lessonId}`, {
+            headers: { 
+                "Authorization": `Bearer ${token}`,
+                "Content-Type": "application/json"
+            }
         });
 
-        let data = await response.json();
+        const data = await response.json();
+        console.log("Load lesson response:", data);
+
         if (data.status === "success") {
-            document.getElementById("lessonContent").innerHTML = `
-                <h3>${data.lesson.title}</h3>
-                <p>${data.lesson.text}</p>
-            `;
+            const lessonCard = document.getElementById("lessonCard");
+            const lessonTitle = document.getElementById("lessonTitle");
+            const lessonContent = document.getElementById("lessonContent");
+
+            lessonTitle.textContent = data.lesson.title;
+            lessonContent.innerHTML = data.lesson.text.replace(/\n/g, '<br>');
+            lessonCard.classList.remove("d-none");
         } else {
-            alert(`Error: ${data.message}`);
+            alert("Error loading lesson content");
         }
     } catch (error) {
         console.error("Error loading lesson:", error);
+        alert("Failed to load lesson content");
     }
 }
 
 // Fetch and display lesson content
 async function fetchLessons() {
-    let token = getAuthToken();
+    const token = getAuthToken();
     console.log("Using Token:", token);
 
     if (!token) {
+        console.error("No auth token found");
         alert("Please log in first.");
         return;
     }
 
     try {
-        let response = await fetch(`${API_BASE_URL}/lessons`, {
+        const response = await fetch(`${API_BASE_URL}/lessons`, {
             method: "GET",
-            headers: { "Authorization": `Bearer ${token}` },
+            headers: { 
+                "Authorization": `Bearer ${token}`,
+                "Content-Type": "application/json"
+            },
         });
 
-        let data = await response.json();
-        console.log("API Response:", data);
+        const data = await response.json();
+        console.log("Lessons API Response:", data);
 
-        if (data.status === "success") {
-            // Get the lessons container
-            let lessonsContainer = document.getElementById("lessonSelect");
-            if (!lessonsContainer) {
-                console.error("Lessons container not found in DOM");
-                return;
-            }
+        const lessonsContainer = document.getElementById("lessonSelect");
+        if (!lessonsContainer) {
+            console.error("Lesson select element not found");
+            return;
+        }
 
-            // Clear existing options
-            lessonsContainer.innerHTML = '<option value="">Select a lesson...</option>';
+        // Clear existing options
+        lessonsContainer.innerHTML = '<option value="">Select a lesson...</option>';
 
-            // Add lessons as options
-            data.lessons.forEach(lesson => {
-                let option = document.createElement("option");
-                option.value = lesson.lesson_id;
-                option.textContent = lesson.title;
-                lessonsContainer.appendChild(option);
+        if (data.status === "success" && Array.isArray(data.lessons)) {
+            // Sort lessons by lesson number if possible
+            const sortedLessons = data.lessons.sort((a, b) => {
+                const aNum = parseInt(a.lesson_id.split('_')[1]) || 0;
+                const bNum = parseInt(b.lesson_id.split('_')[1]) || 0;
+                return aNum - bNum;
+            });
+
+            // Add lessons to select
+            sortedLessons.forEach(lesson => {
+                if (lesson.lesson_id && lesson.title) {
+                    const option = document.createElement("option");
+                    option.value = lesson.lesson_id;
+                    option.textContent = `Lesson ${lesson.lesson_id.split('_')[1]}: ${lesson.title}`;
+                    lessonsContainer.appendChild(option);
+                }
             });
         } else {
-            alert(`Error: ${data.message}`);
+            console.error("Invalid lessons data received:", data);
+            alert("Error loading lessons. Please try again.");
         }
     } catch (error) {
         console.error("Error fetching lessons:", error);

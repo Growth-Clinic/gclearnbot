@@ -8,96 +8,73 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
 </head>
 <body class="bg-light">
-
-    <div id="loginSection">
+    <!-- Login Section -->
+    <div id="loginSection" class="container py-4">
         <h2>Register</h2>
-        <input type="email" id="registerEmail" placeholder="Enter your email">
-        <input type="password" id="registerPassword" placeholder="Enter your password">
-        <button onclick="registerUser()">Register</button>
+        <input type="email" id="registerEmail" placeholder="Enter your email" class="form-control mb-2">
+        <input type="password" id="registerPassword" placeholder="Enter your password" class="form-control mb-2">
+        <button onclick="registerUser()" class="btn btn-primary mb-4">Register</button>
 
         <h2>Login</h2>
-        <input type="email" id="email" placeholder="Enter email">
-        <input type="password" id="password" placeholder="Enter password">
-        <button onclick="loginUser()">Login</button>
+        <input type="email" id="email" placeholder="Enter email" class="form-control mb-2">
+        <input type="password" id="password" placeholder="Enter password" class="form-control mb-2">
+        <button onclick="loginUser()" class="btn btn-primary">Login</button>
     </div>
 
-    <div id="dashboardSection" style="display: none;">
-        <div class="container py-4">
-            <div class="d-flex justify-content-between align-items-center">
-                <h2>Welcome to Your Learning Dashboard</h2>
-                <button class="btn btn-danger" id="logoutButton" onclick="logoutUser()">Logout</button>
-            </div>
-    
-            <!-- Select Lesson -->
-            <div class="card my-3">
-                <div class="card-body">
-                    <h5>Select a Lesson</h5>
-                    <select id="lessonSelect" class="form-select">
-                        <option value="">Select a lesson...</option>
-                    </select>
-                    <button class="btn btn-primary mt-2" onclick="loadLesson()">Load Lesson</button>
-                </div>
-            </div>
-    
-            <!-- Lesson Content -->
-            <div class="card my-3 d-none" id="lessonCard">
-                <div class="card-body">
-                    <h5 id="lessonTitle"></h5>
-                    <p id="lessonContent"></p>
-                </div>
-            </div>
+    <!-- Dashboard Section -->
+    <div id="dashboardSection" style="display: none;" class="container py-4">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2>Welcome to Your Learning Dashboard</h2>
+            <button onclick="logoutUser()" class="btn btn-danger">Logout</button>
         </div>
-    </div>
-
-    <div class="container py-4">
-        <h1 class="text-center">📚 Learning Dashboard</h1>
 
         <!-- Select Lesson -->
-        <div class="card my-3">
+        <div class="card mb-4">
             <div class="card-body">
-                <h5>Select a Lesson</h5>
-                <select id="lessonSelect" class="form-select"></select>
-                <button class="btn btn-primary mt-2" onclick="fetchLesson()">Load Lesson</button>
+                <h5 class="card-title">Select a Lesson</h5>
+                <select id="lessonSelect" class="form-select mb-2">
+                    <option value="">Select a lesson...</option>
+                </select>
+                <button onclick="loadLesson()" class="btn btn-primary">Load Lesson</button>
             </div>
         </div>
 
         <!-- Lesson Content -->
-        <div class="card my-3 d-none" id="lessonCard">
+        <div id="lessonCard" class="card mb-4 d-none">
             <div class="card-body">
-                <h5 id="lessonTitle"></h5>
-                <p id="lessonContent"></p>
+                <h5 id="lessonTitle" class="card-title"></h5>
+                <div id="lessonContent" class="card-text"></div>
             </div>
         </div>
 
-        <!-- Submit Response -->
-        <div class="card my-3">
+        <!-- Response Section -->
+        <div class="card mb-4">
             <div class="card-body">
-                <h5>Submit Your Response</h5>
-                <textarea id="responseText" class="form-control" rows="3" placeholder="Write your response..."></textarea>
-                <button class="btn btn-success mt-2" onclick="submitResponse()">Submit</button>
-                <p class="mt-2 text-success d-none" id="responseMessage">Response submitted!</p>
+                <h5 class="card-title">Submit Your Response</h5>
+                <textarea id="responseText" class="form-control mb-2" rows="4" placeholder="Write your response..."></textarea>
+                <button onclick="submitResponse()" class="btn btn-success">Submit</button>
             </div>
         </div>
 
-        <!-- View Progress -->
-        <div class="card my-3">
+        <!-- Progress Section -->
+        <div class="card mb-4">
             <div class="card-body">
-                <h5>Your Progress</h5>
-                <p id="progressText">Loading...</p>
-                <button class="btn btn-info" onclick="fetchProgress()">Refresh Progress</button>
+                <h5 class="card-title">Your Progress</h5>
+                <div id="progressText">Loading...</div>
+                <button onclick="fetchProgress()" class="btn btn-info mt-2">Refresh Progress</button>
             </div>
         </div>
 
-        <!-- View Journal -->
-        <div class="card my-3">
+        <!-- Journal Section -->
+        <div class="card">
             <div class="card-body">
-                <h5>Your Journal</h5>
-                <ul id="journalList" class="list-group"></ul>
-                <button class="btn btn-secondary mt-2" onclick="fetchJournal()">Load Journal</button>
+                <h5 class="card-title">Your Journal</h5>
+                <ul id="journalList" class="list-group list-group-flush"></ul>
+                <button onclick="fetchJournal()" class="btn btn-secondary mt-2">Load Journal</button>
             </div>
         </div>
-
     </div>
-<script src="/web/app.js"></script>
+
+    <script src="/web/app.js"></script>
 </body>
 </html>
