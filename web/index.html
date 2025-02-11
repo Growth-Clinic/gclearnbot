@@ -3,74 +3,100 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Learning Dashboard</title>
+    <title>Growth Clinic - Future-Proof Your Career</title>
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
 </head>
 <body class="bg-light">
-    <!-- Login Section -->
-    <div id="loginSection" class="container py-4">
-        <h2>Register</h2>
-        <input type="email" id="registerEmail" placeholder="Enter your email" class="form-control mb-2">
-        <input type="password" id="registerPassword" placeholder="Enter your password" class="form-control mb-2">
-        <button onclick="registerUser()" class="btn btn-primary mb-4">Register</button>
-
-        <h2>Login</h2>
-        <input type="email" id="email" placeholder="Enter email" class="form-control mb-2">
-        <input type="password" id="password" placeholder="Enter password" class="form-control mb-2">
-        <button onclick="loginUser()" class="btn btn-primary">Login</button>
-    </div>
-
-    <!-- Dashboard Section -->
-    <div id="dashboardSection" style="display: none;" class="container py-4">
-        <div class="d-flex justify-content-between align-items-center mb-4">
-            <h2>Welcome to Your Learning Dashboard</h2>
-            <button onclick="logoutUser()" class="btn btn-danger">Logout</button>
-        </div>
-
-        <!-- Select Lesson -->
-        <div class="card mb-4">
-            <div class="card-body">
-                <h5 class="card-title">Select a Lesson</h5>
-                <select id="lessonSelect" class="form-select mb-2">
-                    <option value="">Select a lesson...</option>
-                </select>
-                <button onclick="loadLesson()" class="btn btn-primary">Load Lesson</button>
+    <div class="container py-5">
+        <!-- Hero Section -->
+        <div class="text-center mb-5">
+            <h1 class="display-4 mb-3">Welcome to Growth Clinic</h1>
+            <p class="lead mb-4">Future-proof your career with practical mental models and skills</p>
+            <div class="row justify-content-center">
+                <div class="col-md-8">
+                    <p class="text-muted">Learn essential thinking frameworks through bite-sized, practical lessons. Perfect for busy professionals looking to enhance their problem-solving and decision-making skills.</p>
+                </div>
             </div>
         </div>
 
-        <!-- Lesson Content -->
-        <div id="lessonCard" class="card mb-4 d-none">
-            <div class="card-body">
-                <h5 id="lessonTitle" class="card-title"></h5>
-                <div id="lessonContent" class="card-text"></div>
+        <!-- Key Features -->
+        <div class="row mb-5 g-4">
+            <div class="col-md-4">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <h5 class="card-title">🎨 Design Thinking</h5>
+                        <p class="card-text">Master creative problem-solving and user-centered innovation techniques.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <h5 class="card-title">💼 Business Modeling</h5>
+                        <p class="card-text">Transform ideas into sustainable ventures using proven frameworks.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <h5 class="card-title">📈 Market Thinking</h5>
+                        <p class="card-text">Learn how to scale products and identify market opportunities.</p>
+                    </div>
+                </div>
             </div>
         </div>
 
-        <!-- Response Section -->
-        <div class="card mb-4">
-            <div class="card-body">
-                <h5 class="card-title">Submit Your Response</h5>
-                <textarea id="responseText" class="form-control mb-2" rows="4" placeholder="Write your response..."></textarea>
-                <button onclick="submitResponse()" class="btn btn-success">Submit</button>
+        <!-- Auth Section -->
+        <div class="row justify-content-center">
+            <div class="col-md-6">
+                <!-- Register Section -->
+                <div class="card mb-4">
+                    <div class="card-body">
+                        <h2 class="card-title mb-3">Register</h2>
+                        <p class="text-muted mb-4">Start your learning journey today</p>
+                        <input type="email" id="registerEmail" class="form-control mb-3" placeholder="Enter your email">
+                        <input type="password" id="registerPassword" class="form-control mb-3" placeholder="Enter your password">
+                        <button onclick="registerUser()" class="btn btn-primary w-100">Register</button>
+                    </div>
+                </div>
+
+                <!-- Login Section -->
+                <div class="card">
+                    <div class="card-body">
+                        <h2 class="card-title mb-3">Login</h2>
+                        <p class="text-muted mb-4">Welcome back! Continue your learning</p>
+                        <input type="email" id="email" class="form-control mb-3" placeholder="Enter email">
+                        <input type="password" id="password" class="form-control mb-3" placeholder="Enter password">
+                        <button onclick="loginUser()" class="btn btn-primary w-100">Login</button>
+                    </div>
+                </div>
             </div>
         </div>
 
-        <!-- Progress Section -->
-        <div class="card mb-4">
-            <div class="card-body">
-                <h5 class="card-title">Your Progress</h5>
-                <div id="progressText">Loading...</div>
-                <button onclick="fetchProgress()" class="btn btn-info mt-2">Refresh Progress</button>
+        <!-- Features Section -->
+        <div class="row mt-5 pt-5">
+            <div class="col-12 text-center mb-4">
+                <h3>Why Choose Growth Clinic?</h3>
             </div>
-        </div>
-
-        <!-- Journal Section -->
-        <div class="card">
-            <div class="card-body">
-                <h5 class="card-title">Your Journal</h5>
-                <ul id="journalList" class="list-group list-group-flush"></ul>
-                <button onclick="fetchJournal()" class="btn btn-secondary mt-2">Load Journal</button>
+            <div class="col-md-4 mb-3">
+                <div class="text-center">
+                    <h5>📝 Practical Learning</h5>
+                    <p class="text-muted">Learn through hands-on tasks and real-world applications</p>
+                </div>
+            </div>
+            <div class="col-md-4 mb-3">
+                <div class="text-center">
+                    <h5>🎯 Track Progress</h5>
+                    <p class="text-muted">Monitor your growth with detailed progress tracking</p>
+                </div>
+            </div>
+            <div class="col-md-4 mb-3">
+                <div class="text-center">
+                    <h5>📚 Personal Journal</h5>
+                    <p class="text-muted">Build your knowledge through structured reflection</p>
+                </div>
             </div>
         </div>
     </div>
