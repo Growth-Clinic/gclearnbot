@@ -147,7 +147,6 @@ async function fetchLessons() {
 
     if (!token) {
         console.error("No auth token found");
-        alert("Please log in first.");
         return;
     }
 
@@ -163,17 +162,19 @@ async function fetchLessons() {
         const data = await response.json();
         console.log("Lessons API Response:", data);
 
-        const lessonsContainer = document.getElementById("lessonSelect");
-        if (!lessonsContainer) {
-            console.error("Lesson select element not found");
+        // Get the select element - match the exact structure in your HTML
+        const select = document.querySelector('select');
+        
+        if (!select) {
+            console.error("Select element not found");
             return;
         }
 
-        // Clear existing options
-        lessonsContainer.innerHTML = '<option value="">Select a lesson...</option>';
+        // Clear current options
+        select.innerHTML = '<option value="">Select a lesson...</option>';
 
         if (data.status === "success" && Array.isArray(data.lessons)) {
-            // Sort lessons by lesson number if possible
+            // Sort lessons by number
             const sortedLessons = data.lessons.sort((a, b) => {
                 const aNum = parseInt(a.lesson_id.split('_')[1]) || 0;
                 const bNum = parseInt(b.lesson_id.split('_')[1]) || 0;
@@ -186,16 +187,14 @@ async function fetchLessons() {
                     const option = document.createElement("option");
                     option.value = lesson.lesson_id;
                     option.textContent = `Lesson ${lesson.lesson_id.split('_')[1]}: ${lesson.title}`;
-                    lessonsContainer.appendChild(option);
+                    select.appendChild(option);
                 }
             });
         } else {
-            console.error("Invalid lessons data received:", data);
-            alert("Error loading lessons. Please try again.");
+            console.error("Invalid lessons data:", data);
         }
     } catch (error) {
         console.error("Error fetching lessons:", error);
-        alert("Failed to load lessons. Please try again.");
     }
 }
 
@@ -299,14 +298,34 @@ async function fetchJournal() {
 async function initializeApp() {
     const token = getAuthToken();
     if (token) {
-        document.getElementById('loginSection').style.display = 'none';
-        document.getElementById('dashboardSection').style.display = 'block';
-        await fetchLessons();  // Note: using fetchLessons instead of loadLessons
+        // Remove login section
+        const loginSection = document.getElementById('loginSection');
+        if (loginSection) {
+            loginSection.style.display = 'none';
+        }
+        
+        // Show dashboard
+        const dashboardSection = document.getElementById('dashboardSection');
+        if (dashboardSection) {
+            dashboardSection.style.display = 'block';
+        }
+        
+        // Fetch lessons
+        await fetchLessons();
     } else {
-        document.getElementById('loginSection').style.display = 'block';
-        document.getElementById('dashboardSection').style.display = 'none';
+        // Show login section
+        const loginSection = document.getElementById('loginSection');
+        if (loginSection) {
+            loginSection.style.display = 'block';
+        }
+        
+        // Hide dashboard
+        const dashboardSection = document.getElementById('dashboardSection');
+        if (dashboardSection) {
+            dashboardSection.style.display = 'none';
+        }
     }
 }
 
-// Load app on page load
+// Initialize on page load
 window.onload = initializeApp;
