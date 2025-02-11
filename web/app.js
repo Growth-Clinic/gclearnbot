@@ -4,34 +4,37 @@ const API_BASE_URL = "https://gclearnbot.onrender.com";
 function toggleAuth() {
     const registerBox = document.getElementById('registerBox');
     const loginBox = document.getElementById('loginBox');
-    
-    if (registerBox.style.display === 'none') {
-        registerBox.style.display = 'block';
-        loginBox.style.display = 'none';
+
+    if (registerBox.classList.contains('is-hidden')) {
+        registerBox.classList.remove('is-hidden');
+        loginBox.classList.add('is-hidden');
     } else {
-        registerBox.style.display = 'none';
-        loginBox.style.display = 'block';
+        registerBox.classList.add('is-hidden');
+        loginBox.classList.remove('is-hidden');
     }
 }
 
-// Initialize auth display state (integrate with existing initializeApp)
+// Initialize auth display state
 function initializeAuthDisplay() {
     if (!localStorage.getItem('returning')) {
-        document.getElementById('registerBox').style.display = 'block';
-        document.getElementById('loginBox').style.display = 'none';
+        document.getElementById('registerBox').classList.remove('is-hidden');
+        document.getElementById('loginBox').classList.add('is-hidden');
         localStorage.setItem('returning', 'true');
     } else {
-        document.getElementById('registerBox').style.display = 'none';
-        document.getElementById('loginBox').style.display = 'block';
+        document.getElementById('registerBox').classList.add('is-hidden');
+        document.getElementById('loginBox').classList.remove('is-hidden');
     }
 }
 
-// Mobile menu functionality
+// Mobile menu functionality (Bulma)
 function initializeMobileMenu() {
-    const mobileMenuToggle = document.querySelector('.mobile-menu-toggle');
-    if (mobileMenuToggle) {
-        mobileMenuToggle.addEventListener('click', function() {
-            document.querySelector('.navbar-nav').classList.toggle('active');
+    const burger = document.querySelector('.navbar-burger');
+    const menu = document.querySelector('.navbar-menu');
+
+    if (burger && menu) {
+        burger.addEventListener('click', () => {
+            burger.classList.toggle('is-active');
+            menu.classList.toggle('is-active');
         });
     }
 }
@@ -44,50 +47,26 @@ function checkRedirect() {
     }
 }
 
-// Update the existing initializeApp function to include new initializations
+// Initialize app and manage login state
 async function initializeApp() {
     const token = getAuthToken();
     if (token) {
-        // Remove login section
-        const loginSection = document.getElementById('loginSection');
-        if (loginSection) {
-            loginSection.style.display = 'none';
-        }
-        
-        // Show dashboard
-        const dashboardSection = document.getElementById('dashboardSection');
-        if (dashboardSection) {
-            dashboardSection.style.display = 'block';
-        }
-        
-        // Fetch lessons
+        document.getElementById('loginSection')?.classList.add('is-hidden');
+        document.getElementById('dashboardSection')?.classList.remove('is-hidden');
         await fetchLessons();
     } else {
-        // Show login section
-        const loginSection = document.getElementById('loginSection');
-        if (loginSection) {
-            loginSection.style.display = 'block';
-        }
-        
-        // Hide dashboard
-        const dashboardSection = document.getElementById('dashboardSection');
-        if (dashboardSection) {
-            dashboardSection.style.display = 'none';
-        }
-
-        // Initialize auth display
+        document.getElementById('loginSection')?.classList.remove('is-hidden');
+        document.getElementById('dashboardSection')?.classList.add('is-hidden');
         initializeAuthDisplay();
     }
 
-    // Initialize mobile menu
     initializeMobileMenu();
 }
 
+// Register user
 async function registerUser() {
     let email = document.getElementById("registerEmail").value.trim();
     let password = document.getElementById("registerPassword").value.trim();
-
-    console.log("Registering user:", { email, password });
 
     if (!email || !password) {
         alert("Please enter a valid email and password.");
@@ -102,7 +81,6 @@ async function registerUser() {
         });
 
         let data = await response.json();
-        console.log("Register API Response:", data);
 
         if (response.status === 409) {
             alert("This email is already registered. Please try logging in instead.");
@@ -122,11 +100,10 @@ async function registerUser() {
     }
 }
 
+// Login user
 async function loginUser() {
     let email = document.getElementById("email").value.trim();
     let password = document.getElementById("password").value.trim();
-
-    console.log("Sending login request:", { email, password });
 
     if (!email || !password) {
         alert("Please enter a valid email and password.");
@@ -141,7 +118,6 @@ async function loginUser() {
         });
 
         let data = await response.json();
-        console.log("Login API Response:", data);
 
         if (data.status === "success") {
             localStorage.setItem("token", data.token);
@@ -156,17 +132,19 @@ async function loginUser() {
     }
 }
 
+// Logout user
 function logoutUser() {
-    localStorage.removeItem("token");  // ✅ Remove token from local storage
+    localStorage.removeItem("token");
     alert("You have been logged out.");
-    window.location.reload();  // ✅ Refresh the page to go back to login screen
+    window.location.reload();
 }
 
+// Get auth token from local storage
 function getAuthToken() {
     return localStorage.getItem("token");
 }
 
-// Example of an API request with authentication
+// Fetch user progress
 async function fetchUserProgress() {
     let token = getAuthToken();
     if (!token) {
@@ -174,20 +152,24 @@ async function fetchUserProgress() {
         return;
     }
 
-    let response = await fetch(`${API_BASE_URL}/progress`, {
-        method: "GET",
-        headers: { "Authorization": `Bearer ${token}` },
-    });
+    try {
+        let response = await fetch(`${API_BASE_URL}/progress`, {
+            method: "GET",
+            headers: { "Authorization": `Bearer ${token}` }
+        });
 
-    let data = await response.json();
-    console.log(data);
+        let data = await response.json();
+        console.log(data);
+    } catch (error) {
+        console.error("Error fetching progress:", error);
+    }
 }
 
-// Load available lessons into the dropdown
+// Load lessons
 async function loadLesson() {
     const lessonSelect = document.getElementById("lessonSelect");
     const lessonId = lessonSelect.value;
-    
+
     if (!lessonId) {
         alert("Please select a lesson first");
         return;
@@ -196,7 +178,7 @@ async function loadLesson() {
     const token = getAuthToken();
     try {
         const response = await fetch(`${API_BASE_URL}/lessons/${lessonId}`, {
-            headers: { 
+            headers: {
                 "Authorization": `Bearer ${token}`,
                 "Content-Type": "application/json"
             }
@@ -206,19 +188,12 @@ async function loadLesson() {
         console.log("Load lesson response:", data);
 
         if (data.status === "success") {
-            const lessonCard = document.getElementById("lessonCard");
-            const lessonTitle = document.getElementById("lessonTitle");
-            const lessonContent = document.getElementById("lessonContent");
-
-            lessonTitle.textContent = data.lesson.title;
-            lessonContent.innerHTML = data.lesson.text.replace(/\n/g, '<br>');
-            lessonCard.classList.remove("d-none");
+            document.getElementById("lessonContent").innerHTML = data.content;
         } else {
-            alert("Error loading lesson content");
+            alert("Failed to load lesson.");
         }
     } catch (error) {
         console.error("Error loading lesson:", error);
-        alert("Failed to load lesson content");
     }
 }
 

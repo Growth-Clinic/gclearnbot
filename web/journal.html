@@ -2,44 +2,58 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Journal - Growth Clinic</title>
-  <link href="/web/css/styles.css" rel="stylesheet">
+  <!-- Bulma CSS -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css">
+  <link rel="stylesheet" href="/web/css/styles.css">
   <script defer src="/web/app.js"></script>
 </head>
 <body onload="initializeApp()">
-  <nav class="navbar">
+  <!-- Navbar -->
+  <nav class="navbar is-light" role="navigation" aria-label="main navigation">
     <div class="container">
-      <div class="navbar-content">
-        <a href="/web/index.html" class="navbar-brand">
+      <div class="navbar-brand">
+        <a class="navbar-item" href="/web/index.html">
           <img src="/web/img/gc-logo.svg" alt="Growth Clinic Logo">
         </a>
-        <ul class="navbar-nav">
-          <li><a class="nav-link" href="/web/dashboard.html">Dashboard</a></li>
-          <li><a class="nav-link" href="/web/journal.html">Journal</a></li>
-          <li><a class="nav-link" href="/web/progress.html">Progress</a></li>
-          <li><a class="nav-link" href="mailto:growthclinic@gmail.com">Contact</a></li>
-          <li><button onclick="logoutUser()" class="btn btn-danger">Logout</button></li>
-        </ul>
-        <button class="mobile-menu-toggle">
-          <span></span>
-          <span></span>
-          <span></span>
-        </button>
+        <a role="button" class="navbar-burger" aria-label="menu" aria-expanded="false" data-target="navbarJournal">
+          <span aria-hidden="true"></span>
+          <span aria-hidden="true"></span>
+          <span aria-hidden="true"></span>
+        </a>
+      </div>
+      <div id="navbarJournal" class="navbar-menu">
+        <div class="navbar-start">
+          <a class="navbar-item" href="/web/dashboard.html">Dashboard</a>
+          <a class="navbar-item" href="/web/journal.html">Journal</a>
+          <a class="navbar-item" href="/web/progress.html">Progress</a>
+          <a class="navbar-item" href="mailto:growthclinic@gmail.com">Contact</a>
+        </div>
+        <div class="navbar-end">
+          <div class="navbar-item">
+            <button onclick="logoutUser()" class="button is-danger">Logout</button>
+          </div>
+        </div>
       </div>
     </div>
   </nav>
 
-  <main class="container py-4">
-    <h1>Your Journal</h1>
-    <p class="text-muted">View your past responses and reflections</p>
-    <div class="card">
-      <div class="card-body">
-        <h2>Journal Entries</h2>
-        <ul id="journalList" class="list"></ul>
-        <button onclick="fetchJournal()" class="btn btn-secondary mt-2">Load Journal</button>
+  <!-- Main Content -->
+  <section class="section">
+    <div class="container">
+      <h1 class="title">Your Journal</h1>
+      <p class="subtitle">View your past responses and reflections</p>
+      <div class="card">
+        <div class="card-content">
+          <h2 class="title is-4">Journal Entries</h2>
+          <ul id="journalList">
+            <!-- Journal entries will appear here -->
+          </ul>
+          <button onclick="fetchJournal()" class="button is-secondary mt-4">Load Journal</button>
+        </div>
       </div>
     </div>
-  </main>
+  </section>
 </body>
 </html>

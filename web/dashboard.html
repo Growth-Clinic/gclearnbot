@@ -2,78 +2,107 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Dashboard - Growth Clinic</title>
-  <link href="/web/css/styles.css" rel="stylesheet">
+  <!-- Bulma CSS -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css">
+  <link rel="stylesheet" href="/web/css/styles.css">
   <script defer src="/web/app.js"></script>
 </head>
 <body onload="initializeApp(); fetchLessons();">
-  <nav class="navbar">
+  <!-- Navbar -->
+  <nav class="navbar is-light" role="navigation" aria-label="main navigation">
     <div class="container">
-      <div class="navbar-content">
-        <a href="/web/index.html" class="navbar-brand">
+      <div class="navbar-brand">
+        <a class="navbar-item" href="/web/index.html">
           <img src="/web/img/gc-logo.svg" alt="Growth Clinic Logo">
         </a>
-        <ul class="navbar-nav">
-          <li><a class="nav-link" href="/web/dashboard.html">Dashboard</a></li>
-          <li><a class="nav-link" href="/web/journal.html">Journal</a></li>
-          <li><a class="nav-link" href="/web/progress.html">Progress</a></li>
-          <li><a class="nav-link" href="mailto:growthclinic@gmail.com">Contact</a></li>
-          <li><button onclick="logoutUser()" class="btn btn-danger">Logout</button></li>
-        </ul>
-        <button class="mobile-menu-toggle">
-          <span></span>
-          <span></span>
-          <span></span>
-        </button>
+        <a role="button" class="navbar-burger" aria-label="menu" aria-expanded="false" data-target="navbarDashboard">
+          <span aria-hidden="true"></span>
+          <span aria-hidden="true"></span>
+          <span aria-hidden="true"></span>
+        </a>
+      </div>
+      <div id="navbarDashboard" class="navbar-menu">
+        <div class="navbar-start">
+          <a class="navbar-item" href="/web/dashboard.html">Dashboard</a>
+          <a class="navbar-item" href="/web/journal.html">Journal</a>
+          <a class="navbar-item" href="/web/progress.html">Progress</a>
+          <a class="navbar-item" href="mailto:growthclinic@gmail.com">Contact</a>
+        </div>
+        <div class="navbar-end">
+          <div class="navbar-item">
+            <button onclick="logoutUser()" class="button is-danger">Logout</button>
+          </div>
+        </div>
       </div>
     </div>
   </nav>
 
-  <main class="container py-4">
-    <h1>Learning Dashboard</h1>
-    
-    <div class="card mb-4">
-      <div class="card-body">
-        <h2>Select a Lesson</h2>
-        <select id="lessonSelect" class="form-select mb-2">
-          <option value="">Select a lesson...</option>
-          <!-- Options will be populated dynamically -->
-        </select>
-        <button onclick="loadLesson()" class="btn btn-success">Load Lesson</button>
+  <!-- Main Content -->
+  <section class="section">
+    <div class="container">
+      <h1 class="title">Learning Dashboard</h1>
+      
+      <!-- Lesson Selection -->
+      <div class="card mb-4">
+        <div class="card-content">
+          <h2 class="subtitle">Select a Lesson</h2>
+          <div class="field">
+            <div class="control">
+              <div class="select is-fullwidth">
+                <select id="lessonSelect">
+                  <option value="">Select a lesson...</option>
+                  <!-- Options will be populated dynamically -->
+                </select>
+              </div>
+            </div>
+          </div>
+          <button onclick="loadLesson()" class="button is-success">Load Lesson</button>
+        </div>
       </div>
-    </div>
 
-    <div id="lessonCard" class="card mb-4 d-none">
-      <div class="card-body">
-        <h2 id="lessonTitle"></h2>
-        <p id="lessonContent"></p>
+      <!-- Lesson Content -->
+      <div id="lessonCard" class="card mb-4 is-hidden">
+        <div class="card-content">
+          <h2 id="lessonTitle" class="title"></h2>
+          <div id="lessonContent" class="content"></div>
+        </div>
       </div>
-    </div>
 
-    <div class="card mb-4">
-      <div class="card-body">
-        <h2>Submit Your Response</h2>
-        <textarea id="responseText" class="form-control mb-2" rows="4" placeholder="Write your response..."></textarea>
-        <button onclick="submitResponse()" class="btn btn-success">Submit</button>
+      <!-- Response Submission -->
+      <div class="card mb-4">
+        <div class="card-content">
+          <h2 class="title">Submit Your Response</h2>
+          <div class="field">
+            <div class="control">
+              <textarea id="responseText" class="textarea" placeholder="Write your response..."></textarea>
+            </div>
+          </div>
+          <button onclick="submitResponse()" class="button is-success">Submit</button>
+        </div>
       </div>
-    </div>
 
-    <div class="card mb-4">
-      <div class="card-body">
-        <h2>Your Progress</h2>
-        <div id="progressText">Loading...</div>
-        <button onclick="fetchProgress()" class="btn btn-info mt-2">Refresh Progress</button>
+      <!-- Progress Overview -->
+      <div class="card mb-4">
+        <div class="card-content">
+          <h2 class="title">Your Progress</h2>
+          <div id="progressText" class="content">Loading...</div>
+          <button onclick="fetchProgress()" class="button is-info mt-4">Refresh Progress</button>
+        </div>
       </div>
-    </div>
 
-    <div class="card">
-      <div class="card-body">
-        <h2>Your Journal</h2>
-        <ul id="journalList" class="list"></ul>
-        <button onclick="fetchJournal()" class="btn btn-secondary mt-2">Load Journal</button>
+      <!-- Journal Preview -->
+      <div class="card">
+        <div class="card-content">
+          <h2 class="title">Your Journal</h2>
+          <ul id="journalList">
+            <!-- Journal entries will appear here -->
+          </ul>
+          <button onclick="fetchJournal()" class="button is-secondary mt-4">Load Journal</button>
+        </div>
       </div>
     </div>
-  </main>
+  </section>
 </body>
 </html>
