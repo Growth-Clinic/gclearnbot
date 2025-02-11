@@ -1,70 +1,79 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Learning Dashboard - Growth Clinic</title>
-    <link rel="stylesheet" href="styles.css">
-    <script defer src="app.js"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard - Growth Clinic</title>
+  <link href="/web/css/styles.css" rel="stylesheet">
+  <script defer src="/web/app.js"></script>
 </head>
-<body onload="initializeApp()">
-    <nav class="navbar">
-        <div class="container navbar-content">
-            <a href="index.html" class="navbar-brand">
-                <img src="img/gc-logo.svg" height="40" alt="Growth Clinic Logo">
-            </a>
-            <ul class="navbar-nav">
-                <li><a class="nav-link active" href="dashboard.html">Dashboard</a></li>
-                <li><a class="nav-link" href="journal.html">Journal</a></li>
-                <li><a class="nav-link" href="progress.html">Progress</a></li>
-                <li><a class="nav-link" href="mailto:growthclinic@gmail.com">Contact</a></li>
-                <li><button onclick="logoutUser()" class="btn btn-danger">Logout</button></li>
-            </ul>
-        </div>
-    </nav>
+<body onload="initializeApp(); fetchLessons();">
+  <nav class="navbar">
+    <div class="container">
+      <div class="navbar-content">
+        <a href="/web/index.html" class="navbar-brand">
+          <img src="/web/img/gc-logo.svg" alt="Growth Clinic Logo">
+        </a>
+        <ul class="navbar-nav">
+          <li><a class="nav-link" href="/web/dashboard.html">Dashboard</a></li>
+          <li><a class="nav-link" href="/web/journal.html">Journal</a></li>
+          <li><a class="nav-link" href="/web/progress.html">Progress</a></li>
+          <li><a class="nav-link" href="mailto:growthclinic@gmail.com">Contact</a></li>
+          <li><button onclick="logoutUser()" class="btn btn-danger">Logout</button></li>
+        </ul>
+        <button class="mobile-menu-toggle">
+          <span></span>
+          <span></span>
+          <span></span>
+        </button>
+      </div>
+    </div>
+  </nav>
 
-    <main class="container py-4">
-        <h1>Welcome back, <span id="userName">User</span>!</h1>
-        <p class="text-muted">Continue your learning journey</p>
+  <main class="container py-4">
+    <h1>Learning Dashboard</h1>
+    
+    <div class="card mb-4">
+      <div class="card-body">
+        <h2>Select a Lesson</h2>
+        <select id="lessonSelect" class="form-select mb-2">
+          <option value="">Select a lesson...</option>
+          <!-- Options will be populated dynamically -->
+        </select>
+        <button onclick="loadLesson()" class="btn btn-success">Load Lesson</button>
+      </div>
+    </div>
 
-        <div class="card">
-            <h2>Overall Progress</h2>
-            <div class="progress">
-                <div class="progress-bar" id="overallProgress" style="width: 0%"></div>
-            </div>
-        </div>
+    <div id="lessonCard" class="card mb-4 d-none">
+      <div class="card-body">
+        <h2 id="lessonTitle"></h2>
+        <p id="lessonContent"></p>
+      </div>
+    </div>
 
-        <div class="card">
-            <h2>Current Lesson</h2>
-            <select id="lessonSelect" class="form-select"></select>
-            <div id="lessonContent" class="d-none">
-                <h3 id="lessonTitle"></h3>
-                <p id="lessonText"></p>
-                <textarea id="responseText" class="form-control" rows="4" placeholder="Write your response..."></textarea>
-                <button onclick="submitResponse()" class="btn btn-success">Submit Response</button>
-            </div>
-        </div>
+    <div class="card mb-4">
+      <div class="card-body">
+        <h2>Submit Your Response</h2>
+        <textarea id="responseText" class="form-control mb-2" rows="4" placeholder="Write your response..."></textarea>
+        <button onclick="submitResponse()" class="btn btn-success">Submit</button>
+      </div>
+    </div>
 
-        <div class="row">
-            <div class="col-4">
-                <div class="card text-center">
-                    <h3 id="completedLessons">0</h3>
-                    <p class="text-muted">Completed Lessons</p>
-                </div>
-            </div>
-            <div class="col-4">
-                <div class="card text-center">
-                    <h3 id="currentStreak">0</h3>
-                    <p class="text-muted">Day Streak</p>
-                </div>
-            </div>
-            <div class="col-4">
-                <div class="card text-center">
-                    <h3 id="averageScore">0%</h3>
-                    <p class="text-muted">Average Score</p>
-                </div>
-            </div>
-        </div>
-    </main>
+    <div class="card mb-4">
+      <div class="card-body">
+        <h2>Your Progress</h2>
+        <div id="progressText">Loading...</div>
+        <button onclick="fetchProgress()" class="btn btn-info mt-2">Refresh Progress</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-body">
+        <h2>Your Journal</h2>
+        <ul id="journalList" class="list"></ul>
+        <button onclick="fetchJournal()" class="btn btn-secondary mt-2">Load Journal</button>
+      </div>
+    </div>
+  </main>
 </body>
 </html>

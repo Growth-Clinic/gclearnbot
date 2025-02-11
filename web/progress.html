@@ -1,37 +1,45 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Progress - Growth Clinic</title>
-    <link rel="stylesheet" href="styles.css">
-    <script defer src="app.js"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Progress - Growth Clinic</title>
+  <link href="/web/css/styles.css" rel="stylesheet">
+  <script defer src="/web/app.js"></script>
 </head>
 <body onload="initializeApp()">
-    <nav class="navbar">
-        <div class="container navbar-content">
-            <a href="index.html" class="navbar-brand">
-                <img src="img/gc-logo.svg" height="40" alt="Growth Clinic Logo">
-            </a>
-            <ul class="navbar-nav">
-                <li><a class="nav-link" href="dashboard.html">Dashboard</a></li>
-                <li><a class="nav-link" href="journal.html">Journal</a></li>
-                <li><a class="nav-link active" href="progress.html">Progress</a></li>
-                <li><a class="nav-link" href="mailto:growthclinic@gmail.com">Contact</a></li>
-                <li><button onclick="logoutUser()" class="btn btn-danger">Logout</button></li>
-            </ul>
-        </div>
-    </nav>
+  <nav class="navbar">
+    <div class="container">
+      <div class="navbar-content">
+        <a href="/web/index.html" class="navbar-brand">
+          <img src="/web/img/gc-logo.svg" alt="Growth Clinic Logo">
+        </a>
+        <ul class="navbar-nav">
+          <li><a class="nav-link" href="/web/dashboard.html">Dashboard</a></li>
+          <li><a class="nav-link" href="/web/journal.html">Journal</a></li>
+          <li><a class="nav-link" href="/web/progress.html">Progress</a></li>
+          <li><a class="nav-link" href="mailto:growthclinic@gmail.com">Contact</a></li>
+          <li><button onclick="logoutUser()" class="btn btn-danger">Logout</button></li>
+        </ul>
+        <button class="mobile-menu-toggle">
+          <span></span>
+          <span></span>
+          <span></span>
+        </button>
+      </div>
+    </div>
+  </nav>
 
-    <main class="container py-4">
-        <h1>Learning Progress</h1>
-        <p class="text-muted">Track your achievements and completed lessons</p>
-
-        <div class="card">
-            <h2>Progress Overview</h2>
-            <div id="progressText">Loading...</div>
-            <button onclick="fetchProgress()" class="btn btn-info">Refresh Progress</button>
-        </div>
-    </main>
+  <main class="container py-4">
+    <h1>Learning Progress</h1>
+    <p class="text-muted">Track your achievements and completed lessons</p>
+    <div class="card">
+      <div class="card-body">
+        <h2>Progress Overview</h2>
+        <div id="progressText">Loading...</div>
+        <button onclick="fetchProgress()" class="btn btn-info mt-2">Refresh Progress</button>
+      </div>
+    </div>
+  </main>
 </body>
 </html>

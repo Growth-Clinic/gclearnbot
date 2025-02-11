@@ -36,6 +36,14 @@ function initializeMobileMenu() {
     }
 }
 
+
+// Check if user is logged in; if so, redirect from index.html to dashboard
+function checkRedirect() {
+    if (getAuthToken()) {
+        window.location.href = "/web/dashboard.html";
+    }
+}
+
 // Update the existing initializeApp function to include new initializations
 async function initializeApp() {
     const token = getAuthToken();
