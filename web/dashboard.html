@@ -9,7 +9,7 @@
   <link rel="stylesheet" href="/web/css/styles.css">
   <script defer src="/web/app.js"></script>
 </head>
-<body onload="initializeApp(); fetchLessons();">
+<body onload="initializeProtectedPage()">
   <!-- Navbar -->
   <nav class="navbar is-light" role="navigation" aria-label="main navigation">
     <div class="container">
@@ -39,8 +39,8 @@
     </div>
   </nav>
 
-  <!-- Main Content -->
-  <section class="section">
+  <!-- Protected Content -->
+  <section class="section" id="protectedContent">
     <div class="container">
       <h1 class="title">Learning Dashboard</h1>
       
@@ -104,5 +104,26 @@
       </div>
     </div>
   </section>
+
+  <!-- Not Signed In Message (hidden by default) -->
+  <section class="section is-hidden" id="notSignedIn">
+    <div class="container">
+      <div class="notification is-warning">
+        <p>You are not signed in. Please <a href="/web/index.html">log in</a> to access this page.</p>
+      </div>
+    </div>
+  </section>
+
+  <script>
+    // On protected pages, check if the user is authenticated
+    function initializeProtectedPage() {
+      if (!getAuthToken()) {
+        document.getElementById('protectedContent').classList.add('is-hidden');
+        document.getElementById('notSignedIn').classList.remove('is-hidden');
+      } else {
+        initializeApp();
+      }
+    }
+  </script>
 </body>
 </html>

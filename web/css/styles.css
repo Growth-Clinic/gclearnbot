@@ -14,3 +14,8 @@ body {
 .card {
   margin-bottom: 1.5rem;
 }
+
+/* Utility override for hiding elements (Bulma already uses is-hidden) */
+.is-hidden {
+  display: none !important;
+}

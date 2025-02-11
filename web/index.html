@@ -34,13 +34,7 @@
           <a class="navbar-item" href="/web/progress.html">Progress</a>
           <a class="navbar-item" href="mailto:growthclinic@gmail.com">Contact</a>
         </div>
-        <div class="navbar-end">
-          <div class="navbar-item">
-            <div class="buttons">
-              <button class="button is-success" onclick="toggleAuth()">Get Started</button>
-            </div>
-          </div>
-        </div>
+        <!-- Removed the "Get Started" button -->
       </div>
     </div>
   </nav>
@@ -60,31 +54,8 @@
     <div class="container">
       <div class="columns is-centered">
         <div class="column is-half">
-          <!-- Register Box -->
-          <div id="registerBox" class="card mb-4">
-            <div class="card-content">
-              <h2 class="title">Start Your Learning Journey</h2>
-              <p class="subtitle">Create your account to begin</p>
-              <div class="field">
-                <div class="control">
-                  <input type="email" id="registerEmail" class="input" placeholder="Enter your email">
-                </div>
-              </div>
-              <div class="field">
-                <div class="control">
-                  <input type="password" id="registerPassword" class="input" placeholder="Enter your password">
-                </div>
-              </div>
-              <div class="field">
-                <div class="control">
-                  <button onclick="registerUser()" class="button is-success is-fullwidth">Register</button>
-                </div>
-              </div>
-              <p class="has-text-centered">Already have an account? <a href="#" onclick="toggleAuth()">Login here</a></p>
-            </div>
-          </div>
-          <!-- Login Box -->
-          <div id="loginBox" class="card mb-4">
+          <!-- Login Box (default visible) -->
+          <div id="loginBox" class="card">
             <div class="card-content">
               <h2 class="title">Welcome Back!</h2>
               <p class="subtitle">Continue your learning journey</p>
@@ -103,7 +74,34 @@
                   <button onclick="loginUser()" class="button is-success is-fullwidth">Login</button>
                 </div>
               </div>
-              <p class="has-text-centered">New to Growth Clinic? <a href="#" onclick="toggleAuth()">Register here</a></p>
+              <p class="has-text-centered">
+                New to Growth Clinic? <a href="#" onclick="toggleAuth()">Register here</a>
+              </p>
+            </div>
+          </div>
+          <!-- Registration Box (hidden by default) -->
+          <div id="registerBox" class="card is-hidden" style="margin-top: 1rem;">
+            <div class="card-content">
+              <h2 class="title">Start Your Learning Journey</h2>
+              <p class="subtitle">Create your account to begin</p>
+              <div class="field">
+                <div class="control">
+                  <input type="email" id="registerEmail" class="input" placeholder="Enter your email">
+                </div>
+              </div>
+              <div class="field">
+                <div class="control">
+                  <input type="password" id="registerPassword" class="input" placeholder="Enter your password">
+                </div>
+              </div>
+              <div class="field">
+                <div class="control">
+                  <button onclick="registerUser()" class="button is-success is-fullwidth">Register</button>
+                </div>
+              </div>
+              <p class="has-text-centered">
+                Already have an account? <a href="#" onclick="toggleAuth()">Login here</a>
+              </p>
             </div>
           </div>
         </div>
