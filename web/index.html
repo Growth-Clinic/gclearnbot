@@ -231,34 +231,6 @@
         </div>
     </footer>
 
-    <script src="/web/app.js"></script>
-    <script>
-        function toggleAuth() {
-            const registerBox = document.getElementById('registerBox');
-            const loginBox = document.getElementById('loginBox');
-            
-            if (registerBox.style.display === 'none') {
-                registerBox.style.display = 'block';
-                loginBox.style.display = 'none';
-            } else {
-                registerBox.style.display = 'none';
-                loginBox.style.display = 'block';
-            }
-        }
-
-        if (!localStorage.getItem('returning')) {
-            document.getElementById('registerBox').style.display = 'block';
-            document.getElementById('loginBox').style.display = 'none';
-            localStorage.setItem('returning', 'true');
-        } else {
-            document.getElementById('registerBox').style.display = 'none';
-            document.getElementById('loginBox').style.display = 'block';
-        }
-
-        // Mobile menu toggle
-        document.querySelector('.mobile-menu-toggle').addEventListener('click', function() {
-            document.querySelector('.navbar-nav').classList.toggle('active');
-        });
-    </script>
+    <script src="app.js"></script>
 </body>
 </html>
