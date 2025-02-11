@@ -344,17 +344,12 @@ async function fetchUserProgress() {
 }
 
 // Load lessons
-async function loadLesson() {
-    const lessonSelect = document.getElementById('lessonSelect');
-    const lessonId = lessonSelect.value;
+async function loadLesson(lessonId) {
     const lessonCard = document.getElementById('lessonCard');
     const lessonTitle = document.getElementById('lessonTitle');
     const lessonContent = document.getElementById('lessonContent');
-
-    if (!lessonId) {
-        showError("Please select a lesson first");
-        return;
-    }
+    const responseCard = document.getElementById('responseCard');
+    const lessonSelectCard = document.getElementById('lessonSelectCard');
 
     try {
         const response = await fetch(`${API_BASE_URL}/lessons/${lessonId}`, {
@@ -367,11 +362,27 @@ async function loadLesson() {
         const data = await response.json();
 
         if (data.status === "success" && data.lesson) {
-            lessonCard.classList.remove('is-hidden');
-            lessonTitle.textContent = data.lesson.title;
-            lessonContent.innerHTML = data.lesson.text;
-        } else {
-            showError("Failed to load lesson content.");
+            // Fade out selector
+            lessonSelectCard.classList.add('fade-out');
+            setTimeout(() => {
+                lessonSelectCard.classList.add('is-hidden');
+                
+                // Update lesson content
+                lessonTitle.textContent = data.lesson.title || `Lesson ${lessonId.split('_')[1]}`;
+                lessonContent.innerHTML = formatLessonContent(data.lesson.text);
+                
+                // Show lesson card
+                lessonCard.classList.remove('is-hidden');
+                lessonCard.classList.add('fade-in');
+
+                // Show response form if needed
+                if (data.lesson.requires_response) {
+                    responseCard.classList.remove('is-hidden');
+                }
+
+                // Update navigation buttons
+                updateNavigation(lessonId, data.lesson.next);
+            }, 300);
         }
     } catch (error) {
         console.error("Error loading lesson:", error);
@@ -379,13 +390,42 @@ async function loadLesson() {
     }
 }
 
+// Format lesson content for web display
+function formatLessonContent(text) {
+    return text
+        .replace(/\[([^\]]+)\]/g, '<$1>')
+        .replace(/\n\n/g, '</p><p>')
+        .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
+        .replace(/\*([^*]+)\*/g, '<em>$1</em>')
+        .split('\n').join('<br>');
+}
+
+// Update navigation buttons
+function updateNavigation(currentId, nextId) {
+    const prevButton = document.getElementById('prevLesson');
+    const nextButton = document.getElementById('nextLesson');
+
+    // Get current lesson number and step
+    const [, lessonNum, , stepNum] = currentId.split('_');
+    
+    prevButton.disabled = !stepNum || stepNum === '1';
+    nextButton.disabled = !nextId;
+
+    prevButton.onclick = () => {
+        const prevStep = stepNum ? parseInt(stepNum) - 1 : 1;
+        const prevId = `lesson_${lessonNum}_step_${prevStep}`;
+        loadLesson(prevId);
+    };
+
+    nextButton.onclick = () => {
+        if (nextId) loadLesson(nextId);
+    };
+}
+
 // Fetch and display lesson content
 async function fetchLessons() {
     const token = getAuthToken();
-    if (!token) {
-        console.error("No auth token found");
-        return;
-    }
+    if (!token) return;
 
     try {
         const response = await fetch(`${API_BASE_URL}/lessons`, {
@@ -402,33 +442,35 @@ async function fetchLessons() {
             const selectElement = document.getElementById('lessonSelect');
             if (!selectElement) return;
 
-            // Clear existing options
-            selectElement.innerHTML = '<option value="">Select a lesson...</option>';
+            selectElement.innerHTML = '<option value="">Choose your learning path...</option>';
 
-            // Sort lessons by number
-            const sortedLessons = data.lessons.sort((a, b) => {
-                const aNum = parseInt(a.lesson_id.split('_')[1]) || 0;
-                const bNum = parseInt(b.lesson_id.split('_')[1]) || 0;
-                return aNum - bNum;
-            });
+            // Filter main lessons only
+            const mainLessons = Object.entries(data.lessons)
+                .filter(([id]) => !id.includes('_step_') && 
+                                id !== 'lesson_1' && 
+                                !id.toLowerCase().includes('congratulations'))
+                .sort((a, b) => {
+                    const aNum = parseInt(a[0].split('_')[1]) || 0;
+                    const bNum = parseInt(b[0].split('_')[1]) || 0;
+                    return aNum - bNum;
+                });
 
-            // Add lessons to select
-            sortedLessons.forEach(lesson => {
-                if (lesson.lesson_id && lesson.title) {
-                    const option = document.createElement('option');
-                    option.value = lesson.lesson_id;
-                    option.textContent = `Lesson ${lesson.lesson_id.split('_')[1]}: ${lesson.title}`;
-                    selectElement.appendChild(option);
-                }
+            mainLessons.forEach(([id, lesson]) => {
+                const option = document.createElement('option');
+                option.value = id;
+                option.textContent = lesson.description || `Lesson ${id.split('_')[1]}`;
+                selectElement.appendChild(option);
             });
         }
     } catch (error) {
         console.error("Error fetching lessons:", error);
+        showError("Failed to load lessons. Please try again.");
     }
 }
 
 // Submit user response
 async function submitResponse() {
+    event?.preventDefault();
     const lessonId = document.getElementById("lessonSelect").value;
     const responseText = document.getElementById("responseText").value;
     const token = getAuthToken(); // Get stored JWT token
@@ -453,7 +495,7 @@ async function submitResponse() {
         let data = await response.json();
         if (data.status === "success") {
             document.getElementById("responseMessage").classList.remove("is-hidden");
-            setTimeout(() => document.getElementById("responseMessage").classList.add("d-none"), 3000);
+            setTimeout(() => document.getElementById("responseMessage").classList.add("is-hidden"), 3000);
         } else {
             showError(`Error: ${data.message}`);
         } 
@@ -581,4 +623,10 @@ window.onload = initializeApp;
 document.addEventListener('DOMContentLoaded', () => {
     updateNavigation();
     initializeMobileMenu();
+});
+
+document.getElementById('lessonSelect')?.addEventListener('change', (e) => {
+    if (e.target.value) {
+        loadLesson(e.target.value);
+    }
 });

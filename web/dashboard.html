@@ -50,8 +50,8 @@
                         <a class="navbar-item" href="/web/dashboard.html">Dashboard</a>
                         <a class="navbar-item" href="/web/journal.html">Journal</a>
                         <a class="navbar-item" href="/web/progress.html">Progress</a>
+                        <a class="navbar-item" href="mailto:growthclinic@gmail.com">Contact</a>
                     </div>
-                    <a class="navbar-item" href="mailto:growthclinic@gmail.com">Contact</a>
                 </div>
                 <div class="navbar-end">
                     <div id="authButton" class="navbar-item">
@@ -68,9 +68,9 @@
             <h1 class="title">Learning Dashboard</h1>
 
             <!-- Lesson Selection -->
-            <div class="card mb-4">
+            <div id="lessonSelectCard" class="card mb-4">
                 <div class="card-content">
-                    <h2 class="subtitle">Select a Lesson</h2>
+                    <h2 class="subtitle">Choose Your Learning Path</h2>
                     <div class="field">
                         <div class="control">
                             <div class="select is-fullwidth">
@@ -80,9 +80,6 @@
                             </div>
                         </div>
                     </div>
-                    <button id="loadLessonButton" onclick="loadLesson()" class="button is-success">
-                        <span>Load Lesson</span>
-                    </button>
                 </div>
             </div>
 
@@ -91,13 +88,24 @@
                 <div class="card-content">
                     <h2 id="lessonTitle" class="title"></h2>
                     <div id="lessonContent" class="content"></div>
+                    <div class="lesson-navigation mt-4">
+                        <div class="buttons">
+                            <button id="prevLesson" class="button is-light" disabled>
+                                <span>Previous</span>
+                            </button>
+                            <button id="nextLesson" class="button is-primary" disabled>
+                                <span>Next</span>
+                            </button>
+                        </div>
+                    </div>
                 </div>
             </div>
 
-            <!-- Response Submission -->
-            <div class="card mb-4">
+            <!-- Response Form (hidden by default) -->
+            <div id="responseCard" class="card mb-4 is-hidden">
                 <div class="card-content">
-                    <h2 class="title">Submit Your Response</h2>
+                    <h2 class="title">Your Response</h2>
+                    <p class="subtitle">Share your thoughts and learning reflections</p>
                     <form id="responseForm" onsubmit="submitResponse(event)">
                         <div class="field">
                             <div class="control">
@@ -116,31 +124,23 @@
                 </div>
             </div>
 
-            <!-- Progress Overview -->
-            <div class="card mb-4">
+            <div id="responseMessage" class="notification is-success is-hidden">
+                Response submitted successfully!
+            </div>
+
+            <!-- Progress Overview (hidden by default) -->
+            <div id="progressCard" class="card mb-4 is-hidden">
                 <div class="card-content">
                     <h2 class="title">Your Progress</h2>
-                    <div id="progressText" class="content">
-                        <div class="is-loading has-text-centered">
-                            <span>Loading progress...</span>
-                        </div>
-                    </div>
-                    <button id="refreshProgress" onclick="fetchProgress()" class="button is-info mt-4">
-                        <span>Refresh Progress</span>
-                    </button>
+                    <div id="progressText" class="content"></div>
                 </div>
             </div>
 
-            <!-- Journal Preview -->
-            <div class="card">
+            <!-- Journal Preview (hidden by default) -->
+            <div id="journalCard" class="card is-hidden">
                 <div class="card-content">
                     <h2 class="title">Your Journal</h2>
-                    <div id="journalList" class="content">
-                        <!-- Journal entries will appear here -->
-                    </div>
-                    <button id="loadJournal" onclick="fetchJournal()" class="button is-secondary mt-4">
-                        <span>Load Journal</span>
-                    </button>
+                    <div id="journalList" class="content"></div>
                 </div>
             </div>
         </div>
