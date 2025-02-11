@@ -1,4 +1,5 @@
 const API_BASE_URL = "https://gclearnbot.onrender.com"; 
+const PROTECTED_ROUTES = ['/web/dashboard.html', '/web/journal.html', '/web/progress.html'];
 
 // Auth toggle functions
 function toggleAuth() {
@@ -26,24 +27,104 @@ function initializeAuthDisplay() {
     }
 }
 
-// Mobile menu functionality (Bulma)
-function initializeMobileMenu() {
-    const burger = document.querySelector('.navbar-burger');
-    const menu = document.querySelector('.navbar-menu');
-
-    if (burger && menu) {
-        burger.addEventListener('click', () => {
-            burger.classList.toggle('is-active');
-            menu.classList.toggle('is-active');
-        });
+async function initializeProtectedPage() {
+    if (!checkAuth()) {
+        document.getElementById('protectedContent').classList.add('is-hidden');
+        document.getElementById('notSignedIn').classList.remove('is-hidden');
+        return;
     }
+    
+    document.getElementById('protectedContent').classList.remove('is-hidden');
+    document.getElementById('notSignedIn').classList.add('is-hidden');
+    
+    // Initialize based on current page
+    const currentPath = window.location.pathname;
+    
+    if (currentPath.includes('dashboard.html')) {
+        await fetchLessons();
+        await fetchProgress();
+    } else if (currentPath.includes('progress.html')) {
+        await fetchProgress();
+    } else if (currentPath.includes('journal.html')) {
+        await fetchJournal();
+    }
+    
+    initializeMobileMenu();
+    updateNavigation();
 }
 
+// Mobile menu functionality (Bulma)
+function initializeMobileMenu() {
+    // Get all "navbar-burger" elements
+    const burgers = document.querySelectorAll('.navbar-burger');
+    
+    // Add click event to each burger
+    burgers.forEach(burger => {
+        burger.addEventListener('click', () => {
+            // Get the target from the "data-target" attribute
+            const targetId = burger.dataset.target;
+            const target = document.getElementById(targetId);
+            
+            // Toggle the class on both the burger and menu
+            burger.classList.toggle('is-active');
+            target.classList.toggle('is-active');
+        });
+    });
+}
+
+// Improve the authentication check
+function checkAuth() {
+    const token = getAuthToken();
+    const currentPath = window.location.pathname;
+    
+    if (token && isTokenExpired(token)) {
+        localStorage.removeItem('token');
+        showError('Your session has expired. Please log in again.');
+        window.location.href = '/web/index.html';
+        return false;
+    }
+
+    // If on a protected route and not authenticated
+    if (PROTECTED_ROUTES.includes(currentPath) && !token) {
+        window.location.href = '/web/index.html';
+        return false;
+    }
+    
+    // If authenticated and on login page, redirect to dashboard
+    if (token && currentPath === '/web/index.html') {
+        window.location.href = '/web/dashboard.html';
+        return true;
+    }
+    
+    return !!token;
+}
 
 // Check if user is logged in; if so, redirect from index.html to dashboard
 function checkRedirect() {
     if (getAuthToken()) {
         window.location.href = "/web/dashboard.html";
+    }
+}
+
+function updateNavigation() {
+    const token = getAuthToken();
+    const authLinks = document.getElementById('authLinks');
+    const authButton = document.getElementById('authButton');
+    
+    if (token) {
+        authLinks?.classList.remove('is-hidden');
+        if (authButton) {
+            authButton.innerHTML = `
+                <button onclick="logoutUser()" class="button is-danger">
+                    Logout
+                </button>
+            `;
+        }
+    } else {
+        authLinks?.classList.add('is-hidden');
+        if (authButton) {
+            authButton.innerHTML = '';
+        }
     }
 }
 
@@ -64,71 +145,116 @@ async function initializeApp() {
 }
 
 // Register user
-async function registerUser() {
-    let email = document.getElementById("registerEmail").value.trim();
-    let password = document.getElementById("registerPassword").value.trim();
+async function registerUser(event) {
+    event?.preventDefault(); // Prevent form submission
+    disableForm('registerForm');
+    
+    const registerButton = document.getElementById('registerButton');
+    const email = document.getElementById('registerEmail').value.trim();
+    const password = document.getElementById('registerPassword').value;
 
-    if (!email || !password) {
-        alert("Please enter a valid email and password.");
-        return;
-    }
+    // Add loading state
+    registerButton.classList.add('is-loading');
 
     try {
-        let response = await fetch(`${API_BASE_URL}/register`, {
+        const response = await fetch(`${API_BASE_URL}/register`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ email, password })
         });
 
-        let data = await response.json();
+        const data = await response.json();
 
         if (response.status === 409) {
-            alert("This email is already registered. Please try logging in instead.");
+            showError("This email is already registered. Please try logging in instead.");
             return;
         }
 
         if (data.status === "success") {
             localStorage.setItem("token", data.token);
-            alert("Registration successful! You are now logged in.");
-            window.location.reload();
+            window.location.href = '/web/dashboard.html';
         } else {
-            alert("Registration failed: " + data.message);
+            showError(data.message || "Registration failed. Please try again.");
         }
     } catch (error) {
-        console.error("Error registering user:", error);
-        alert("Registration failed. Please try again.");
+        showError("Registration failed. Please try again.");
+    } finally {
+        registerButton.classList.remove('is-loading');
+        enableForm('registerForm');
+    }
+}
+
+// Add this to prevent double submission
+function disableForm(formId) {
+    const form = document.getElementById(formId);
+    if (form) {
+        const inputs = form.getElementsByTagName('input');
+        const buttons = form.getElementsByTagName('button');
+        
+        // Disable all inputs
+        for (let input of inputs) {
+            input.disabled = true;
+        }
+        
+        // Disable all buttons
+        for (let button of buttons) {
+            button.disabled = true;
+            button.classList.add('is-loading');
+        }
+    }
+}
+
+function enableForm(formId) {
+    const form = document.getElementById(formId);
+    if (form) {
+        const inputs = form.getElementsByTagName('input');
+        const buttons = form.getElementsByTagName('button');
+        
+        // Enable all inputs
+        for (let input of inputs) {
+            input.disabled = false;
+        }
+        
+        // Enable all buttons
+        for (let button of buttons) {
+            button.disabled = false;
+            button.classList.remove('is-loading');
+        }
     }
 }
 
 // Login user
-async function loginUser() {
-    let email = document.getElementById("email").value.trim();
-    let password = document.getElementById("password").value.trim();
+async function loginUser(event) {
+    event?.preventDefault(); // Prevent form submission
+    disableForm('loginForm');
+    
+    const loginButton = document.getElementById('loginButton');
+    const email = document.getElementById('email').value.trim();
+    const password = document.getElementById('password').value;
 
-    if (!email || !password) {
-        alert("Please enter a valid email and password.");
-        return;
-    }
+    // Add loading state
+    loginButton.classList.add('is-loading');
 
     try {
-        let response = await fetch(`${API_BASE_URL}/login`, {
+        const response = await fetch(`${API_BASE_URL}/login`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ email, password })
         });
 
-        let data = await response.json();
+        const data = await response.json();
 
         if (data.status === "success") {
             localStorage.setItem("token", data.token);
-            alert("Login successful!");
-            window.location.reload();
+            window.location.href = '/web/dashboard.html';
         } else {
-            alert(data.message || "Login failed. Please check your credentials.");
+            showError(data.message || "Login failed. Please check your credentials.");
         }
     } catch (error) {
-        console.error("Error logging in:", error);
-        alert("Login failed. Please try again.");
+        showError("Login failed. Please try again.");
+    } finally {
+        loginButton.classList.remove('is-loading');
+        enableForm('loginForm');
     }
 }
 
@@ -144,11 +270,63 @@ function getAuthToken() {
     return localStorage.getItem("token");
 }
 
+function showLoading(elementId) {
+    const element = document.getElementById(elementId);
+    if (element) {
+        element.classList.add('is-loading');
+    }
+}
+
+function hideLoading(elementId) {
+    const element = document.getElementById(elementId);
+    if (element) {
+        element.classList.remove('is-loading');
+    }
+}
+
+// Add better error handling
+function showError(message, duration = 3000) {
+    const errorDiv = document.createElement('div');
+    errorDiv.className = 'notification is-danger';
+    errorDiv.innerHTML = `
+        <button class="delete"></button>
+        ${message}
+    `;
+    
+    // Add to page
+    document.querySelector('.container').insertBefore(errorDiv, document.querySelector('.container').firstChild);
+    
+    // Add close button functionality
+    errorDiv.querySelector('.delete').addEventListener('click', () => {
+        errorDiv.remove();
+    });
+    
+    // Auto-remove after duration
+    setTimeout(() => {
+        errorDiv.remove();
+    }, duration);
+}
+
+// Add token expiration check
+function isTokenExpired(token) {
+    if (!token) return true;
+    
+    try {
+        const base64Url = token.split('.')[1];
+        const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+        const payload = JSON.parse(window.atob(base64));
+        
+        return payload.exp ? Date.now() >= payload.exp * 1000 : false;
+    } catch (e) {
+        return true;
+    }
+}
+
 // Fetch user progress
 async function fetchUserProgress() {
     let token = getAuthToken();
     if (!token) {
-        alert("Please log in first.");
+        showError("Please log in first.");
         return;
     }
 
@@ -167,41 +345,43 @@ async function fetchUserProgress() {
 
 // Load lessons
 async function loadLesson() {
-    const lessonSelect = document.getElementById("lessonSelect");
+    const lessonSelect = document.getElementById('lessonSelect');
     const lessonId = lessonSelect.value;
+    const lessonCard = document.getElementById('lessonCard');
+    const lessonTitle = document.getElementById('lessonTitle');
+    const lessonContent = document.getElementById('lessonContent');
 
     if (!lessonId) {
-        alert("Please select a lesson first");
+        showError("Please select a lesson first");
         return;
     }
 
-    const token = getAuthToken();
     try {
         const response = await fetch(`${API_BASE_URL}/lessons/${lessonId}`, {
             headers: {
-                "Authorization": `Bearer ${token}`,
+                "Authorization": `Bearer ${getAuthToken()}`,
                 "Content-Type": "application/json"
             }
         });
 
         const data = await response.json();
-        console.log("Load lesson response:", data);
 
-        if (data.status === "success") {
-            document.getElementById("lessonContent").innerHTML = data.content;
+        if (data.status === "success" && data.lesson) {
+            lessonCard.classList.remove('is-hidden');
+            lessonTitle.textContent = data.lesson.title;
+            lessonContent.innerHTML = data.lesson.text;
         } else {
-            alert("Failed to load lesson.");
+            showError("Failed to load lesson content.");
         }
     } catch (error) {
         console.error("Error loading lesson:", error);
+        showError("Error loading lesson. Please try again.");
     }
 }
 
 // Fetch and display lesson content
 async function fetchLessons() {
     const token = getAuthToken();
-    console.log("Using Token:", token);
-
     if (!token) {
         console.error("No auth token found");
         return;
@@ -213,56 +393,37 @@ async function fetchLessons() {
             headers: { 
                 "Authorization": `Bearer ${token}`,
                 "Content-Type": "application/json"
-            },
+            }
         });
 
         const data = await response.json();
-        console.log("Lessons API Response:", data);
-
-        // Use querySelector to match the exact select element structure from your HTML
-        const selectElement = document.querySelector('input[type="text"][placeholder="Select a lesson..."]');
         
-        if (!selectElement) {
-            console.error("Could not find lesson select element");
-            console.log("Available elements:", document.querySelectorAll('select, input'));
-            return;
-        }
-
-        // Create select element to replace the input
-        const newSelect = document.createElement('select');
-        newSelect.className = selectElement.className;
-        newSelect.style = selectElement.style;
-        
-        // Add default option
-        const defaultOption = document.createElement('option');
-        defaultOption.value = '';
-        defaultOption.textContent = 'Select a lesson...';
-        newSelect.appendChild(defaultOption);
-
         if (data.status === "success" && Array.isArray(data.lessons)) {
-            // Sort lessons
+            const selectElement = document.getElementById('lessonSelect');
+            if (!selectElement) return;
+
+            // Clear existing options
+            selectElement.innerHTML = '<option value="">Select a lesson...</option>';
+
+            // Sort lessons by number
             const sortedLessons = data.lessons.sort((a, b) => {
                 const aNum = parseInt(a.lesson_id.split('_')[1]) || 0;
                 const bNum = parseInt(b.lesson_id.split('_')[1]) || 0;
                 return aNum - bNum;
             });
 
-            // Add lessons
+            // Add lessons to select
             sortedLessons.forEach(lesson => {
                 if (lesson.lesson_id && lesson.title) {
                     const option = document.createElement('option');
                     option.value = lesson.lesson_id;
                     option.textContent = `Lesson ${lesson.lesson_id.split('_')[1]}: ${lesson.title}`;
-                    newSelect.appendChild(option);
+                    selectElement.appendChild(option);
                 }
             });
-
-            // Replace input with select
-            selectElement.parentNode.replaceChild(newSelect, selectElement);
-            console.log("Successfully replaced input with populated select");
         }
     } catch (error) {
-        console.error("Error in fetchLessons:", error);
+        console.error("Error fetching lessons:", error);
     }
 }
 
@@ -271,9 +432,11 @@ async function submitResponse() {
     const lessonId = document.getElementById("lessonSelect").value;
     const responseText = document.getElementById("responseText").value;
     const token = getAuthToken(); // Get stored JWT token
+    const submitButton = document.getElementById('submitButton');
+    showLoading('submitButton');
 
     if (!token) {
-        alert("Please log in first.");
+        showError("Please log in first.");
         return;
     }
 
@@ -289,14 +452,16 @@ async function submitResponse() {
 
         let data = await response.json();
         if (data.status === "success") {
-            document.getElementById("responseMessage").classList.remove("d-none");
+            document.getElementById("responseMessage").classList.remove("is-hidden");
             setTimeout(() => document.getElementById("responseMessage").classList.add("d-none"), 3000);
         } else {
-            alert(`Error: ${data.message}`);
-        }
+            showError(`Error: ${data.message}`);
+        } 
     } catch (error) {
         console.error("Error submitting response:", error);
-        alert("Something went wrong. Please try again.");
+        showError("Something went wrong. Please try again.");
+    } finally {
+        hideLoading('submitButton');
     }
 }
 
@@ -306,7 +471,7 @@ async function fetchProgress() {
     console.log("Fetching progress with token:", token);  // ✅ Log the token
 
     if (!token) {
-        alert("Please log in first.");
+        showError("Please log in first.");
         return;
     }
 
@@ -331,21 +496,35 @@ async function fetchProgress() {
 
             progressDiv.innerHTML += lessonList;
         } else {
-            alert(`Error: ${data.message}`);
+            showError(`Error: ${data.message}`);
         }
     } catch (error) {
         console.error("Error fetching progress:", error);
+    } finally {
+        hideLoading('refreshProgress');
     }
 }
 
 
 // Fetch journal entries
+// Fetch journal entries
 async function fetchJournal() {
+    const token = getAuthToken();
+    if (!token) {
+        showError("Please log in first.");
+        return;
+    }
+
     const journalList = document.getElementById("journalList");
     journalList.innerHTML = '<li class="list-group-item">Loading...</li>';
 
     try {
-        let response = await fetch(`${API_BASE_URL}/journal/${USER_ID}`);
+        let response = await fetch(`${API_BASE_URL}/journal`, {  // Remove USER_ID reference
+            headers: {
+                "Authorization": `Bearer ${token}`,
+                "Content-Type": "application/json"
+            }
+        });
         let data = await response.json();
 
         if (data.status === "success") {
@@ -359,6 +538,7 @@ async function fetchJournal() {
         }
     } catch (error) {
         console.error("Error fetching journal:", error);
+        showError("Failed to load journal entries");
     }
 }
 
@@ -397,3 +577,8 @@ async function initializeApp() {
 
 // Initialize on page load
 window.onload = initializeApp;
+
+document.addEventListener('DOMContentLoaded', () => {
+    updateNavigation();
+    initializeMobileMenu();
+});

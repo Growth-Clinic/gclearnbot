@@ -1,77 +1,108 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Progress - Growth Clinic</title>
-  <!-- Bulma CSS -->
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css">
-  <link rel="stylesheet" href="/web/css/styles.css">
-  <script defer src="/web/app.js"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- Favicon -->
+    <link rel="apple-touch-icon" sizes="57x57" href="/web/img/favicon/apple-icon-57x57.png">
+    <link rel="apple-touch-icon" sizes="60x60" href="/web/img/favicon/apple-icon-60x60.png">
+    <link rel="apple-touch-icon" sizes="72x72" href="/web/img/favicon/apple-icon-72x72.png">
+    <link rel="apple-touch-icon" sizes="76x76" href="/web/img/favicon/apple-icon-76x76.png">
+    <link rel="apple-touch-icon" sizes="114x114" href="/web/img/favicon/apple-icon-114x114.png">
+    <link rel="apple-touch-icon" sizes="120x120" href="/web/img/favicon/apple-icon-120x120.png">
+    <link rel="apple-touch-icon" sizes="144x144" href="/web/img/favicon/apple-icon-144x144.png">
+    <link rel="apple-touch-icon" sizes="152x152" href="/web/img/favicon/apple-icon-152x152.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/web/img/favicon/apple-icon-180x180.png">
+    <link rel="icon" type="image/png" sizes="192x192" href="/web/img/favicon/android-icon-192x192.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/web/img/favicon/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="96x96" href="/web/img/favicon/favicon-96x96.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/web/img/favicon/favicon-16x16.png">
+    <link rel="manifest" href="/web/img/favicon/manifest.json">
+    <meta name="msapplication-TileColor" content="#ffffff">
+    <meta name="msapplication-TileImage" content="/web/img/favicon/ms-icon-144x144.png">
+    <meta name="theme-color" content="#ffffff">
+    <title>Progress - Growth Clinic</title>
+    <!-- Bulma CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css">
+    <link rel="stylesheet" href="/web/css/styles.css">
+    <script defer src="/web/app.js"></script>
 </head>
+
 <body onload="initializeProtectedPage()">
-  <!-- Navbar -->
-  <nav class="navbar is-light" role="navigation" aria-label="main navigation">
-    <div class="container">
-      <div class="navbar-brand">
-        <a class="navbar-item" href="/web/index.html">
-          <img src="/web/img/gc-logo.svg" alt="Growth Clinic Logo">
-        </a>
-        <a role="button" class="navbar-burger" aria-label="menu" aria-expanded="false" data-target="navbarProgress">
-          <span aria-hidden="true"></span>
-          <span aria-hidden="true"></span>
-          <span aria-hidden="true"></span>
-        </a>
-      </div>
-      <div id="navbarProgress" class="navbar-menu">
-        <div class="navbar-start">
-          <a class="navbar-item" href="/web/dashboard.html">Dashboard</a>
-          <a class="navbar-item" href="/web/journal.html">Journal</a>
-          <a class="navbar-item" href="/web/progress.html">Progress</a>
-          <a class="navbar-item" href="mailto:growthclinic@gmail.com">Contact</a>
+    <!-- Navbar -->
+    <nav class="navbar is-light" role="navigation" aria-label="main navigation">
+        <div class="container">
+            <div class="navbar-brand">
+                <a class="navbar-item" href="/web/dashboard.html">
+                    <img src="/web/img/gc-logo.svg" alt="Growth Clinic Logo">
+                </a>
+                <a role="button" class="navbar-burger" aria-label="menu" aria-expanded="false"
+                    data-target="navbarProtected">
+                    <span aria-hidden="true"></span>
+                    <span aria-hidden="true"></span>
+                    <span aria-hidden="true"></span>
+                </a>
+            </div>
+            <div id="navbarProtected" class="navbar-menu">
+                <div class="navbar-start">
+                    <div id="authLinks">
+                        <a class="navbar-item" href="/web/dashboard.html">Dashboard</a>
+                        <a class="navbar-item" href="/web/journal.html">Journal</a>
+                        <a class="navbar-item" href="/web/progress.html">Progress</a>
+                    </div>
+                    <a class="navbar-item" href="mailto:growthclinic@gmail.com">Contact</a>
+                </div>
+                <div class="navbar-end">
+                    <div id="authButton" class="navbar-item">
+                        <button onclick="logoutUser()" class="button is-danger">Logout</button>
+                    </div>
+                </div>
+            </div>
         </div>
-        <div class="navbar-end">
-          <div class="navbar-item">
-            <button onclick="logoutUser()" class="button is-danger">Logout</button>
-          </div>
+    </nav>
+
+    <!-- Protected Content -->
+    <section class="section" id="protectedContent">
+        <div class="container">
+            <h1 class="title">Learning Progress</h1>
+            <p class="subtitle">Track your achievements and completed lessons</p>
+            <!-- Progress Content -->
+            <div class="card">
+                <div class="card-content">
+                    <h2 class="title is-4">Progress Overview</h2>
+                    <div id="progressText" class="content">
+                        <div class="is-loading has-text-centered">
+                            <span>Loading progress...</span>
+                        </div>
+                    </div>
+                    <button id="refreshProgress" onclick="fetchProgress()" class="button is-info mt-4">
+                        <span>Refresh Progress</span>
+                    </button>
+                </div>
+            </div>
         </div>
-      </div>
-    </div>
-  </nav>
+    </section>
 
-  <!-- Protected Content -->
-  <section class="section" id="protectedContent">
-    <div class="container">
-      <h1 class="title">Learning Progress</h1>
-      <p class="subtitle">Track your achievements and completed lessons</p>
-      <div class="card">
-        <div class="card-content">
-          <h2 class="title is-4">Progress Overview</h2>
-          <div id="progressText" class="content">Loading...</div>
-          <button onclick="fetchProgress()" class="button is-info mt-4">Refresh Progress</button>
+    <!-- Not Signed In Message -->
+    <section class="section is-hidden" id="notSignedIn">
+        <div class="container">
+            <div class="notification is-warning">
+                <p>You are not signed in. Please <a href="/web/index.html">log in</a> to access this page.</p>
+            </div>
         </div>
-      </div>
-    </div>
-  </section>
+    </section>
 
-  <!-- Not Signed In Message -->
-  <section class="section is-hidden" id="notSignedIn">
-    <div class="container">
-      <div class="notification is-warning">
-        <p>You are not signed in. Please <a href="/web/index.html">log in</a> to access this page.</p>
-      </div>
-    </div>
-  </section>
-
-  <script>
-    function initializeProtectedPage() {
-      if (!getAuthToken()) {
-        document.getElementById('protectedContent').classList.add('is-hidden');
-        document.getElementById('notSignedIn').classList.remove('is-hidden');
-      } else {
-        initializeApp();
-      }
-    }
-  </script>
+    <script>
+        function initializeProtectedPage() {
+            if (!getAuthToken()) {
+                document.getElementById('protectedContent').classList.add('is-hidden');
+                document.getElementById('notSignedIn').classList.remove('is-hidden');
+            } else {
+                initializeApp();
+            }
+        }
+    </script>
 </body>
+
 </html>

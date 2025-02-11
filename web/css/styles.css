@@ -19,3 +19,9 @@ body {
 .is-hidden {
   display: none !important;
 }
+
+#errorDisplay {
+  margin-top: 1rem;
+  position: relative;
+  z-index: 1000;  /* Ensure it shows above other content */
+}

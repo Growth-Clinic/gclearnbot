@@ -1,129 +1,171 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Dashboard - Growth Clinic</title>
-  <!-- Bulma CSS -->
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css">
-  <link rel="stylesheet" href="/web/css/styles.css">
-  <script defer src="/web/app.js"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- Favicon -->
+    <link rel="apple-touch-icon" sizes="57x57" href="/web/img/favicon/apple-icon-57x57.png">
+    <link rel="apple-touch-icon" sizes="60x60" href="/web/img/favicon/apple-icon-60x60.png">
+    <link rel="apple-touch-icon" sizes="72x72" href="/web/img/favicon/apple-icon-72x72.png">
+    <link rel="apple-touch-icon" sizes="76x76" href="/web/img/favicon/apple-icon-76x76.png">
+    <link rel="apple-touch-icon" sizes="114x114" href="/web/img/favicon/apple-icon-114x114.png">
+    <link rel="apple-touch-icon" sizes="120x120" href="/web/img/favicon/apple-icon-120x120.png">
+    <link rel="apple-touch-icon" sizes="144x144" href="/web/img/favicon/apple-icon-144x144.png">
+    <link rel="apple-touch-icon" sizes="152x152" href="/web/img/favicon/apple-icon-152x152.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/web/img/favicon/apple-icon-180x180.png">
+    <link rel="icon" type="image/png" sizes="192x192" href="/web/img/favicon/android-icon-192x192.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/web/img/favicon/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="96x96" href="/web/img/favicon/favicon-96x96.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/web/img/favicon/favicon-16x16.png">
+    <link rel="manifest" href="/web/img/favicon/manifest.json">
+    <meta name="msapplication-TileColor" content="#ffffff">
+    <meta name="msapplication-TileImage" content="/web/img/favicon/ms-icon-144x144.png">
+    <meta name="theme-color" content="#ffffff">
+    <title>Dashboard - Growth Clinic</title>
+    <!-- Bulma CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css">
+    <link rel="stylesheet" href="/web/css/styles.css">
+    <script defer src="/web/app.js"></script>
 </head>
+
 <body onload="initializeProtectedPage()">
-  <!-- Navbar -->
-  <nav class="navbar is-light" role="navigation" aria-label="main navigation">
-    <div class="container">
-      <div class="navbar-brand">
-        <a class="navbar-item" href="/web/index.html">
-          <img src="/web/img/gc-logo.svg" alt="Growth Clinic Logo">
-        </a>
-        <a role="button" class="navbar-burger" aria-label="menu" aria-expanded="false" data-target="navbarDashboard">
-          <span aria-hidden="true"></span>
-          <span aria-hidden="true"></span>
-          <span aria-hidden="true"></span>
-        </a>
-      </div>
-      <div id="navbarDashboard" class="navbar-menu">
-        <div class="navbar-start">
-          <a class="navbar-item" href="/web/dashboard.html">Dashboard</a>
-          <a class="navbar-item" href="/web/journal.html">Journal</a>
-          <a class="navbar-item" href="/web/progress.html">Progress</a>
-          <a class="navbar-item" href="mailto:growthclinic@gmail.com">Contact</a>
-        </div>
-        <div class="navbar-end">
-          <div class="navbar-item">
-            <button onclick="logoutUser()" class="button is-danger">Logout</button>
-          </div>
-        </div>
-      </div>
-    </div>
-  </nav>
-
-  <!-- Protected Content -->
-  <section class="section" id="protectedContent">
-    <div class="container">
-      <h1 class="title">Learning Dashboard</h1>
-      
-      <!-- Lesson Selection -->
-      <div class="card mb-4">
-        <div class="card-content">
-          <h2 class="subtitle">Select a Lesson</h2>
-          <div class="field">
-            <div class="control">
-              <div class="select is-fullwidth">
-                <select id="lessonSelect">
-                  <option value="">Select a lesson...</option>
-                  <!-- Options will be populated dynamically -->
-                </select>
-              </div>
+    <!-- Navbar -->
+    <nav class="navbar is-light" role="navigation" aria-label="main navigation">
+        <div class="container">
+            <div class="navbar-brand">
+                <a class="navbar-item" href="/web/dashboard.html">
+                    <img src="/web/img/gc-logo.svg" alt="Growth Clinic Logo">
+                </a>
+                <a role="button" class="navbar-burger" aria-label="menu" aria-expanded="false"
+                    data-target="navbarProtected">
+                    <span aria-hidden="true"></span>
+                    <span aria-hidden="true"></span>
+                    <span aria-hidden="true"></span>
+                </a>
             </div>
-          </div>
-          <button onclick="loadLesson()" class="button is-success">Load Lesson</button>
-        </div>
-      </div>
-
-      <!-- Lesson Content -->
-      <div id="lessonCard" class="card mb-4 is-hidden">
-        <div class="card-content">
-          <h2 id="lessonTitle" class="title"></h2>
-          <div id="lessonContent" class="content"></div>
-        </div>
-      </div>
-
-      <!-- Response Submission -->
-      <div class="card mb-4">
-        <div class="card-content">
-          <h2 class="title">Submit Your Response</h2>
-          <div class="field">
-            <div class="control">
-              <textarea id="responseText" class="textarea" placeholder="Write your response..."></textarea>
+            <div id="navbarProtected" class="navbar-menu">
+                <div class="navbar-start">
+                    <div id="authLinks">
+                        <a class="navbar-item" href="/web/dashboard.html">Dashboard</a>
+                        <a class="navbar-item" href="/web/journal.html">Journal</a>
+                        <a class="navbar-item" href="/web/progress.html">Progress</a>
+                    </div>
+                    <a class="navbar-item" href="mailto:growthclinic@gmail.com">Contact</a>
+                </div>
+                <div class="navbar-end">
+                    <div id="authButton" class="navbar-item">
+                        <button onclick="logoutUser()" class="button is-danger">Logout</button>
+                    </div>
+                </div>
             </div>
-          </div>
-          <button onclick="submitResponse()" class="button is-success">Submit</button>
         </div>
-      </div>
+    </nav>
 
-      <!-- Progress Overview -->
-      <div class="card mb-4">
-        <div class="card-content">
-          <h2 class="title">Your Progress</h2>
-          <div id="progressText" class="content">Loading...</div>
-          <button onclick="fetchProgress()" class="button is-info mt-4">Refresh Progress</button>
+    <!-- Protected Content -->
+    <section class="section" id="protectedContent">
+        <div class="container">
+            <h1 class="title">Learning Dashboard</h1>
+
+            <!-- Lesson Selection -->
+            <div class="card mb-4">
+                <div class="card-content">
+                    <h2 class="subtitle">Select a Lesson</h2>
+                    <div class="field">
+                        <div class="control">
+                            <div class="select is-fullwidth">
+                                <select id="lessonSelect">
+                                    <option value="">Select a lesson...</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <button id="loadLessonButton" onclick="loadLesson()" class="button is-success">
+                        <span>Load Lesson</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Lesson Content -->
+            <div id="lessonCard" class="card mb-4 is-hidden">
+                <div class="card-content">
+                    <h2 id="lessonTitle" class="title"></h2>
+                    <div id="lessonContent" class="content"></div>
+                </div>
+            </div>
+
+            <!-- Response Submission -->
+            <div class="card mb-4">
+                <div class="card-content">
+                    <h2 class="title">Submit Your Response</h2>
+                    <form id="responseForm" onsubmit="submitResponse(event)">
+                        <div class="field">
+                            <div class="control">
+                                <textarea id="responseText" class="textarea" placeholder="Write your response..."
+                                    required minlength="10"></textarea>
+                            </div>
+                        </div>
+                        <div class="field">
+                            <div class="control">
+                                <button type="submit" id="submitButton" class="button is-success">
+                                    <span>Submit Response</span>
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Progress Overview -->
+            <div class="card mb-4">
+                <div class="card-content">
+                    <h2 class="title">Your Progress</h2>
+                    <div id="progressText" class="content">
+                        <div class="is-loading has-text-centered">
+                            <span>Loading progress...</span>
+                        </div>
+                    </div>
+                    <button id="refreshProgress" onclick="fetchProgress()" class="button is-info mt-4">
+                        <span>Refresh Progress</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Journal Preview -->
+            <div class="card">
+                <div class="card-content">
+                    <h2 class="title">Your Journal</h2>
+                    <div id="journalList" class="content">
+                        <!-- Journal entries will appear here -->
+                    </div>
+                    <button id="loadJournal" onclick="fetchJournal()" class="button is-secondary mt-4">
+                        <span>Load Journal</span>
+                    </button>
+                </div>
+            </div>
         </div>
-      </div>
+    </section>
 
-      <!-- Journal Preview -->
-      <div class="card">
-        <div class="card-content">
-          <h2 class="title">Your Journal</h2>
-          <ul id="journalList">
-            <!-- Journal entries will appear here -->
-          </ul>
-          <button onclick="fetchJournal()" class="button is-secondary mt-4">Load Journal</button>
+    <!-- Not Signed In Message (hidden by default) -->
+    <section class="section is-hidden" id="notSignedIn">
+        <div class="container">
+            <div class="notification is-warning">
+                <p>You are not signed in. Please <a href="/web/index.html">log in</a> to access this page.</p>
+            </div>
         </div>
-      </div>
-    </div>
-  </section>
+    </section>
 
-  <!-- Not Signed In Message (hidden by default) -->
-  <section class="section is-hidden" id="notSignedIn">
-    <div class="container">
-      <div class="notification is-warning">
-        <p>You are not signed in. Please <a href="/web/index.html">log in</a> to access this page.</p>
-      </div>
-    </div>
-  </section>
-
-  <script>
-    // On protected pages, check if the user is authenticated
-    function initializeProtectedPage() {
-      if (!getAuthToken()) {
-        document.getElementById('protectedContent').classList.add('is-hidden');
-        document.getElementById('notSignedIn').classList.remove('is-hidden');
-      } else {
-        initializeApp();
-      }
-    }
-  </script>
+    <script>
+        // On protected pages, check if the user is authenticated
+        function initializeProtectedPage() {
+            if (!getAuthToken()) {
+                document.getElementById('protectedContent').classList.add('is-hidden');
+                document.getElementById('notSignedIn').classList.remove('is-hidden');
+            } else {
+                initializeApp();
+            }
+        }
+    </script>
 </body>
+
 </html>
