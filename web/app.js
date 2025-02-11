@@ -1,5 +1,79 @@
 const API_BASE_URL = "https://gclearnbot.onrender.com"; 
 
+// Auth toggle functions
+function toggleAuth() {
+    const registerBox = document.getElementById('registerBox');
+    const loginBox = document.getElementById('loginBox');
+    
+    if (registerBox.style.display === 'none') {
+        registerBox.style.display = 'block';
+        loginBox.style.display = 'none';
+    } else {
+        registerBox.style.display = 'none';
+        loginBox.style.display = 'block';
+    }
+}
+
+// Initialize auth display state (integrate with existing initializeApp)
+function initializeAuthDisplay() {
+    if (!localStorage.getItem('returning')) {
+        document.getElementById('registerBox').style.display = 'block';
+        document.getElementById('loginBox').style.display = 'none';
+        localStorage.setItem('returning', 'true');
+    } else {
+        document.getElementById('registerBox').style.display = 'none';
+        document.getElementById('loginBox').style.display = 'block';
+    }
+}
+
+// Mobile menu functionality
+function initializeMobileMenu() {
+    const mobileMenuToggle = document.querySelector('.mobile-menu-toggle');
+    if (mobileMenuToggle) {
+        mobileMenuToggle.addEventListener('click', function() {
+            document.querySelector('.navbar-nav').classList.toggle('active');
+        });
+    }
+}
+
+// Update the existing initializeApp function to include new initializations
+async function initializeApp() {
+    const token = getAuthToken();
+    if (token) {
+        // Remove login section
+        const loginSection = document.getElementById('loginSection');
+        if (loginSection) {
+            loginSection.style.display = 'none';
+        }
+        
+        // Show dashboard
+        const dashboardSection = document.getElementById('dashboardSection');
+        if (dashboardSection) {
+            dashboardSection.style.display = 'block';
+        }
+        
+        // Fetch lessons
+        await fetchLessons();
+    } else {
+        // Show login section
+        const loginSection = document.getElementById('loginSection');
+        if (loginSection) {
+            loginSection.style.display = 'block';
+        }
+        
+        // Hide dashboard
+        const dashboardSection = document.getElementById('dashboardSection');
+        if (dashboardSection) {
+            dashboardSection.style.display = 'none';
+        }
+
+        // Initialize auth display
+        initializeAuthDisplay();
+    }
+
+    // Initialize mobile menu
+    initializeMobileMenu();
+}
 
 async function registerUser() {
     let email = document.getElementById("registerEmail").value.trim();
