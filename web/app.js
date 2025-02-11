@@ -162,39 +162,50 @@ async function fetchLessons() {
         const data = await response.json();
         console.log("Lessons API Response:", data);
 
-        // Get the select element - match the exact structure in your HTML
-        const select = document.querySelector('select');
+        // Use querySelector to match the exact select element structure from your HTML
+        const selectElement = document.querySelector('input[type="text"][placeholder="Select a lesson..."]');
         
-        if (!select) {
-            console.error("Select element not found");
+        if (!selectElement) {
+            console.error("Could not find lesson select element");
+            console.log("Available elements:", document.querySelectorAll('select, input'));
             return;
         }
 
-        // Clear current options
-        select.innerHTML = '<option value="">Select a lesson...</option>';
+        // Create select element to replace the input
+        const newSelect = document.createElement('select');
+        newSelect.className = selectElement.className;
+        newSelect.style = selectElement.style;
+        
+        // Add default option
+        const defaultOption = document.createElement('option');
+        defaultOption.value = '';
+        defaultOption.textContent = 'Select a lesson...';
+        newSelect.appendChild(defaultOption);
 
         if (data.status === "success" && Array.isArray(data.lessons)) {
-            // Sort lessons by number
+            // Sort lessons
             const sortedLessons = data.lessons.sort((a, b) => {
                 const aNum = parseInt(a.lesson_id.split('_')[1]) || 0;
                 const bNum = parseInt(b.lesson_id.split('_')[1]) || 0;
                 return aNum - bNum;
             });
 
-            // Add lessons to select
+            // Add lessons
             sortedLessons.forEach(lesson => {
                 if (lesson.lesson_id && lesson.title) {
-                    const option = document.createElement("option");
+                    const option = document.createElement('option');
                     option.value = lesson.lesson_id;
                     option.textContent = `Lesson ${lesson.lesson_id.split('_')[1]}: ${lesson.title}`;
-                    select.appendChild(option);
+                    newSelect.appendChild(option);
                 }
             });
-        } else {
-            console.error("Invalid lessons data:", data);
+
+            // Replace input with select
+            selectElement.parentNode.replaceChild(newSelect, selectElement);
+            console.log("Successfully replaced input with populated select");
         }
     } catch (error) {
-        console.error("Error fetching lessons:", error);
+        console.error("Error in fetchLessons:", error);
     }
 }
 
