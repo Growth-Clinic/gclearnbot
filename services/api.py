@@ -112,7 +112,7 @@ def setup_routes(app: Quart, application: Application) -> None:
         """Authenticate user and return JWT"""
         try:
             data = await request.get_json()
-            logger.info(f"Login request received: {data}")  # Log incoming data
+            logger.info(f"Login request received: {data}")
 
             email = data.get("email")
             password = data.get("password")
@@ -122,7 +122,10 @@ def setup_routes(app: Quart, application: Application) -> None:
 
             # Get database instance
             db = await get_db()
-            user = await db.users.find_one({"email": email})
+            user = await asyncio.to_thread(
+                db.users.find_one,
+                {"email": email}
+            )
 
             if not user:
                 return jsonify({"status": "error", "message": "User not found"}), 404
@@ -130,9 +133,18 @@ def setup_routes(app: Quart, application: Application) -> None:
             if not verify_password(password, user["password"]):
                 return jsonify({"status": "error", "message": "Invalid credentials"}), 401
 
-            token = jwt.encode({"sub": email}, JWT_SECRET_KEY, algorithm="HS256")
+            # Use PyJWT directly instead of flask_jwt_extended
+            import jwt as pyjwt
+            token = pyjwt.encode(
+                {"sub": email}, 
+                JWT_SECRET_KEY, 
+                algorithm="HS256"
+            )
 
-            return jsonify({"status": "success", "token": token}), 200
+            return jsonify({
+                "status": "success", 
+                "token": token
+            }), 200
 
         except Exception as e:
             logger.error(f"Login error: {e}", exc_info=True)

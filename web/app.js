@@ -5,7 +5,7 @@ async function registerUser() {
     let email = document.getElementById("registerEmail").value.trim();
     let password = document.getElementById("registerPassword").value.trim();
 
-    console.log("Registering user:", { email, password });  // ✅ Debugging log
+    console.log("Registering user:", { email, password });
 
     if (!email || !password) {
         alert("Please enter a valid email and password.");
@@ -16,11 +16,16 @@ async function registerUser() {
         let response = await fetch(`${API_BASE_URL}/register`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ email, password })  // ✅ Send JSON correctly
+            body: JSON.stringify({ email, password })
         });
 
         let data = await response.json();
-        console.log("Register API Response:", data);  // ✅ Log API response
+        console.log("Register API Response:", data);
+
+        if (response.status === 409) {
+            alert("This email is already registered. Please try logging in instead.");
+            return;
+        }
 
         if (data.status === "success") {
             localStorage.setItem("token", data.token);
@@ -35,12 +40,16 @@ async function registerUser() {
     }
 }
 
-
 async function loginUser() {
-    let email = document.getElementById("email").value;
-    let password = document.getElementById("password").value;
+    let email = document.getElementById("email").value.trim();
+    let password = document.getElementById("password").value.trim();
 
-    console.log("Sending login request:", { email, password });  // ✅ Debug log
+    console.log("Sending login request:", { email, password });
+
+    if (!email || !password) {
+        alert("Please enter a valid email and password.");
+        return;
+    }
 
     try {
         let response = await fetch(`${API_BASE_URL}/login`, {
@@ -50,14 +59,14 @@ async function loginUser() {
         });
 
         let data = await response.json();
-        console.log("Login API Response:", data);  // ✅ Log API response
+        console.log("Login API Response:", data);
 
         if (data.status === "success") {
             localStorage.setItem("token", data.token);
             alert("Login successful!");
             window.location.reload();
         } else {
-            alert("Login failed: " + data.message);
+            alert(data.message || "Login failed. Please check your credentials.");
         }
     } catch (error) {
         console.error("Error logging in:", error);
