@@ -250,5 +250,18 @@ async function fetchJournal() {
     }
 }
 
-// Load lessons on page load
-window.onload = loadLessons;
+// Initialize the app
+async function initializeApp() {
+    const token = getAuthToken();
+    if (token) {
+        document.getElementById('loginSection').style.display = 'none';
+        document.getElementById('dashboardSection').style.display = 'block';
+        await fetchLessons();  // Note: using fetchLessons instead of loadLessons
+    } else {
+        document.getElementById('loginSection').style.display = 'block';
+        document.getElementById('dashboardSection').style.display = 'none';
+    }
+}
+
+// Load app on page load
+window.onload = initializeApp;

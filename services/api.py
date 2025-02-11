@@ -45,34 +45,65 @@ def setup_routes(app: Quart, application: Application) -> None:
         """Register a new user and return a JWT token"""
         try:
             data = await request.get_json()
-            logger.info(f"Received registration data: {data}")  # ✅ Log incoming request data
+            logger.info(f"Received registration data: {data}")
 
             email = data.get("email")
             password = data.get("password")
 
             if not email or not password:
                 return jsonify({"status": "error", "message": "Email and password required"}), 400
-            
-            db = await get_db()  # ✅ Ensure db is initialized
 
-            existing_user = await db.users.find_one({"email": email})
+            # Initialize database connection
+            db = await get_db()
+
+            # Check if user already exists
+            existing_user = await asyncio.to_thread(
+                db.users.find_one,
+                {"email": email}
+            )
+            
             if existing_user:
                 return jsonify({"status": "error", "message": "User already exists"}), 409
 
-            hashed_password = generate_password_hash(password)  # ✅ Secure password
+            # Create user data structure
             user_data = {
+                "user_id": str(hash(email)),  # Generate a unique user ID
                 "email": email,
-                "password": hashed_password,
-                "progress": {"completed_lessons": []},
+                "password": generate_password_hash(password),
+                "platform": "web",
+                "username": email.split('@')[0],
+                "first_name": "",
+                "language_code": "en",
+                "joined_date": datetime.now(timezone.utc).isoformat(),
+                "current_lesson": "lesson_1",
+                "completed_lessons": [],
+                "last_active": datetime.now(timezone.utc).isoformat()
             }
 
-            await db.users.insert_one(user_data)  # ✅ Save to MongoDB
-            token = jwt.encode({"sub": email}, JWT_SECRET_KEY, algorithm="HS256")
+            # Save user to database
+            result = await asyncio.to_thread(
+                db.users.insert_one,
+                user_data
+            )
 
-            return jsonify({"status": "success", "token": token}), 201
+            if not result.acknowledged:
+                logger.error("Failed to save user to database")
+                return jsonify({"status": "error", "message": "Database error"}), 500
+
+            # Generate JWT token
+            token = jwt.encode(
+                {"sub": email}, 
+                JWT_SECRET_KEY, 
+                algorithm="HS256"
+            )
+
+            return jsonify({
+                "status": "success",
+                "token": token
+            }), 201
 
         except Exception as e:
-            logger.error(f"Register error: {e}", exc_info=True)
+            logger.error(f"Registration error: {e}", exc_info=True)
             return jsonify({"status": "error", "message": "Server error"}), 500
 
     
