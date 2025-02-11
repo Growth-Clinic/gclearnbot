@@ -120,19 +120,21 @@ def setup_routes(app: Quart, application: Application) -> None:
             if not email or not password:
                 return jsonify({"status": "error", "message": "Missing email or password"}), 400
 
-            # Get database instance and await the result
+            # Get database instance
             db = await get_db()
-            user = await asyncio.to_thread(
-                lambda: db.users.find_one({"email": email})  # Use lambda to execute find_one
-            )
-
-            if not user:
+            
+            # Execute database query and await result
+            result = await db.users.find_one({"email": email})
+            
+            if not result:
+                logger.info(f"User not found: {email}")
                 return jsonify({"status": "error", "message": "User not found"}), 404
 
-            if not verify_password(password, user["password"]):
+            if not verify_password(password, result["password"]):
+                logger.info(f"Invalid password for user: {email}")
                 return jsonify({"status": "error", "message": "Invalid credentials"}), 401
 
-            # Use PyJWT directly
+            # Use PyJWT directly for token generation
             import jwt as pyjwt
             token = pyjwt.encode(
                 {"sub": email}, 
