@@ -132,34 +132,46 @@ async function loadLesson(lessonId) {
 // Fetch and display lesson content
 async function fetchLessons() {
     let token = getAuthToken();
-    console.log("Using Token:", token);  // ✅ Check if the token is set
+    console.log("Using Token:", token);
 
     if (!token) {
         alert("Please log in first.");
         return;
     }
 
-    let response = await fetch(`${API_BASE_URL}/lessons`, {
-        method: "GET",
-        headers: { "Authorization": `Bearer ${token}` },
-    });
-
-    let data = await response.json();
-    console.log("API Response:", data);  // ✅ Log full API response
-
-    if (data.status === "success") {
-        let lessonsContainer = document.getElementById("lessons");
-        lessonsContainer.innerHTML = "";
-
-        data.lessons.forEach(lesson => {
-            let lessonDiv = document.createElement("div");
-            lessonDiv.innerHTML = `<h3>${lesson.title}</h3>
-                <p>${lesson.text}</p>
-                <button onclick="loadLesson('${lesson.lesson_id}')">Start</button>`;
-            lessonsContainer.appendChild(lessonDiv);
+    try {
+        let response = await fetch(`${API_BASE_URL}/lessons`, {
+            method: "GET",
+            headers: { "Authorization": `Bearer ${token}` },
         });
-    } else {
-        alert(`Error: ${data.message}`);
+
+        let data = await response.json();
+        console.log("API Response:", data);
+
+        if (data.status === "success") {
+            // Get the lessons container
+            let lessonsContainer = document.getElementById("lessonSelect");
+            if (!lessonsContainer) {
+                console.error("Lessons container not found in DOM");
+                return;
+            }
+
+            // Clear existing options
+            lessonsContainer.innerHTML = '<option value="">Select a lesson...</option>';
+
+            // Add lessons as options
+            data.lessons.forEach(lesson => {
+                let option = document.createElement("option");
+                option.value = lesson.lesson_id;
+                option.textContent = lesson.title;
+                lessonsContainer.appendChild(option);
+            });
+        } else {
+            alert(`Error: ${data.message}`);
+        }
+    } catch (error) {
+        console.error("Error fetching lessons:", error);
+        alert("Failed to load lessons. Please try again.");
     }
 }
 
