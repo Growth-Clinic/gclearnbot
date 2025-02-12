@@ -1,6 +1,22 @@
 const API_BASE_URL = "https://gclearnbot.onrender.com"; 
 const PROTECTED_ROUTES = ['/web/dashboard.html', '/web/journal.html', '/web/progress.html'];
 
+// Initialize the app
+async function initializeApp() {
+    const token = getAuthToken();
+    if (token) {
+        document.getElementById('loginSection')?.classList.add('is-hidden');
+        document.getElementById('dashboardSection')?.classList.remove('is-hidden');
+        await fetchLessons();
+    } else {
+        document.getElementById('loginSection')?.classList.remove('is-hidden');
+        document.getElementById('dashboardSection')?.classList.add('is-hidden');
+        initializeAuthDisplay();
+    }
+
+    initializeMobileMenu();
+}
+
 // Auth toggle functions
 function toggleAuth() {
     const registerBox = document.getElementById('registerBox');
@@ -260,6 +276,44 @@ function logoutUser() {
     localStorage.removeItem("token");
     alert("You have been logged out.");
     window.location.reload();
+}
+
+function disableForm(formId) {
+    const form = document.getElementById(formId);
+    if (form) {
+        const inputs = form.getElementsByTagName('input');
+        const buttons = form.getElementsByTagName('button');
+        
+        // Disable all inputs
+        for (let input of inputs) {
+            input.disabled = true;
+        }
+        
+        // Disable all buttons
+        for (let button of buttons) {
+            button.disabled = true;
+            button.classList.add('is-loading');
+        }
+    }
+}
+
+function enableForm(formId) {
+    const form = document.getElementById(formId);
+    if (form) {
+        const inputs = form.getElementsByTagName('input');
+        const buttons = form.getElementsByTagName('button');
+        
+        // Enable all inputs
+        for (let input of inputs) {
+            input.disabled = false;
+        }
+        
+        // Enable all buttons
+        for (let button of buttons) {
+            button.disabled = false;
+            button.classList.remove('is-loading');
+        }
+    }
 }
 
 // Get auth token from local storage
@@ -629,39 +683,6 @@ async function fetchJournal() {
                     <a href="/web/dashboard.html" class="button is-primary">Go to Learning Dashboard</a>
                 </p>
             </div>`;
-    }
-}
-
-// Initialize the app
-async function initializeApp() {
-    const token = getAuthToken();
-    if (token) {
-        // Remove login section
-        const loginSection = document.getElementById('loginSection');
-        if (loginSection) {
-            loginSection.style.display = 'none';
-        }
-        
-        // Show dashboard
-        const dashboardSection = document.getElementById('dashboardSection');
-        if (dashboardSection) {
-            dashboardSection.style.display = 'block';
-        }
-        
-        // Fetch lessons
-        await fetchLessons();
-    } else {
-        // Show login section
-        const loginSection = document.getElementById('loginSection');
-        if (loginSection) {
-            loginSection.style.display = 'block';
-        }
-        
-        // Hide dashboard
-        const dashboardSection = document.getElementById('dashboardSection');
-        if (dashboardSection) {
-            dashboardSection.style.display = 'none';
-        }
     }
 }
 
