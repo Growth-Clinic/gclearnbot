@@ -11,9 +11,9 @@ body {
 }
 
 /* Hero section styling */
-.hero.is-primary {
-  background-color: #009688; /* Changed to a darker green for better contrast */
-  color: white;
+.hero.is-light {
+  background-color: #f5f5f5; /* Light gray background for better readability */
+  color: #333;
   padding: 2rem 1rem; /* Added padding for better spacing */
 }
 
