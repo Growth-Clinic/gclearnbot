@@ -66,7 +66,7 @@ async function initializeProtectedPage() {
     }
     
     initializeMobileMenu();
-    updateNavigation();
+    updateAuthNavigation();
 }
 
 // Mobile menu functionality (Bulma)
@@ -122,7 +122,7 @@ function checkRedirect() {
     }
 }
 
-function updateNavigation() {
+function updateAuthNavigation() {
     const token = getAuthToken();
     const authLinks = document.querySelectorAll('.auth-links');
     const logoutButtons = document.querySelectorAll('.logout-button');
@@ -431,8 +431,8 @@ async function loadLesson(lessonId) {
                     responseCard.classList.remove('is-hidden');
                 }
 
-                // Update navigation buttons
-                updateNavigation(lessonId, data.lesson.next);
+                // Update lesson navigation buttons
+                updateLessonNavigation(lessonId, data.lesson.next);
             }, 300);
         }
     } catch (error) {
@@ -451,21 +451,33 @@ function formatLessonContent(text) {
         .split('\n').join('<br>');
 }
 
-// Update navigation buttons
-function updateNavigation(currentId, nextId) {
+// Update lesson navigation buttons
+function updateLessonNavigation(currentId, nextId) {
+    if (!currentId) {
+        console.error("updateLessonNavigation error: currentId is undefined");
+        return;
+    }
+
     const prevButton = document.getElementById('prevLesson');
     const nextButton = document.getElementById('nextLesson');
 
-    // Get current lesson number and step
-    const [, lessonNum, , stepNum] = currentId.split('_');
-    
-    prevButton.disabled = !stepNum || stepNum === '1';
+    const parts = currentId.split('_');
+    if (parts.length < 2) {
+        console.error("Invalid lesson ID format:", currentId);
+        return;
+    }
+
+    const lessonNum = parts[1];
+    const stepNum = parts[3] ? parseInt(parts[3]) : null;
+
+    prevButton.disabled = !stepNum || stepNum === 1;
     nextButton.disabled = !nextId;
 
     prevButton.onclick = () => {
-        const prevStep = stepNum ? parseInt(stepNum) - 1 : 1;
-        const prevId = `lesson_${lessonNum}_step_${prevStep}`;
-        loadLesson(prevId);
+        if (stepNum && stepNum > 1) {
+            const prevId = `lesson_${lessonNum}_step_${stepNum - 1}`;
+            loadLesson(prevId);
+        }
     };
 
     nextButton.onclick = () => {
@@ -690,7 +702,7 @@ async function fetchJournal() {
 window.onload = initializeApp;
 
 document.addEventListener('DOMContentLoaded', () => {
-    updateNavigation();
+    updateAuthNavigation();
     initializeMobileMenu();
 });
 
