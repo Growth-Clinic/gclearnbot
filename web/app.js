@@ -523,15 +523,15 @@ async function fetchLessons() {
             // Debugging: Check which lessons pass filtering
             const mainLessons = data.lessons.filter(lesson => {
                 console.log("Checking lesson:", lesson.lesson_id, lesson.type);
+            
                 return (
                     lesson.lesson_id !== "lesson_1" && 
                     !lesson.lesson_id.includes("_step_") &&
                     !lesson.lesson_id.toLowerCase().includes("congratulations") &&
-                    lesson.type === "full_lesson"
+                    (lesson.type === "full_lesson" || lesson.type === undefined) // Adjust filter logic
                 );
             });
-
-            console.log("Filtered Lessons Count:", mainLessons.length);
+            
             console.log("Filtered Lessons After Debugging:", mainLessons);
 
             // Sorting
