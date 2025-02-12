@@ -10,15 +10,24 @@ body {
   margin-bottom: 1rem;
 }
 
+/* Hero section styling */
+.hero.is-primary {
+  background-color: #009688; /* Changed to a darker green for better contrast */
+  color: white;
+  padding: 2rem 1rem; /* Added padding for better spacing */
+}
+
 /* Spacing for cards */
 .card {
   margin-bottom: 1.5rem;
   transition: opacity 0.3s ease-in-out;
   display: flex;
   flex-direction: column;
-  min-height: 500px; /* Adjust as needed */
+  justify-content: center; /* Center content vertically */
+  min-height: 200px; /* Adjusted to better fit content */
   border-radius: 10px;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  padding: 1.5rem; /* Added padding for better content spacing */
 }
 
 /* Utility override for hiding elements (Bulma already uses is-hidden) */
@@ -91,12 +100,6 @@ body {
   background: white;
 }
 
-/* Hero section styling */
-.hero.is-primary {
-  background-color: #00d1b2;
-  color: white;
-}
-
 .card-title {
   font-size: 1.5rem;
   margin-bottom: 0.5rem;
@@ -105,4 +108,19 @@ body {
 .card-text {
   font-size: 1rem;
   color: #666;
+}
+
+/* Additional styling for better layout */
+.section {
+  padding: 2rem 1rem; /* Added padding for better section spacing */
+}
+
+.columns {
+  justify-content: center; /* Center columns */
+}
+
+.column {
+  display: flex;
+  flex-direction: column;
+  justify-content: center; /* Center content vertically in columns */
 }
