@@ -124,3 +124,30 @@ body {
   flex-direction: column;
   justify-content: center; /* Center content vertically in columns */
 }
+
+.testimonial-box {
+  position: relative;
+}
+
+.testimonial-preview {
+  max-height: 3.6em; /* Adjust as needed */
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2; /* Number of lines to show */
+  line-clamp: 2; /* Standard property */
+  -webkit-box-orient: vertical;
+  box-orient: vertical; /* Standard property */
+}
+
+.testimonial-full {
+  display: none;
+}
+
+.read-more-button {
+  margin-top: 0.5rem;
+}
+
+.hidden {
+  display: none;
+}
