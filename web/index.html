@@ -71,16 +71,49 @@
     </nav>
 
     <!-- Hero Section -->
-    <section class="hero is-light">
+    <section class="hero is-primary">
         <div class="hero-body">
             <div class="container has-text-centered">
-                <h1 class="title">Welcome to Growth Clinic</h1>
-                <h2 class="subtitle">Future-proof your career with practical mental models and skills</h2>
+                <h1 class="title is-1">Welcome to Growth Clinic</h1>
+                <p class="subtitle is-4">Future-proof your career with practical mental models and skills</p>
+                <p class="has-text-grey">Learn essential thinking frameworks through bite-sized, practical lessons. Perfect for busy professionals looking to enhance their problem-solving and decision-making skills.</p>
             </div>
         </div>
     </section>
 
     <div id="errorDisplay" class="container mt-4"></div>
+
+    <!-- Key Features Section -->
+    <section class="section">
+        <div class="container">
+            <div class="columns is-multiline">
+                <div class="column is-one-third">
+                    <div class="card">
+                        <div class="card-content">
+                            <p class="card-title">🎨 Design Thinking</p>
+                            <p class="card-text">Master creative problem-solving and user-centered innovation techniques.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="column is-one-third">
+                    <div class="card">
+                        <div class="card-content">
+                            <p class="card-title">📈 Market Thinking</p>
+                            <p class="card-text">Learn how to scale products and identify market opportunities.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="column is-one-third">
+                    <div class="card">
+                        <div class="card-content">
+                            <p class="card-title">✨ And More!</p>
+                            <p class="card-text">Discover additional mental models and frameworks to enhance your professional toolkit.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
 
     <!-- Authentication Section -->
     <section id="loginSection" class="section">
@@ -171,7 +204,6 @@
                                 <li>✓ Personalized Learning Path</li>
                                 <li>✓ Weekly Expert Calls</li>
                                 <li>✓ Enhanced Feedback & Insights</li>
-                                <li>✓ Field Expert Guide</li>
                             </ul>
                             <button class="button is-success is-large mt-4">Unlock Personalization</button>
                         </div>
@@ -187,9 +219,8 @@
             <h3 class="title">Why Choose Growth Clinic?</h3>
             <div class="columns">
                 <div class="column">
-                    <h5 class="title is-5">🎯 Personalised Learning</h5>
-                    <p class="subtitle is-6">Customise your learning journey with interactive workshops and weekly
-                        coaching calls</p>
+                    <h5 class="title is-5">📝 Practical Learning</h5>
+                    <p class="subtitle is-6">Learn through hands-on tasks and real-world applications</p>
                 </div>
                 <div class="column">
                     <h5 class="title is-5">⚡ Smart Micro-Content</h5>
@@ -197,8 +228,8 @@
                     </p>
                 </div>
                 <div class="column">
-                    <h5 class="title is-5">📚 Practical Application</h5>
-                    <p class="subtitle is-6">Learn through real-world examples and immediate implementation</p>
+                    <h5 class="title is-5">📚 Personal Journal</h5>
+                    <p class="subtitle is-6">Build your knowledge through structured reflection</p>
                 </div>
             </div>
         </div>
@@ -241,7 +272,7 @@
     </footer>
 
     <script>
-                // If user is logged in, redirect to dashboard
+        // If user is logged in, redirect to dashboard
         function checkRedirect() {
             if (typeof getAuthToken === 'function') {
                 if (getAuthToken()) {
