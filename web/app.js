@@ -60,14 +60,14 @@ function initializeMobileMenu() {
     
     // Add click event to each burger
     burgers.forEach(burger => {
-        burger.addEventListener('click', () => {
+        burger.addEventListener('click', function() {
             // Get the target from the "data-target" attribute
-            const targetId = burger.dataset.target;
+            const targetId = this.dataset.target;
             const target = document.getElementById(targetId);
             
             // Toggle the class on both the burger and menu
-            burger.classList.toggle('is-active');
-            target.classList.toggle('is-active');
+            this.classList.toggle('is-active');
+            target?.classList.toggle('is-active');
         });
     });
 }
@@ -108,23 +108,20 @@ function checkRedirect() {
 
 function updateNavigation() {
     const token = getAuthToken();
-    const authLinks = document.getElementById('authLinks');
-    const authButton = document.getElementById('authButton');
+    const authLinks = document.querySelectorAll('.auth-links');
+    const logoutButtons = document.querySelectorAll('.logout-button');
+    const loginButtons = document.querySelectorAll('.login-button');
     
     if (token) {
-        authLinks?.classList.remove('is-hidden');
-        if (authButton) {
-            authButton.innerHTML = `
-                <button onclick="logoutUser()" class="button is-danger">
-                    Logout
-                </button>
-            `;
-        }
+        // Show authenticated links
+        authLinks.forEach(link => link.classList.remove('is-hidden'));
+        logoutButtons.forEach(button => button.classList.remove('is-hidden'));
+        loginButtons.forEach(button => button.classList.add('is-hidden'));
     } else {
-        authLinks?.classList.add('is-hidden');
-        if (authButton) {
-            authButton.innerHTML = '';
-        }
+        // Hide authenticated links
+        authLinks.forEach(link => link.classList.add('is-hidden'));
+        logoutButtons.forEach(button => button.classList.add('is-hidden'));
+        loginButtons.forEach(button => button.classList.remove('is-hidden'));
     }
 }
 
@@ -425,7 +422,10 @@ function updateNavigation(currentId, nextId) {
 // Fetch and display lesson content
 async function fetchLessons() {
     const token = getAuthToken();
-    if (!token) return;
+    if (!token) {
+        console.error("No auth token found");
+        return;
+    }
 
     try {
         const response = await fetch(`${API_BASE_URL}/lessons`, {
@@ -442,29 +442,40 @@ async function fetchLessons() {
             const selectElement = document.getElementById('lessonSelect');
             if (!selectElement) return;
 
-            selectElement.innerHTML = '<option value="">Choose your learning path...</option>';
+            // Clear existing options
+            selectElement.innerHTML = '<option value="">What would you like to learn?</option>';
 
-            // Filter main lessons only
-            const mainLessons = Object.entries(data.lessons)
-                .filter(([id]) => !id.includes('_step_') && 
-                                id !== 'lesson_1' && 
-                                !id.toLowerCase().includes('congratulations'))
-                .sort((a, b) => {
-                    const aNum = parseInt(a[0].split('_')[1]) || 0;
-                    const bNum = parseInt(b[0].split('_')[1]) || 0;
-                    return aNum - bNum;
-                });
+            // Filter to only show main lessons (not steps) and filter out congratulations
+            const mainLessons = data.lessons.filter(lesson => 
+                lesson.lesson_id !== "lesson_1" && 
+                !lesson.lesson_id.includes("_step_") &&
+                !lesson.lesson_id.toLowerCase().includes("congratulations") &&
+                lesson.type === "full_lesson"
+            );
 
-            mainLessons.forEach(([id, lesson]) => {
-                const option = document.createElement('option');
-                option.value = id;
-                option.textContent = lesson.description || `Lesson ${id.split('_')[1]}`;
-                selectElement.appendChild(option);
+            // Sort lessons by number
+            const sortedLessons = mainLessons.sort((a, b) => {
+                const aNum = parseInt(a.lesson_id.split('_')[1]) || 0;
+                const bNum = parseInt(b.lesson_id.split('_')[1]) || 0;
+                return aNum - bNum;
+            });
+
+            // Add lessons to select using their descriptions
+            sortedLessons.forEach(lesson => {
+                if (lesson.lesson_id && lesson.description) {
+                    const option = document.createElement('option');
+                    option.value = lesson.lesson_id;
+                    option.textContent = `📚 ${lesson.description}`;
+                    selectElement.appendChild(option);
+                }
             });
         }
     } catch (error) {
         console.error("Error fetching lessons:", error);
-        showError("Failed to load lessons. Please try again.");
+        const selectElement = document.getElementById('lessonSelect');
+        if (selectElement) {
+            selectElement.innerHTML = '<option value="">Error loading lessons. Please try again.</option>';
+        }
     }
 }
 
@@ -510,20 +521,34 @@ async function submitResponse() {
 // Fetch user progress
 async function fetchProgress() {
     const token = getAuthToken();
-    console.log("Fetching progress with token:", token);  // ✅ Log the token
-
     if (!token) {
         showError("Please log in first.");
         return;
     }
 
+    const progressText = document.getElementById("progressText");
+    progressText.innerHTML = '<div class="has-text-centered">Loading...</div>';
+
     try {
-        let response = await fetch(`${API_BASE_URL}/progress`, {
-            method: "GET",
-            headers: { "Authorization": `Bearer ${token}` }
+        const response = await fetch(`${API_BASE_URL}/progress`, {
+            headers: {
+                "Authorization": `Bearer ${token}`,
+                "Content-Type": "application/json"
+            }
         });
 
-        let data = await response.json();
+        if (response.status === 404 || response.status === 500) {
+            progressText.innerHTML = `
+                <div class="notification is-info">
+                    <p>No progress data yet! Start your learning journey to track your progress.</p>
+                    <p class="mt-3">
+                        <a href="/web/dashboard.html" class="button is-primary">Go to Learning Dashboard</a>
+                    </p>
+                </div>`;
+            return;
+        }
+
+        const data = await response.json();
         console.log("Progress API Response:", data);  // ✅ Log full API response
 
         if (data.status === "success") {
@@ -541,7 +566,13 @@ async function fetchProgress() {
             showError(`Error: ${data.message}`);
         }
     } catch (error) {
-        console.error("Error fetching progress:", error);
+        progressText.innerHTML = `
+            <div class="notification is-info">
+                <p>No progress data yet! Start your learning journey to track your progress.</p>
+                <p class="mt-3">
+                    <a href="/web/dashboard.html" class="button is-primary">Go to Learning Dashboard</a>
+                </p>
+            </div>`;
     } finally {
         hideLoading('refreshProgress');
     }
@@ -561,13 +592,25 @@ async function fetchJournal() {
     journalList.innerHTML = '<li class="list-group-item">Loading...</li>';
 
     try {
-        let response = await fetch(`${API_BASE_URL}/journal`, {  // Remove USER_ID reference
+        const response = await fetch(`${API_BASE_URL}/journal`, {
             headers: {
                 "Authorization": `Bearer ${token}`,
                 "Content-Type": "application/json"
             }
         });
-        let data = await response.json();
+
+        if (response.status === 404) {
+            journalList.innerHTML = `
+                <div class="notification is-info">
+                    <p>No journal entries yet! Start your learning journey to begin documenting your progress.</p>
+                    <p class="mt-3">
+                        <a href="/web/dashboard.html" class="button is-primary">Go to Learning Dashboard</a>
+                    </p>
+                </div>`;
+            return;
+        }
+
+        const data = await response.json();
 
         if (data.status === "success") {
             journalList.innerHTML = "";
@@ -579,8 +622,13 @@ async function fetchJournal() {
             });
         }
     } catch (error) {
-        console.error("Error fetching journal:", error);
-        showError("Failed to load journal entries");
+        journalList.innerHTML = `
+            <div class="notification is-info">
+                <p>No journal entries yet! Start your learning journey to begin documenting your progress.</p>
+                <p class="mt-3">
+                    <a href="/web/dashboard.html" class="button is-primary">Go to Learning Dashboard</a>
+                </p>
+            </div>`;
     }
 }
 

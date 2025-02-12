@@ -34,28 +34,30 @@
     <nav class="navbar is-light" role="navigation" aria-label="main navigation">
         <div class="container">
             <div class="navbar-brand">
-                <a class="navbar-item" href="/web/dashboard.html">
+                <a class="navbar-item" href="/web/index.html">
                     <img src="/web/img/gc-logo.svg" alt="Growth Clinic Logo">
                 </a>
-                <a role="button" class="navbar-burger" aria-label="menu" aria-expanded="false"
-                    data-target="navbarProtected">
+                <a role="button" class="navbar-burger" aria-label="menu" aria-expanded="false" data-target="navbarMain">
                     <span aria-hidden="true"></span>
                     <span aria-hidden="true"></span>
                     <span aria-hidden="true"></span>
                 </a>
             </div>
-            <div id="navbarProtected" class="navbar-menu">
+            <div id="navbarMain" class="navbar-menu">
                 <div class="navbar-start">
-                    <div id="authLinks">
-                        <a class="navbar-item" href="/web/dashboard.html">Dashboard</a>
+                    <!-- Auth-required links -->
+                    <div class="auth-links is-hidden">
+                        <a class="navbar-item" href="/web/dashboard.html">Learning Dashboard</a>
                         <a class="navbar-item" href="/web/journal.html">Journal</a>
                         <a class="navbar-item" href="/web/progress.html">Progress</a>
-                        <a class="navbar-item" href="mailto:growthclinic@gmail.com">Contact</a>
                     </div>
+                    <!-- Always visible links -->
+                    <a class="navbar-item" href="mailto:growthclinic@gmail.com">Contact</a>
                 </div>
                 <div class="navbar-end">
-                    <div id="authButton" class="navbar-item">
-                        <button onclick="logoutUser()" class="button is-danger">Logout</button>
+                    <div class="navbar-item">
+                        <button onclick="logoutUser()" class="button is-danger logout-button is-hidden">Logout</button>
+                        <a href="/web/index.html" class="button is-primary login-button">Login</a>
                     </div>
                 </div>
             </div>

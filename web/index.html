@@ -51,17 +51,19 @@
             </div>
             <div id="navbarMain" class="navbar-menu">
                 <div class="navbar-start">
-                    <!-- These links will be shown/hidden by JavaScript based on auth status -->
-                    <div id="authLinks" class="is-hidden">
+                    <!-- Auth-required links -->
+                    <div class="auth-links is-hidden">
                         <a class="navbar-item" href="/web/dashboard.html">Learning Dashboard</a>
                         <a class="navbar-item" href="/web/journal.html">Journal</a>
                         <a class="navbar-item" href="/web/progress.html">Progress</a>
-                        <a class="navbar-item" href="mailto:growthclinic@gmail.com">Contact</a>
                     </div>
+                    <!-- Always visible links -->
+                    <a class="navbar-item" href="mailto:growthclinic@gmail.com">Contact</a>
                 </div>
                 <div class="navbar-end">
-                    <div id="authButton" class="navbar-item">
-                        <!-- Will be populated by JavaScript -->
+                    <div class="navbar-item">
+                        <button onclick="logoutUser()" class="button is-danger logout-button is-hidden">Logout</button>
+                        <a href="/web/index.html" class="button is-primary login-button">Login</a>
                     </div>
                 </div>
             </div>
