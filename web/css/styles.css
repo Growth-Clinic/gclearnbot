@@ -89,17 +89,17 @@ body {
   background: white;
 }
 
-Copy#lessonSelectCard {
-  max-height: 300px;
-  transition: max-height 0.3s ease-in-out;
+#lessonSelectCard {
+    max-height: 300px;
+    transition: max-height 0.3s ease-in-out;
 }
 
 #lessonCard {
-  max-height: 0;
-  overflow: hidden;
-  transition: max-height 0.3s ease-in-out;
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease-in-out;
 }
 
 #lessonCard.is-active {
-  max-height: 800px; /* Adjust as needed */
+    max-height: 800px; /* Adjust as needed */
 }
