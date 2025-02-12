@@ -168,7 +168,7 @@
                                             <p class="has-text-weight-semibold testimonial-full hidden">"Growth Clinic transformed my business! Expert guidance on pricing and automation tools streamlined our processes, leading to exponential growth in just one year. Highly recommended!"</p>
                                         </div>
                                         <p class="has-text-right">- Founder, Festivilla</p>
-                                        <a href="#" class="read-more-button has-text-link">Read More</a>
+                                        <span class="read-more-button has-text-link">Read More</span>
                                     </div>
                                 </div>
                             </div>
@@ -187,7 +187,7 @@
                                             <p class="has-text-weight-semibold testimonial-full hidden">"Growth Clinic provided rare insights and mental models that were crucial for my business growth. The focus on customer engagement and community management has been pivotal."</p>
                                         </div>
                                         <p class="has-text-right">- Funmi Amarvi, Founder, PhiliaTech</p>
-                                        <a href="#" class="read-more-button has-text-link">Read More</a>
+                                        <span class="read-more-button has-text-link">Read More</span>
                                     </div>
                                 </div>
                             </div>
@@ -206,7 +206,7 @@
                                             <p class="has-text-weight-semibold testimonial-full hidden">"This program is fantastic! It emphasizes the importance of engaging with customers and managing communities effectively. A solid foundation for anyone in product management or startups."</p>
                                         </div>
                                         <p class="has-text-right">- Raheemah Azeez, Co-founder, Afrimama Farms</p>
-                                        <a href="#" class="read-more-button has-text-link">Read More</a>
+                                        <span class="read-more-button has-text-link">Read More</span>
                                     </div>
                                 </div>
                             </div>
@@ -340,7 +340,9 @@
         }
 
         document.querySelectorAll('.read-more-button').forEach(button => {
-            button.addEventListener('click', function () {
+            button.addEventListener('click', function (event) {
+                event.preventDefault(); // Stop the page from jumping to the top
+
                 const preview = this.closest('.media-content').querySelector('.testimonial-preview');
                 const fullText = this.closest('.media-content').querySelector('.testimonial-full');
 
