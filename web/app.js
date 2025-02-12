@@ -540,7 +540,7 @@ async function fetchLessons() {
             console.log("Sorted Lessons:", sortedLessons);
 
             sortedLessons.forEach(lesson => {
-                if (lesson.lesson_id && lesson.description) {
+                if (lesson.lesson_id && lesson.title) {
                     const option = document.createElement('option');
                     option.value = lesson.lesson_id;
                     option.textContent = `📚 ${lesson.description}`;
