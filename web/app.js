@@ -488,12 +488,14 @@ function updateLessonNavigation(currentId, nextId) {
 // Fetch and display lesson content
 async function fetchLessons() {
     const token = getAuthToken();
+    console.log("Auth Token:", token); // 🔍 Check if token is retrieved
     if (!token) {
         console.error("No auth token found");
         return;
     }
 
     try {
+        console.log("Fetching lessons from:", `${API_BASE_URL}/lessons`); // 🔍 Log API endpoint
         const response = await fetch(`${API_BASE_URL}/lessons`, {
             method: "GET",
             headers: { 
@@ -502,10 +504,16 @@ async function fetchLessons() {
             }
         });
 
+        console.log("Response Status:", response.status); // 🔍 Check HTTP response status
         const data = await response.json();
+        console.log("Raw API Response:", data); // 🔍 Log the full API response
         
         if (data.status === "success" && Array.isArray(data.lessons)) {
+            console.log("Total Lessons Fetched:", data.lessons.length); // 🔍 Number of lessons returned
+
             const selectElement = document.getElementById('lessonSelect');
+            console.log("lessonSelect Element:", selectElement); // 🔍 Check if select element exists
+
             if (!selectElement) return;
 
             // Clear existing options
@@ -519,6 +527,8 @@ async function fetchLessons() {
                 lesson.type === "full_lesson"
             );
 
+            console.log("Filtered Lessons Count:", mainLessons.length); // 🔍 Log number of valid lessons
+
             // Sort lessons by number
             const sortedLessons = mainLessons.sort((a, b) => {
                 const aNum = parseInt(a.lesson_id.split('_')[1]) || 0;
@@ -526,9 +536,12 @@ async function fetchLessons() {
                 return aNum - bNum;
             });
 
+            console.log("Sorted Lessons:", sortedLessons); // 🔍 Check sorted lesson order
+
             // Add lessons to select using their descriptions
             sortedLessons.forEach(lesson => {
                 if (lesson.lesson_id && lesson.description) {
+                    console.log("Adding Lesson:", lesson.lesson_id, "->", lesson.description); // 🔍 Log each lesson added
                     const option = document.createElement('option');
                     option.value = lesson.lesson_id;
                     option.textContent = `📚 ${lesson.description}`;
@@ -644,8 +657,6 @@ async function fetchProgress() {
     }
 }
 
-
-// Fetch journal entries
 // Fetch journal entries
 async function fetchJournal() {
     const token = getAuthToken();

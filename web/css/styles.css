@@ -35,11 +35,22 @@ body {
   opacity: 1;
 }
 
-/* Fix navbar styling */
+/* Navbar styling */
 #authLinks {
   display: flex;
+  flex-wrap: wrap;
   gap: 1rem;
   align-items: center;
+  justify-content: flex-end; /* Align to right */
+}
+
+@media screen and (max-width: 768px) {
+  #authLinks {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+    width: 100%;
+  }
 }
 
 @media screen and (max-width: 1023px) {
