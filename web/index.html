@@ -341,18 +341,26 @@
 
         document.querySelectorAll('.read-more-button').forEach(button => {
             button.addEventListener('click', function (event) {
-                event.preventDefault(); // Stop the page from jumping to the top
+                event.preventDefault(); // Prevent scrolling to top
 
-                const preview = this.closest('.media-content').querySelector('.testimonial-preview');
-                const fullText = this.closest('.media-content').querySelector('.testimonial-full');
+                const mediaContent = this.closest('.media-content');
+                const preview = mediaContent.querySelector('.testimonial-preview');
+                const fullText = mediaContent.querySelector('.testimonial-full');
 
-                const isHidden = fullText.classList.contains('hidden');
-                fullText.classList.toggle('hidden');
-                preview.classList.toggle('hidden');
-
-                this.textContent = isHidden ? "Read Less" : "Read More";
+                if (fullText.classList.contains('hidden')) {
+                    // Show full text, hide preview
+                    fullText.classList.remove('hidden');
+                    preview.classList.add('hidden');
+                    this.textContent = "Read Less";
+                } else {
+                    // Hide full text, show preview
+                    fullText.classList.add('hidden');
+                    preview.classList.remove('hidden');
+                    this.textContent = "Read More";
+                }
             });
         });
+
     </script>
 </body>
 
