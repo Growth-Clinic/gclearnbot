@@ -146,6 +146,8 @@ body {
 
 .read-more-button {
   margin-top: 0.5rem;
+  cursor: pointer;
+  font-size: 0.9rem;
 }
 
 .hidden {
