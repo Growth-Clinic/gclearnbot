@@ -140,16 +140,9 @@ body {
   box-orient: vertical; /* Standard property */
 }
 
-.testimonial-full {
-  display: none;
-}
-
 .read-more-button {
-  margin-top: 0.5rem;
   cursor: pointer;
   font-size: 0.9rem;
-}
-
-.hidden {
-  display: none !important;
+  color: #3273dc; /* Bulma's default link color */
+  text-decoration: underline;
 }
