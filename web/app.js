@@ -488,14 +488,14 @@ function updateLessonNavigation(currentId, nextId) {
 // Fetch and display lesson content
 async function fetchLessons() {
     const token = getAuthToken();
-    console.log("Auth Token:", token); // 🔍 Check if token is retrieved
     if (!token) {
         console.error("No auth token found");
         return;
     }
 
     try {
-        console.log("Fetching lessons from:", `${API_BASE_URL}/lessons`); // 🔍 Log API endpoint
+        console.log("Fetching lessons from:", `${API_BASE_URL}/lessons`);
+
         const response = await fetch(`${API_BASE_URL}/lessons`, {
             method: "GET",
             headers: { 
@@ -504,44 +504,47 @@ async function fetchLessons() {
             }
         });
 
-        console.log("Response Status:", response.status); // 🔍 Check HTTP response status
+        console.log("Response Status:", response.status);
+
         const data = await response.json();
-        console.log("Raw API Response:", data); // 🔍 Log the full API response
+        console.log("Raw API Response:", data);
         
         if (data.status === "success" && Array.isArray(data.lessons)) {
-            console.log("Total Lessons Fetched:", data.lessons.length); // 🔍 Number of lessons returned
+            console.log("Total Lessons Fetched:", data.lessons.length);
+
+            // Debugging: Log all lessons
+            console.log("Lessons Data:", JSON.stringify(data.lessons, null, 2));
 
             const selectElement = document.getElementById('lessonSelect');
-            console.log("lessonSelect Element:", selectElement); // 🔍 Check if select element exists
-
             if (!selectElement) return;
 
-            // Clear existing options
             selectElement.innerHTML = '<option value="">What would you like to learn?</option>';
 
-            // Filter to only show main lessons (not steps) and filter out congratulations
-            const mainLessons = data.lessons.filter(lesson => 
-                lesson.lesson_id !== "lesson_1" && 
-                !lesson.lesson_id.includes("_step_") &&
-                !lesson.lesson_id.toLowerCase().includes("congratulations") &&
-                lesson.type === "full_lesson"
-            );
+            // Debugging: Check which lessons pass filtering
+            const mainLessons = data.lessons.filter(lesson => {
+                console.log("Checking lesson:", lesson.lesson_id, lesson.type);
+                return (
+                    lesson.lesson_id !== "lesson_1" && 
+                    !lesson.lesson_id.includes("_step_") &&
+                    !lesson.lesson_id.toLowerCase().includes("congratulations") &&
+                    lesson.type === "full_lesson"
+                );
+            });
 
-            console.log("Filtered Lessons Count:", mainLessons.length); // 🔍 Log number of valid lessons
+            console.log("Filtered Lessons Count:", mainLessons.length);
+            console.log("Filtered Lessons After Debugging:", mainLessons);
 
-            // Sort lessons by number
+            // Sorting
             const sortedLessons = mainLessons.sort((a, b) => {
                 const aNum = parseInt(a.lesson_id.split('_')[1]) || 0;
                 const bNum = parseInt(b.lesson_id.split('_')[1]) || 0;
                 return aNum - bNum;
             });
 
-            console.log("Sorted Lessons:", sortedLessons); // 🔍 Check sorted lesson order
+            console.log("Sorted Lessons:", sortedLessons);
 
-            // Add lessons to select using their descriptions
             sortedLessons.forEach(lesson => {
                 if (lesson.lesson_id && lesson.description) {
-                    console.log("Adding Lesson:", lesson.lesson_id, "->", lesson.description); // 🔍 Log each lesson added
                     const option = document.createElement('option');
                     option.value = lesson.lesson_id;
                     option.textContent = `📚 ${lesson.description}`;
