@@ -420,6 +420,10 @@ async function loadLesson(lessonId) {
                 
                 // Update lesson content
                 lessonTitle.textContent = data.lesson.title || `Lesson ${lessonId.split('_')[1]}`;
+                
+                // Create a scrollable content area
+                lessonContent.style.maxHeight = '400px'; // Set a fixed height
+                lessonContent.style.overflowY = 'auto';  // Make it scrollable
                 lessonContent.innerHTML = formatLessonContent(data.lesson.text);
                 
                 // Show lesson card
@@ -429,6 +433,13 @@ async function loadLesson(lessonId) {
                 // Show response form if needed
                 if (data.lesson.requires_response) {
                     responseCard.classList.remove('is-hidden');
+                }
+
+                // Show response form for steps (not main lessons)
+                if (lessonId.includes('_step_')) {
+                    responseCard.classList.remove('is-hidden');
+                } else {
+                    responseCard.classList.add('is-hidden');
                 }
 
                 // Update lesson navigation buttons
@@ -543,7 +554,7 @@ async function fetchLessons() {
                 if (lesson.lesson_id && lesson.title) {
                     const option = document.createElement('option');
                     option.value = lesson.lesson_id;
-                    option.textContent = `📚 ${lesson.description}`;
+                    option.textContent = `📚 ${lesson.title}`;
                     selectElement.appendChild(option);
                 }
             });
