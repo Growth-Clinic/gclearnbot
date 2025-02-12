@@ -2,6 +2,7 @@
 <html lang="en">
 
 <head>
+    <script src="/web/app.js"></script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="description"
@@ -32,7 +33,6 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css">
     <!-- Optional custom overrides -->
     <link rel="stylesheet" href="/web/css/styles.css">
-    <script defer src="/web/app.js"></script>
 </head>
 
 <body onload="checkRedirect()">
@@ -241,10 +241,12 @@
     </footer>
 
     <script>
-        // If user is logged in, redirect to dashboard
+                // If user is logged in, redirect to dashboard
         function checkRedirect() {
-            if (getAuthToken()) {
-                window.location.href = "/web/dashboard.html";
+            if (typeof getAuthToken === 'function') {
+                if (getAuthToken()) {
+                    window.location.href = "/web/dashboard.html";
+                }
             }
         }
     </script>

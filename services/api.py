@@ -163,7 +163,19 @@ def setup_routes(app: Quart, application: Application) -> None:
     # ✅ Serve static files from the web directory
     @app.route('/web/<path:filename>')
     async def serve_static(filename):
-        return await send_from_directory(os.path.join(os.getcwd(), "web"), filename)
+        try:
+            # Get absolute path to web directory
+            web_dir = os.path.join(os.getcwd(), "web")
+            
+            # Check if file exists
+            if not os.path.exists(os.path.join(web_dir, filename)):
+                logger.error(f"File not found: {filename}")
+                return {"error": "File not found"}, 404
+                
+            return await send_from_directory(web_dir, filename)
+        except Exception as e:
+            logger.error(f"Error serving static file {filename}: {e}")
+            return {"error": "Internal server error"}, 500
     
     @app.route('/lessons', methods=['GET'])
     async def list_lessons():
