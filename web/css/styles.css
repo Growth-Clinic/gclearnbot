@@ -88,3 +88,18 @@ body {
   bottom: 0;
   background: white;
 }
+
+Copy#lessonSelectCard {
+  max-height: 300px;
+  transition: max-height 0.3s ease-in-out;
+}
+
+#lessonCard {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.3s ease-in-out;
+}
+
+#lessonCard.is-active {
+  max-height: 800px; /* Adjust as needed */
+}

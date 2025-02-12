@@ -33,6 +33,12 @@ async def before_serving():
     db = await get_db()
     logger.info("Database initialized")
 
+@app.before_request
+async def ensure_context():
+    """Ensure app context is available for JWT operations"""
+    if not app.app_context:
+        await app.app_context().__aenter__()
+
 def setup_routes(app: Quart, application: Application) -> None:
 
     """Set up API routes for web access"""
@@ -228,8 +234,30 @@ def setup_routes(app: Quart, application: Application) -> None:
     async def submit_lesson_response(lesson_id):
         """Submit a user response for a lesson"""
         try:
+            # Get the token from Authorization header
+            auth_header = request.headers.get("Authorization")
+            if not auth_header or not auth_header.startswith("Bearer "):
+                return jsonify({"status": "error", "message": "Missing or invalid token"}), 401
+
+            token = auth_header.split(" ")[1]
+            
+            with app.app_context():
+                decoded = decode_token(token)
+                if not decoded:
+                    return jsonify({"status": "error", "message": "Invalid token"}), 401
+                
+                user_email = decoded.get('sub')
+                if not user_email:
+                    return jsonify({"status": "error", "message": "Invalid token"}), 401
+
+                # Get user data
+                user = await db.users.find_one({"email": user_email})
+                if not user:
+                    return jsonify({"status": "error", "message": "User not found"}), 404
+
+                user_id = user.get('user_id')
+
             data = await request.json
-            user_id = str(data.get("user_id"))
             response_text = data.get("response")
 
             if not user_id or not response_text:
@@ -249,37 +277,31 @@ def setup_routes(app: Quart, application: Application) -> None:
 
     @app.route('/progress', methods=['GET'])
     async def get_progress():
-        """Fetch user progress based on JWT token"""
+        """Fetch user progress"""
         try:
-            # ✅ Manually extract the token from the Authorization header
             auth_header = request.headers.get("Authorization")
             if not auth_header or not auth_header.startswith("Bearer "):
                 return jsonify({"status": "error", "message": "Missing or invalid token"}), 401
 
-            token = auth_header.split(" ")[1]  # Extract the token
-            decoded_token = decode_token(token)  # ✅ Manually decode JWT
-            user_email = decoded_token.get("sub")  # ✅ Get user identity from token
+            token = auth_header.split(" ")[1]
 
-            if not user_email:
-                return jsonify({"status": "error", "message": "Invalid token"}), 401
+            # Use flask_jwt_extended's decode_token
+            with app.app_context():
+                decoded = decode_token(token)
+                user_email = decoded['sub']  # Get email from token claims
 
-            logger.info(f"Fetching progress for {user_email}")
+                # Get user data
+                user_data = await db.users.find_one({"email": user_email})
+                if not user_data:
+                    return jsonify({"status": "error", "message": "User not found"}), 404
 
-            db = await get_db()  # ✅ Ensure db is initialized
-            user_data = await db.users.find_one({"email": user_email})  # ✅ Use `await` for async MongoDB query
-
-            if not user_data:
-                return jsonify({"status": "error", "message": "User not found"}), 404
-
-            progress = user_data.get("progress", {})
-            completed_lessons = progress.get("completed_lessons", [])
-
-            return jsonify({
-                "status": "success",
-                "progress": {
-                    "completed_lessons": completed_lessons
-                }
-            }), 200
+                completed_lessons = user_data.get('completed_lessons', [])
+                return jsonify({
+                    "status": "success",
+                    "progress": {
+                        "completed_lessons": completed_lessons
+                    }
+                }), 200
 
         except Exception as e:
             logger.error(f"Error fetching progress: {e}", exc_info=True)
@@ -295,16 +317,31 @@ def setup_routes(app: Quart, application: Application) -> None:
             logger.error(f"Error fetching complete progress for user {user_id}: {e}")
             return jsonify({"status": "error", "message": "Server error"}), 500
 
-    @app.route('/journal/<user_id>', methods=['GET'])
-    async def get_journal(user_id):
+    @app.route('/journal')  # Changed from /journal/<user_id>
+    async def get_journal():
         """Fetch user's journal entries"""
         try:
-            journal = await JournalManager.get_user_journal(user_id)
-            if journal:
-                return jsonify({"status": "success", "journal": journal["entries"]}), 200
-            return jsonify({"status": "error", "message": "No journal entries found"}), 404
+            auth_header = request.headers.get("Authorization")
+            if not auth_header or not auth_header.startswith("Bearer "):
+                return jsonify({"status": "error", "message": "Missing or invalid token"}), 401
+
+            token = auth_header.split(" ")[1]
+            
+            with app.app_context():
+                decoded = decode_token(token)
+                user_email = decoded['sub']
+                
+                user = await db.users.find_one({"email": user_email})
+                if not user:
+                    return jsonify({"status": "error", "message": "User not found"}), 404
+
+                journal = await JournalManager.get_user_journal(user['user_id'])
+                if journal:
+                    return jsonify({"status": "success", "journal": journal["entries"]}), 200
+                return jsonify({"status": "error", "message": "No journal entries found"}), 404
+
         except Exception as e:
-            logger.error(f"Error fetching journal for user {user_id}: {e}")
+            logger.error(f"Error fetching journal: {e}")
             return jsonify({"status": "error", "message": "Server error"}), 500
 
     @app.route('/webhook', methods=['POST'])
@@ -364,27 +401,70 @@ def setup_routes(app: Quart, application: Application) -> None:
 
     # Flask routes for viewing journals
     @app.route('/journals/<user_id>')
-    def view_journal(user_id):
-        # Convert user_id to int since it comes as string from URL
+    async def view_journal(user_id):
+        """Admin route to view specific journal"""
         try:
-            user_id = int(user_id)
-        except ValueError:
-            return jsonify({"error": "Invalid user ID"}), 400
+            # Add auth check
+            auth_header = request.headers.get("Authorization")
+            if not auth_header or not auth_header.startswith("Bearer "):
+                return jsonify({"status": "error", "message": "Missing or invalid token"}), 401
+
+            token = auth_header.split(" ")[1]
             
-        journal = db.journals.find_one({"user_id": user_id})
-        if journal:
-            # Remove MongoDB's _id field before returning
-            journal.pop('_id', None)
-            return jsonify(journal)
-        return jsonify({"error": "Journal not found"}), 404
+            with app.app_context():
+                decoded = decode_token(token)
+                user_email = decoded['sub']
+                
+                # Verify admin status (you'll need to add admin field to user model)
+                admin_user = await db.users.find_one({"email": user_email})
+                if not admin_user or not admin_user.get('is_admin'):
+                    return jsonify({"status": "error", "message": "Unauthorized"}), 403
+
+            # Convert user_id to proper format
+            try:
+                user_id = str(user_id)
+            except ValueError:
+                return jsonify({"error": "Invalid user ID"}), 400
+                
+            journal = await db.journals.find_one({"user_id": user_id})
+            if journal:
+                journal.pop('_id', None)
+                return jsonify(journal)
+            return jsonify({"error": "Journal not found"}), 404
+        except Exception as e:
+            logger.error(f"Error fetching journal: {e}")
+            return jsonify({"error": "Server error"}), 500
 
     @app.route('/journals')
-    def list_journals():
-        journals = list(db.journals.find())
-        # Remove MongoDB's _id field from each journal
-        for journal in journals:
-            journal.pop('_id', None)
-        return jsonify(journals)
+    async def list_journals():
+        """Admin route to list all journals"""
+        try:
+            # Add same auth check as above
+            auth_header = request.headers.get("Authorization")
+            if not auth_header or not auth_header.startswith("Bearer "):
+                return jsonify({"status": "error", "message": "Missing or invalid token"}), 401
+
+            token = auth_header.split(" ")[1]
+            
+            with app.app_context():
+                decoded = decode_token(token)
+                user_email = decoded['sub']
+                
+                admin_user = await db.users.find_one({"email": user_email})
+                if not admin_user or not admin_user.get('is_admin'):
+                    return jsonify({"status": "error", "message": "Unauthorized"}), 403
+
+            # Use async operation
+            journals = await db.journals.find().to_list(length=None)
+            
+            # Remove MongoDB _id from each journal
+            for journal in journals:
+                journal.pop('_id', None)
+                
+            return jsonify({"status": "success", "journals": journals})
+        except Exception as e:
+            logger.error(f"Error listing journals: {e}")
+            return jsonify({"error": "Server error"}), 500
 
     @app.route('/health')
     async def health_check():

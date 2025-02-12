@@ -572,15 +572,17 @@ async function fetchLessons() {
 async function submitResponse() {
     event?.preventDefault();
     const lessonId = document.getElementById("lessonSelect").value;
-    const responseText = document.getElementById("responseText").value;
-    const token = getAuthToken(); // Get stored JWT token
+    const responseText = document.getElementById("responseText");
+    const token = getAuthToken();
     const submitButton = document.getElementById('submitButton');
-    showLoading('submitButton');
-
+    
     if (!token) {
         showError("Please log in first.");
         return;
     }
+
+    // Show loading state
+    submitButton.classList.add('is-loading');
 
     try {
         let response = await fetch(`${API_BASE_URL}/lessons/${lessonId}/response`, {
@@ -589,22 +591,37 @@ async function submitResponse() {
                 "Authorization": `Bearer ${token}`,
                 "Content-Type": "application/json"
             },
-            body: JSON.stringify({ response: responseText })
+            body: JSON.stringify({ response: responseText.value })
         });
 
         let data = await response.json();
         if (data.status === "success") {
-            document.getElementById("responseMessage").classList.remove("is-hidden");
-            setTimeout(() => document.getElementById("responseMessage").classList.add("is-hidden"), 3000);
+            // Show success message
+            showSuccess("Response submitted successfully!");
+            // Clear textarea
+            responseText.value = '';
         } else {
             showError(`Error: ${data.message}`);
-        } 
+        }
     } catch (error) {
         console.error("Error submitting response:", error);
         showError("Something went wrong. Please try again.");
     } finally {
-        hideLoading('submitButton');
+        submitButton.classList.remove('is-loading');
     }
+}
+
+function showSuccess(message) {
+    const notification = document.createElement('div');
+    notification.className = 'notification is-success';
+    notification.innerHTML = `
+        <button class="delete"></button>
+        ${message}
+    `;
+    document.querySelector('.container').insertBefore(notification, document.querySelector('.container').firstChild);
+    
+    // Remove after 3 seconds
+    setTimeout(() => notification.remove(), 3000);
 }
 
 // Fetch user progress
@@ -725,6 +742,24 @@ window.onload = initializeApp;
 document.addEventListener('DOMContentLoaded', () => {
     updateAuthNavigation();
     initializeMobileMenu();
+});
+
+document.addEventListener('DOMContentLoaded', () => {
+    // Get all "navbar-burger" elements
+    const $navbarBurgers = Array.prototype.slice.call(document.querySelectorAll('.navbar-burger'), 0);
+
+    // Add a click event on each of them
+    $navbarBurgers.forEach(el => {
+        el.addEventListener('click', () => {
+            // Get the target from the "data-target" attribute
+            const target = el.dataset.target;
+            const $target = document.getElementById(target);
+
+            // Toggle the "is-active" class on both the "navbar-burger" and the "navbar-menu"
+            el.classList.toggle('is-active');
+            $target.classList.toggle('is-active');
+        });
+    });
 });
 
 document.getElementById('lessonSelect')?.addEventListener('change', (e) => {
