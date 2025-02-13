@@ -266,6 +266,9 @@ def setup_routes(app: Quart, application: Application) -> None:
         try:
             user_email = request.user_email
             
+            # Get database instance
+            db = await get_db()
+            
             # Get user data
             user = await db.users.find_one({"email": user_email})
             if not user:
@@ -296,6 +299,9 @@ def setup_routes(app: Quart, application: Application) -> None:
         """Fetch user progress"""
         try:
             user_email = request.user_email
+            
+            # Get database instance
+            db = await get_db()
             
             # Get user data
             user_data = await db.users.find_one({"email": user_email})
@@ -330,6 +336,9 @@ def setup_routes(app: Quart, application: Application) -> None:
         """Fetch user's journal entries"""
         try:
             user_email = request.user_email
+            
+            # Get database instance
+            db = await get_db()
                 
             user = await db.users.find_one({"email": user_email})
             if not user:
@@ -404,6 +413,10 @@ def setup_routes(app: Quart, application: Application) -> None:
     async def view_journal(user_id):
         """Admin route to view specific journal"""
         try:
+
+            # Get database instance
+            db = await get_db()
+
             # Add auth check
             auth_header = request.headers.get("Authorization")
             if not auth_header or not auth_header.startswith("Bearer "):
@@ -439,6 +452,10 @@ def setup_routes(app: Quart, application: Application) -> None:
     async def list_journals():
         """Admin route to list all journals"""
         try:
+
+            # Get database instance
+            db = await get_db()
+            
             # Add same auth check as above
             auth_header = request.headers.get("Authorization")
             if not auth_header or not auth_header.startswith("Bearer "):
