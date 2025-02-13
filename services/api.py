@@ -241,23 +241,22 @@ def setup_routes(app: Quart, application: Application) -> None:
 
             token = auth_header.split(" ")[1]
             
-            with app.app_context():
-                decoded = decode_token(token)
-                if not decoded:
-                    return jsonify({"status": "error", "message": "Invalid token"}), 401
-                
+            # Decode token without context manager
+            try:
+                decoded = jwt.decode(token, JWT_SECRET_KEY, algorithms=["HS256"])
                 user_email = decoded.get('sub')
                 if not user_email:
                     return jsonify({"status": "error", "message": "Invalid token"}), 401
+            except jwt.InvalidTokenError:
+                return jsonify({"status": "error", "message": "Invalid token"}), 401
 
-                # Get user data
-                user = await db.users.find_one({"email": user_email})
-                if not user:
-                    return jsonify({"status": "error", "message": "User not found"}), 404
+            # Get user data
+            user = await db.users.find_one({"email": user_email})
+            if not user:
+                return jsonify({"status": "error", "message": "User not found"}), 404
 
-                user_id = user.get('user_id')
-
-            data = await request.json
+            user_id = user.get('user_id')
+            data = await request.get_json()
             response_text = data.get("response")
 
             if not user_id or not response_text:
@@ -285,23 +284,24 @@ def setup_routes(app: Quart, application: Application) -> None:
 
             token = auth_header.split(" ")[1]
 
-            # Use flask_jwt_extended's decode_token
-            with app.app_context():
-                decoded = decode_token(token)
-                user_email = decoded['sub']  # Get email from token claims
+            try:
+                decoded = jwt.decode(token, JWT_SECRET_KEY, algorithms=["HS256"])
+                user_email = decoded['sub']
+            except jwt.InvalidTokenError:
+                return jsonify({"status": "error", "message": "Invalid token"}), 401
 
-                # Get user data
-                user_data = await db.users.find_one({"email": user_email})
-                if not user_data:
-                    return jsonify({"status": "error", "message": "User not found"}), 404
+            # Get user data
+            user_data = await db.users.find_one({"email": user_email})
+            if not user_data:
+                return jsonify({"status": "error", "message": "User not found"}), 404
 
-                completed_lessons = user_data.get('completed_lessons', [])
-                return jsonify({
-                    "status": "success",
-                    "progress": {
-                        "completed_lessons": completed_lessons
-                    }
-                }), 200
+            completed_lessons = user_data.get('completed_lessons', [])
+            return jsonify({
+                "status": "success",
+                "progress": {
+                    "completed_lessons": completed_lessons
+                }
+            }), 200
 
         except Exception as e:
             logger.error(f"Error fetching progress: {e}", exc_info=True)
@@ -317,7 +317,7 @@ def setup_routes(app: Quart, application: Application) -> None:
             logger.error(f"Error fetching complete progress for user {user_id}: {e}")
             return jsonify({"status": "error", "message": "Server error"}), 500
 
-    @app.route('/journal')  # Changed from /journal/<user_id>
+    @app.route('/journal')
     async def get_journal():
         """Fetch user's journal entries"""
         try:
@@ -327,18 +327,20 @@ def setup_routes(app: Quart, application: Application) -> None:
 
             token = auth_header.split(" ")[1]
             
-            with app.app_context():
-                decoded = decode_token(token)
+            try:
+                decoded = jwt.decode(token, JWT_SECRET_KEY, algorithms=["HS256"])
                 user_email = decoded['sub']
+            except jwt.InvalidTokenError:
+                return jsonify({"status": "error", "message": "Invalid token"}), 401
                 
-                user = await db.users.find_one({"email": user_email})
-                if not user:
-                    return jsonify({"status": "error", "message": "User not found"}), 404
+            user = await db.users.find_one({"email": user_email})
+            if not user:
+                return jsonify({"status": "error", "message": "User not found"}), 404
 
-                journal = await JournalManager.get_user_journal(user['user_id'])
-                if journal:
-                    return jsonify({"status": "success", "journal": journal["entries"]}), 200
-                return jsonify({"status": "error", "message": "No journal entries found"}), 404
+            journal = await JournalManager.get_user_journal(user['user_id'])
+            if journal:
+                return jsonify({"status": "success", "journal": journal["entries"]}), 200
+            return jsonify({"status": "error", "message": "No journal entries found"}), 404
 
         except Exception as e:
             logger.error(f"Error fetching journal: {e}")
