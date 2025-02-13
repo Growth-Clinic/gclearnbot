@@ -129,6 +129,15 @@ body {
   position: relative;
   min-height: auto; /* Allow it to expand naturally */
   transition: all 0.3s ease-in-out;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.testimonial-box .button {
+  align-self: center; /* Ensures the button stays centered inside the box */
+  width: 100%; /* Ensures button stays within the width of the container */
+  max-width: 250px; /* Prevents the button from stretching too wide */
 }
 
 .testimonial-preview {
@@ -140,13 +149,6 @@ body {
   line-clamp: 2; /* Standard property */
   -webkit-box-orient: vertical;
   box-orient: vertical; /* Standard property */
-}
-
-.read-more-button {
-  cursor: pointer;
-  font-size: 0.9rem;
-  color: #3273dc; /* Bulma's default link color */
-  text-decoration: underline;
 }
 
 .pricing-container {

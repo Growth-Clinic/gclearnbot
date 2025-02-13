@@ -164,13 +164,11 @@
                                         </div>
                                         <div class="media-content">
                                             <div class="testimonial-text">
-                                                <p class="has-text-weight-semibold testimonial-preview"
-                                                    data-full-text="Growth Clinic transformed my business! Expert guidance on pricing and automation tools streamlined our processes, leading to exponential growth in just one year. Highly recommended!">
-                                                    "Growth Clinic transformed my business! Expert guidance on pricing and automation tools streamlined our processes..."
+                                                <p class="has-text-weight-semibold testimonial-preview">
+                                                    "Growth Clinic transformed my business! Expert guidance on pricing and automation tools streamlined our processes, leading to exponential growth in just one year. Highly recommended!"
                                                 </p>
                                             </div>
                                             <p class="has-text-right">- Founder, Festivilla</p>
-                                            <span class="read-more-button has-text-link">Read More</span>
                                         </div>
                                     </div>
                                 </div>
@@ -185,13 +183,11 @@
                                         </div>
                                         <div class="media-content">
                                             <div class="testimonial-text">
-                                                <p class="has-text-weight-semibold testimonial-preview"
-                                                    data-full-text="Growth Clinic provided rare insights and mental models that were crucial for my business growth. The focus on customer engagement and community management has been pivotal.">
-                                                    "Growth Clinic provided rare insights and mental models that were crucial for my business growth. The focus on customer engagement and community management..."
+                                                <p class="has-text-weight-semibold testimonial-preview">
+                                                    "Growth Clinic provided rare insights and mental models that were crucial for my business growth. The focus on customer engagement and community management has been pivotal."
                                                 </p>
                                             </div>
                                             <p class="has-text-right">- Funmi Amarvi, Founder, PhiliaTech</p>
-                                            <span class="read-more-button has-text-link">Read More</span>
                                         </div>
                                     </div>
                                 </div>
@@ -206,13 +202,11 @@
                                         </div>
                                         <div class="media-content">
                                             <div class="testimonial-text">
-                                                <p class="has-text-weight-semibold testimonial-preview"
-                                                    data-full-text="This program is fantastic! It emphasizes the importance of engaging with customers and managing communities effectively. A solid foundation for anyone in product management or startups.">
-                                                    "This program is fantastic! It emphasizes the importance of engaging with customers and managing communities effectively..."
+                                                <p class="has-text-weight-semibold testimonial-preview">
+                                                    "This program is fantastic! It emphasizes the importance of engaging with customers and managing communities effectively. A solid foundation for anyone in product management or startups."
                                                 </p>
                                             </div>
                                             <p class="has-text-right">- Raheemah Azeez, Co-founder, Afrimama Farms</p>
-                                            <span class="read-more-button has-text-link">Read More</span>
                                         </div>
                                     </div>
                                 </div>
@@ -230,7 +224,7 @@
                                 <p class="is-size-6 has-text-grey">Limited-time offer. Invest in your growth today!</p>
                             </div>
 
-                            <button class="button is-success is-large mt-4">Unlock Personalization Now</button>
+                            <button class="button is-success is-large mt-4">Start Learning</button>
                         </div>
                     </div>
                 </div>
@@ -354,26 +348,7 @@
                     window.location.href = "/web/dashboard.html";
                 }
             }
-        }
-
-        document.querySelectorAll('.read-more-button').forEach(button => {
-            button.addEventListener('click', function () {
-                const preview = this.closest('.media-content').querySelector('.testimonial-preview');
-                const box = this.closest('.testimonial-box');
-                const fullText = preview.dataset.fullText;
-
-                if (this.textContent === "Read More") {
-                    preview.dataset.shortText = preview.textContent.trim(); // Store short text
-                    preview.textContent = fullText; // Show full text
-                    box.style.maxHeight = "none"; // Allow expansion
-                    this.textContent = "Read Less";
-                } else {
-                    preview.textContent = preview.dataset.shortText; // Restore short text
-                    box.style.maxHeight = ""; // Reset box size
-                    this.textContent = "Read More";
-                }
-            });
-        });
+        };
     </script>
 </body>
 
