@@ -1,64 +1,317 @@
-/* /web/css/styles.css */
-
-/* Custom overrides for Bulma if needed */
-body {
-  font-family: 'Arial', sans-serif;
+/* Font Configuration */
+@font-face {
+  font-family: 'CerebriSansPro';
+  src: url('/web/css/font/CerebriSansPro-Regular.woff2') format('woff2'),
+       url('/web/css/font/CerebriSansPro-Regular.woff') format('woff');
+  font-weight: normal;
+  font-style: normal;
 }
 
-/* Adjust navbar spacing */
+@font-face {
+  font-family: 'CerebriSansPro';
+  src: url('/web/css/font/CerebriSansPro-Bold.woff2') format('woff2'),
+       url('/web/css/font/CerebriSansPro-Bold.woff') format('woff');
+  font-weight: bold;
+  font-style: normal;
+}
+
+/* Brand Colors */
+:root {
+  --gc-pastel: #20BF55;
+  --gc-dartmouth: #104738;
+  --gc-black: #1D0D3D;
+  --gc-white: #FFFFFF;
+  --gc-dutch: #B0CE5D;
+  --gc-carrot: #F09524;
+  --gc-chestnut: #954738;
+  --gc-light-grey: rgba(229, 229, 229, 0.10);
+}
+
+/* Base Styles */
+body {
+  font-family: 'CerebriSansPro', sans-serif;
+  color: var(--gc-black);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Navbar Styles */
 .navbar {
   margin-bottom: 1rem;
+  background-color: var(--gc-white);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  height: 80px;
+  padding: 0 2rem;
 }
 
-/* Hero section styling */
+.navbar-item img {
+  max-height: 40px;
+  transition: transform 0.3s ease;
+}
+
+.navbar-item img:hover {
+  transform: scale(1.05);
+}
+
+.navbar-item {
+  font-weight: 500;
+  color: var(--gc-black);
+  transition: color 0.3s ease;
+}
+
+.navbar-item:hover {
+  color: var(--gc-pastel);
+}
+
+.navbar-item .button.is-primary {
+  background-color: var(--gc-pastel);
+  color: var(--gc-white);
+  border: none;
+  font-weight: 600;
+}
+
+/* Hero Section */
 .hero.is-light {
-  background-color: #f5f5f5; /* Light gray background for better readability */
-  color: #333;
-  padding: 2rem 1rem; /* Added padding for better spacing */
+  background-color: var(--gc-white);
+  color: var(--gc-black);
+  padding: 2rem 1rem;
+  position: relative;
+  overflow: hidden;
 }
 
-/* Spacing for cards */
+.hero-body {
+  padding: 6rem 2rem;
+}
+
+.hero .title {
+  font-size: 3.5rem;
+  font-weight: bold;
+  line-height: 1.2;
+  margin-bottom: 1.5rem;
+  color: var(--gc-black);
+}
+
+.hero .subtitle {
+  font-size: 1.25rem;
+  line-height: 1.6;
+  color: rgba(29, 13, 61, 0.8);
+}
+
+.hero-illustration {
+  max-width: 100%;
+  height: auto;
+  margin-left: auto;
+  display: block;
+}
+
+/* Button Styles */
+.button {
+  font-family: 'CerebriSansPro', sans-serif;
+  font-weight: 600;
+  border-radius: 8px;
+  transition: all 0.3s ease;
+  height: 48px;
+  padding: 0 24px;
+}
+
+.button.is-primary {
+  background-color: var(--gc-pastel);
+  color: var(--gc-white);
+  border: none;
+}
+
+.button.is-primary:hover {
+  background-color: var(--gc-dartmouth);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(32, 191, 85, 0.2);
+}
+
+.button.is-secondary {
+  background-color: var(--gc-white);
+  color: var(--gc-pastel);
+  border: 2px solid var(--gc-pastel);
+}
+
+.button.is-secondary:hover {
+  background-color: var(--gc-pastel);
+  color: var(--gc-white);
+  transform: translateY(-2px);
+}
+
+.button.is-success {
+  background-color: var(--gc-pastel);
+  border-color: transparent;
+}
+
+.button.is-success:hover {
+  background-color: var(--gc-dartmouth);
+  border-color: transparent;
+}
+
+/* Card Styles */
 .card {
   margin-bottom: 1.5rem;
-  transition: opacity 0.3s ease-in-out;
+  border-radius: 16px;
+  border: none;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.06);
+  transition: all 0.3s ease;
   display: flex;
   flex-direction: column;
-  justify-content: center; /* Center content vertically */
-  min-height: 200px; /* Adjusted to better fit content */
-  border-radius: 10px;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-  padding: 1.5rem; /* Added padding for better content spacing */
+  justify-content: center;
+  min-height: 200px;
+  padding: 1.5rem;
+  overflow: hidden;
 }
 
-/* Utility override for hiding elements (Bulma already uses is-hidden) */
+.card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+}
+
+.card-content {
+  padding: 2rem;
+}
+
+.card-content .title {
+  color: var(--gc-black);
+}
+
+/* Section Styles */
+.section {
+  padding: 4rem 2rem;
+}
+
+.section.has-background-green {
+  background-color: var(--gc-dartmouth);
+  color: var(--gc-white);
+}
+
+.section.has-background-light {
+  background-color: var(--gc-light-grey);
+}
+
+.section.has-background-dark {
+  background-color: var(--gc-black);
+}
+
+/* Features Section */
+.feature-icon {
+  width: 64px;
+  height: 64px;
+  margin-bottom: 1.5rem;
+  transition: transform 0.3s ease;
+}
+
+.feature-icon:hover {
+  transform: scale(1.1);
+}
+
+/* Company Logo Grid */
+.company-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 2rem;
+  align-items: center;
+  justify-items: center;
+  padding: 2rem 0;
+}
+
+.company-logo {
+  max-width: 120px;
+  opacity: 0.8;
+  transition: opacity 0.3s ease;
+}
+
+.company-logo:hover {
+  opacity: 1;
+}
+
+/* Values Grid */
+.values-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 2rem;
+  margin: 2rem 0;
+}
+
+/* Forms and Inputs */
+.input, .textarea {
+  border-radius: 8px;
+  border: 2px solid #E5E5E5;
+  transition: border-color 0.3s ease;
+  height: 48px;
+}
+
+.input:focus, .textarea:focus {
+  border-color: var(--gc-pastel);
+  box-shadow: 0 0 0 2px rgba(32, 191, 85, 0.1);
+}
+
+/* Footer */
+.footer.has-background-dark {
+  background-color: var(--gc-black) !important;
+  color: var(--gc-white);
+  padding: 4rem 2rem 2rem;
+}
+
+.footer a {
+  color: var(--gc-white);
+}
+
+.footer .button.is-primary {
+  background-color: var(--gc-pastel);
+}
+
+/* Notifications */
+.notification {
+  border-radius: 12px;
+  padding: 1.25rem 1.5rem;
+  position: relative;
+  margin-bottom: 1.5rem;
+}
+
+.notification.is-success {
+  background-color: rgba(32, 191, 85, 0.1);
+  color: var(--gc-pastel);
+  border: 1px solid var(--gc-pastel);
+}
+
+/* Utility Classes */
 .is-hidden {
   display: none !important;
 }
 
-#errorDisplay {
-  margin-top: 1rem;
-  position: relative;
-  z-index: 1000;  /* Ensure it shows above other content */
+.has-text-primary {
+  color: var(--gc-pastel) !important;
 }
 
-.fade-out {
-  opacity: 0;
+.has-background-primary {
+  background-color: var(--gc-pastel) !important;
 }
 
-.fade-in {
-  opacity: 1;
+.has-text-dark {
+  color: var(--gc-black) !important;
 }
 
-/* Navbar styling */
-#authLinks {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 1rem;
-  align-items: center;
-  justify-content: flex-end; /* Align to right */
-}
-
+/* Responsive Adjustments */
 @media screen and (max-width: 768px) {
+  .hero .title {
+    font-size: 2.5rem;
+  }
+  
+  .hero-body {
+    padding: 3rem 1.5rem;
+  }
+  
+  .section {
+    padding: 3rem 1.5rem;
+  }
+  
+  .values-grid {
+    grid-template-columns: 1fr;
+  }
+  
   #authLinks {
     flex-direction: column;
     align-items: flex-start;
@@ -67,98 +320,16 @@ body {
   }
 }
 
-@media screen and (max-width: 1023px) {
-  #authLinks {
-      flex-direction: column;
-      align-items: flex-start;
-      gap: 0.5rem;
-  }
+/* Animations */
+.fade-in {
+  animation: fadeIn 0.5s ease-in;
 }
 
-/* Lesson content styling */
-#lessonContent {
-  font-size: 1.1rem;
-  line-height: 1.6;
-  flex: 1;
-  overflow-y: auto;
-  padding-right: 10px; /* Space for scrollbar */
-  margin-bottom: 20px;
+.fade-out {
+  opacity: 0;
 }
 
-#lessonContent p {
-  margin-bottom: 1.5rem;
-}
-
-.lesson-navigation {
-  display: flex;
-  justify-content: space-between;
-  margin-top: auto;
-  padding-top: 20px;
-  border-top: 1px solid #eee;
-  position: sticky;
-  bottom: 0;
-  background: white;
-}
-
-.card-title {
-  font-size: 1.5rem;
-  margin-bottom: 0.5rem;
-}
-
-.card-text {
-  font-size: 1rem;
-  color: #666;
-}
-
-/* Additional styling for better layout */
-.section {
-  padding: 2rem 1rem; /* Added padding for better section spacing */
-}
-
-.columns {
-  justify-content: center; /* Center columns */
-}
-
-.column {
-  display: flex;
-  flex-direction: column;
-  justify-content: center; /* Center content vertically in columns */
-}
-
-.testimonial-box {
-  position: relative;
-  min-height: auto; /* Allow it to expand naturally */
-  transition: all 0.3s ease-in-out;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-}
-
-.testimonial-box .button {
-  align-self: center; /* Ensures the button stays centered inside the box */
-  width: 100%; /* Ensures button stays within the width of the container */
-  max-width: 250px; /* Prevents the button from stretching too wide */
-}
-
-.testimonial-preview {
-  max-height: 3.6em; /* Adjust as needed */
-  overflow: hidden;
-  text-overflow: ellipsis;
-  display: -webkit-box;
-  -webkit-line-clamp: 2; /* Number of lines to show */
-  line-clamp: 2; /* Standard property */
-  -webkit-box-orient: vertical;
-  box-orient: vertical; /* Standard property */
-}
-
-.pricing-container {
-  margin-top: 1.5rem;
-  padding: 1rem;
-  border-radius: 8px;
-  background: #f9f9f9; /* Light grey background for emphasis */
-}
-
-.pricing-container s {
-  font-weight: normal;
-  font-size: 0.9rem;
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }

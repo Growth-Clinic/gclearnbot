@@ -73,11 +73,30 @@
     <!-- Hero Section -->
     <section class="hero is-light">
         <div class="hero-body">
-            <div class="container has-text-centered">
-                <h1 class="title is-1">Learn Essential Mental Models for Free</h1>
-                <p class="subtitle is-4">Future-proof your career with bite-sized, practical lessons.</p>
-                <a href="#loginSection" class="button is-primary is-medium">Start Learning for Free</a>
-                <p class="has-text-grey">Upgrade anytime for personalisation & expert guidance.</p>
+            <div class="container">
+                <div class="columns is-vcentered">
+                    <div class="column is-6">
+                        <h1 class="title">
+                            Learn Essential Mental Models for Free
+                        </h1>
+                        <p class="subtitle is-4">
+                            Future-proof your career with bite-sized, practical lessons.
+                        </p>
+                        <div class="buttons">
+                            <a href="#loginSection" class="button is-primary is-medium">
+                                Start Learning for Free
+                            </a>
+                        </div>
+                        <p class="has-text-grey">
+                            Upgrade anytime for personalisation & expert guidance.
+                        </p>
+                    </div>
+                    <div class="column is-6">
+                        <img src="/web/img/illustrations/hero-img.svg" 
+                             alt="Learning illustration" 
+                             class="hero-illustration">
+                    </div>
+                </div>
             </div>
         </div>
     </section>
@@ -89,6 +108,7 @@
                 <div class="column is-one-third">
                     <div class="card">
                         <div class="card-content">
+                            <img src="/web/img/illustrations/creative.svg" alt="Design Thinking" class="feature-icon mb-4">
                             <p class="title is-4">🎨 Design Thinking</p>
                             <p>Master creative problem-solving and user-centered innovation.</p>
                         </div>
@@ -97,6 +117,7 @@
                 <div class="column is-one-third">
                     <div class="card">
                         <div class="card-content">
+                            <img src="/web/img/illustrations/market.svg" alt="Market Thinking" class="feature-icon mb-4">
                             <p class="title is-4">📈 Market Thinking</p>
                             <p>Learn how to scale products and identify market opportunities.</p>
                         </div>
@@ -105,6 +126,7 @@
                 <div class="column is-one-third">
                     <div class="card">
                         <div class="card-content">
+                            <img src="/web/img/illustrations/more.svg" alt="And More!" class="feature-icon mb-4">
                             <p class="title is-4">✨ And More!</p>
                             <p>Discover additional mental models and frameworks to enhance your professional toolkit.</p>
                         </div>
@@ -173,10 +195,8 @@
                             <h3 class="title is-3">Elevate Your Skills with Tailored Learning</h3>
                             <p>✨ Get personalised learning paths & expert guidance.</p>
                             <p>🔥 Advanced tools for deeper insights and growth.</p>
-                            <p class="is-size-3 has-text-weight-bold has-text-success">
-                                20,000 NGN
-                            </p>
-                            <a href="https://paystack.com/pay/gcplus" class="button is-success is-medium">Upgrade Now</a>                            
+                            <p class="is-size-3 has-text-weight-bold has-text-success">20,000 NGN</p>
+                            <a href="https://paystack.com/pay/gcplus" class="button is-success is-medium">Upgrade Now</a>
                         </div>
                     </div>
                 </div>
@@ -189,12 +209,12 @@
         <div class="container">
             <div class="columns is-centered">
                 <div class="column is-half">
-                    <!-- Login Box (default visible) -->
+                    <!-- Login Box -->
                     <div id="loginBox" class="card">
                         <div class="card-content">
                             <h2 class="title">Welcome Back!</h2>
                             <p class="subtitle">Continue your learning journey</p>
-                            <form onsubmit="loginUser(event)"> <!-- Added form wrapper -->
+                            <form onsubmit="loginUser(event)">
                                 <div class="field">
                                     <div class="control">
                                         <input type="email" id="email" class="input" placeholder="Enter email" required>
@@ -202,24 +222,20 @@
                                 </div>
                                 <div class="field">
                                     <div class="control">
-                                        <input type="password" id="password" class="input" placeholder="Enter password"
-                                            required minlength="6">
+                                        <input type="password" id="password" class="input" placeholder="Enter password" required minlength="6">
                                     </div>
                                 </div>
                                 <div class="field">
                                     <div class="control">
-                                        <button type="submit" id="loginButton" class="button is-success is-fullwidth">
-                                            <span>Login</span>
-                                        </button>
+                                        <button type="submit" id="loginButton" class="button is-success is-fullwidth">Login</button>
                                     </div>
                                 </div>
                             </form>
-                            <p class="has-text-centered">
-                                New to Growth Clinic? <a href="#" onclick="toggleAuth()">Register here</a>
-                            </p>
+                            <p class="has-text-centered">New to Growth Clinic? <a href="#" onclick="toggleAuth()">Register here</a></p>
                         </div>
                     </div>
-                    <!-- Registration Box (hidden by default) -->
+
+                    <!-- Registration Box -->
                     <div id="registerBox" class="card is-hidden">
                         <div class="card-content">
                             <h2 class="title">Start Your Learning Journey</h2>
@@ -227,28 +243,21 @@
                             <form onsubmit="registerUser(event)">
                                 <div class="field">
                                     <div class="control">
-                                        <input type="email" id="registerEmail" class="input"
-                                            placeholder="Enter your email" required>
+                                        <input type="email" id="registerEmail" class="input" placeholder="Enter your email" required>
                                     </div>
                                 </div>
                                 <div class="field">
                                     <div class="control">
-                                        <input type="password" id="registerPassword" class="input"
-                                            placeholder="Enter your password" required minlength="6">
+                                        <input type="password" id="registerPassword" class="input" placeholder="Enter your password" required minlength="6">
                                     </div>
                                 </div>
                                 <div class="field">
                                     <div class="control">
-                                        <button type="submit" id="registerButton"
-                                            class="button is-success is-fullwidth">
-                                            <span>Register</span>
-                                        </button>
+                                        <button type="submit" id="registerButton" class="button is-success is-fullwidth">Register</button>
                                     </div>
                                 </div>
                             </form>
-                            <p class="has-text-centered">
-                                Already have an account? <a href="#" onclick="toggleAuth()">Login here</a>
-                            </p>
+                            <p class="has-text-centered">Already have an account? <a href="#" onclick="toggleAuth()">Login here</a></p>
                         </div>
                     </div>
                 </div>
@@ -264,26 +273,23 @@
                     <figure class="image is-128x128">
                         <img src="/web/img/gc-logo.svg" alt="Growth Clinic Logo">
                     </figure>
-                    <p>Empowering individuals and communities with the skills to grow their career, business and
-                        finance.</p>
+                    <p>Empowering individuals and communities with the skills to grow their career, business and finance.</p>
                     <div class="mt-4">
                         <p class="is-size-6">Subscribe to our newsletter to stay updated. We don't spam.</p>
-                    </br>
-                        <button class="button is-success">Subscribe</button>
+                        <button class="button is-success mt-2">Subscribe</button>
                     </div>
                 </div>
                 <div class="column">
-                    <h6 class="title is-6">Company</h6>
+                    <h6 class="title is-6 has-text-white">Company</h6>
                     <ul>
                         <li><a href="mailto:growthclinic@gmail.com" class="has-text-white-ter">Contact</a></li>
                         <li><a href="#pricingSection" class="has-text-white-ter">Pricing</a></li>
                     </ul>
                 </div>
                 <div class="column">
-                    <h6 class="title is-6">Follow us</h6>
+                    <h6 class="title is-6 has-text-white">Follow us</h6>
                     <ul>
-                        <li><a href="https://linkedin.com/company/growthclinic" class="has-text-white-ter">LinkedIn</a>
-                        </li>
+                        <li><a href="https://linkedin.com/company/growthclinic" class="has-text-white-ter">LinkedIn</a></li>
                         <li><a href="https://twitter.com/growthclinic" class="has-text-white-ter">Twitter</a></li>
                         <li><a href="https://instagram.com/growthclinic" class="has-text-white-ter">Instagram</a></li>
                     </ul>
