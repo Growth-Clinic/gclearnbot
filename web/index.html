@@ -218,6 +218,18 @@
                                 </div>
                             </div>
 
+                            <!-- Pricing Section -->
+                            <div class="pricing-container has-text-centered mt-4">
+                                <p class="is-size-5 has-text-weight-semibold">Get Personalized Learning for just</p>
+                                <p class="is-size-3 has-text-weight-bold has-text-success">
+                                    20,000 NGN 
+                                    <span class="is-size-5 has-text-grey-light">
+                                        <s>50,000 NGN</s>
+                                    </span>
+                                </p>
+                                <p class="is-size-6 has-text-grey">Limited-time offer. Invest in your growth today!</p>
+                            </div>
+
                             <button class="button is-success is-large mt-4">Unlock Personalization Now</button>
                         </div>
                     </div>
@@ -347,19 +359,21 @@
         document.querySelectorAll('.read-more-button').forEach(button => {
             button.addEventListener('click', function () {
                 const preview = this.closest('.media-content').querySelector('.testimonial-preview');
+                const box = this.closest('.testimonial-box');
                 const fullText = preview.dataset.fullText;
 
                 if (this.textContent === "Read More") {
-                    preview.dataset.shortText = preview.textContent.trim(); // Store the short text
+                    preview.dataset.shortText = preview.textContent.trim(); // Store short text
                     preview.textContent = fullText; // Show full text
+                    box.style.maxHeight = "none"; // Allow expansion
                     this.textContent = "Read Less";
                 } else {
                     preview.textContent = preview.dataset.shortText; // Restore short text
+                    box.style.maxHeight = ""; // Reset box size
                     this.textContent = "Read More";
                 }
             });
         });
-
     </script>
 </body>
 

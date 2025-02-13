@@ -127,6 +127,8 @@ body {
 
 .testimonial-box {
   position: relative;
+  min-height: auto; /* Allow it to expand naturally */
+  transition: all 0.3s ease-in-out;
 }
 
 .testimonial-preview {
@@ -145,4 +147,16 @@ body {
   font-size: 0.9rem;
   color: #3273dc; /* Bulma's default link color */
   text-decoration: underline;
+}
+
+.pricing-container {
+  margin-top: 1.5rem;
+  padding: 1rem;
+  border-radius: 8px;
+  background: #f9f9f9; /* Light grey background for emphasis */
+}
+
+.pricing-container s {
+  font-weight: normal;
+  font-size: 0.9rem;
 }
