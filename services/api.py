@@ -241,13 +241,14 @@ def setup_routes(app: Quart, application: Application) -> None:
 
             token = auth_header.split(" ")[1]
             
-            # Decode token without context manager
             try:
-                decoded = jwt.decode(token, JWT_SECRET_KEY, algorithms=["HS256"])
-                user_email = decoded.get('sub')
+                # Use decode_token from flask_jwt_extended
+                decoded = decode_token(token)
+                user_email = decoded['sub']
                 if not user_email:
                     return jsonify({"status": "error", "message": "Invalid token"}), 401
-            except jwt.InvalidTokenError:
+            except Exception as jwt_error:
+                logger.error(f"JWT decode error: {jwt_error}")
                 return jsonify({"status": "error", "message": "Invalid token"}), 401
 
             # Get user data
@@ -285,9 +286,10 @@ def setup_routes(app: Quart, application: Application) -> None:
             token = auth_header.split(" ")[1]
 
             try:
-                decoded = jwt.decode(token, JWT_SECRET_KEY, algorithms=["HS256"])
+                decoded = decode_token(token)
                 user_email = decoded['sub']
-            except jwt.InvalidTokenError:
+            except Exception as jwt_error:
+                logger.error(f"JWT decode error: {jwt_error}")
                 return jsonify({"status": "error", "message": "Invalid token"}), 401
 
             # Get user data
@@ -328,9 +330,10 @@ def setup_routes(app: Quart, application: Application) -> None:
             token = auth_header.split(" ")[1]
             
             try:
-                decoded = jwt.decode(token, JWT_SECRET_KEY, algorithms=["HS256"])
+                decoded = decode_token(token)
                 user_email = decoded['sub']
-            except jwt.InvalidTokenError:
+            except Exception as jwt_error:
+                logger.error(f"JWT decode error: {jwt_error}")
                 return jsonify({"status": "error", "message": "Invalid token"}), 401
                 
             user = await db.users.find_one({"email": user_email})
