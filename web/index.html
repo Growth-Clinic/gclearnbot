@@ -28,7 +28,7 @@
     <meta name="msapplication-TileColor" content="#ffffff">
     <meta name="msapplication-TileImage" content="/web/img/favicon/ms-icon-144x144.png">
     <meta name="theme-color" content="#ffffff">
-    <title>Growth Clinic - Future-Proof Your Career | Learn Essential Mental Models</title>
+    <title>Growth Clinic - Learn Mental Models for Free</title>
     <!-- Bulma CSS -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css">
     <!-- Optional custom overrides -->
@@ -63,7 +63,7 @@
                 <div class="navbar-end">
                     <div class="navbar-item">
                         <button onclick="logoutUser()" class="button is-danger logout-button is-hidden">Logout</button>
-                        <a href="/web/index.html" class="button is-primary login-button">Login</a>
+                        <a href="#loginSection" class="button is-primary login-button">Start Learning for Free</a>
                     </div>
                 </div>
             </div>
@@ -74,9 +74,10 @@
     <section class="hero is-light">
         <div class="hero-body">
             <div class="container has-text-centered">
-                <h1 class="title is-1">Welcome to Growth Clinic</h1>
-                <p class="subtitle is-4">Future-proof your career with practical mental models and skills</p>
-                <p class="has-text-grey">Learn essential thinking frameworks through bite-sized, practical lessons. Perfect for busy professionals looking to enhance their problem-solving and decision-making skills.</p>
+                <h1 class="title is-1">Learn Essential Mental Models for Free</h1>
+                <p class="subtitle is-4">Future-proof your career with bite-sized, practical lessons.</p>
+                <a href="#loginSection" class="button is-primary is-medium">Start Learning for Free</a>
+                <p class="has-text-grey">Upgrade anytime for personalisation & expert guidance.</p>
             </div>
         </div>
     </section>
@@ -88,24 +89,24 @@
                 <div class="column is-one-third">
                     <div class="card">
                         <div class="card-content">
-                            <p class="card-title">🎨 Design Thinking</p>
-                            <p class="card-text">Master creative problem-solving and user-centered innovation techniques.</p>
+                            <p class="title is-4">🎨 Design Thinking</p>
+                            <p>Master creative problem-solving and user-centered innovation.</p>
                         </div>
                     </div>
                 </div>
                 <div class="column is-one-third">
                     <div class="card">
                         <div class="card-content">
-                            <p class="card-title">📈 Market Thinking</p>
-                            <p class="card-text">Learn how to scale products and identify market opportunities.</p>
+                            <p class="title is-4">📈 Market Thinking</p>
+                            <p>Learn how to scale products and identify market opportunities.</p>
                         </div>
                     </div>
                 </div>
                 <div class="column is-one-third">
                     <div class="card">
                         <div class="card-content">
-                            <p class="card-title">✨ And More!</p>
-                            <p class="card-text">Discover additional mental models and frameworks to enhance your professional toolkit.</p>
+                            <p class="title is-4">✨ And More!</p>
+                            <p>Discover additional mental models and frameworks to enhance your professional toolkit.</p>
                         </div>
                     </div>
                 </div>
@@ -113,7 +114,35 @@
         </div>
     </section>
 
-    <!-- Why Choose Growth Clinic? Section -->
+    <!-- Testimonials Section -->
+    <section class="section has-background-light">
+        <div class="container">
+            <h2 class="title is-3 has-text-centered" style="margin-bottom: 1.5rem;">What Our Users Say</h2>
+
+            <!-- Embedded YouTube Testimonial -->
+            <div class="has-text-centered">
+                <iframe width="560" height="315" src="https://www.youtube.com/embed/LbHTdagWWNo" 
+                    title="Testimonials" frameborder="0" allowfullscreen></iframe>
+            </div>
+
+            <div class="columns is-multiline" style="margin-top: 2rem;">
+                <div class="column is-half">
+                    <div class="box">
+                        <p>🚀 “Growth Clinic transformed my business! Highly recommended!”</p>
+                        <strong>- Tobi, Founder and PM</strong>
+                    </div>
+                </div>
+                <div class="column is-half">
+                    <div class="box">
+                        <p>💡 “It's a fantastic program! Anyone taking it will be amazed by their growth”</p>
+                        <strong>- Funmi, Head of Growth and Marketing</strong>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Why Choose Growth Clinic? Section
     <section class="section">
         <div class="container has-text-centered">
             <h3 class="title">Why Choose Growth Clinic?</h3>
@@ -132,99 +161,22 @@
                 </div>
             </div>
         </div>
-    </section>
+    </section>  -->
 
-    <!-- Personalized Learning Experience Section -->
-    <section class="section has-background-light">
+    <!-- Premium features -->
+    <section id="pricingSection" class="section has-background-light">
         <div class="container">
             <div class="columns is-centered">
                 <div class="column is-half">
                     <div class="card">
                         <div class="card-content has-text-centered">
                             <h3 class="title is-3">Elevate Your Skills with Tailored Learning</h3>
-                            <p class="subtitle is-5">Get personalized paths, expert insights, and transform your growth journey.</p>
-                            <p class="content">Ready to excel? Our personalized experience offers:</p>
-                            <ul class="has-text-weight-semibold">
-                                <li>🎯 Custom Learning Paths</li>
-                                <li>📞 Expert Calls</li>
-                                <li>🌟 Enhanced Feedback</li>
-                            </ul>
-
-                            <!-- Testimonials -->
-                            <div class="block">
-                                <h4 class="title is-4">What Our Users Say</h4>
-
-                                <!-- Testimonial 1 -->
-                                <div class="box testimonial-box">
-                                    <div class="media">
-                                        <div class="media-left">
-                                            <figure class="image is-64x64">
-                                                <img src="/web/img/testimonials/Tobi.png" alt="User 1">
-                                            </figure>
-                                        </div>
-                                        <div class="media-content">
-                                            <div class="testimonial-text">
-                                                <p class="has-text-weight-semibold testimonial-preview">
-                                                    "Growth Clinic transformed my business! Expert guidance on pricing and automation tools streamlined our processes, leading to exponential growth in just one year. Highly recommended!"
-                                                </p>
-                                            </div>
-                                            <p class="has-text-right">- Founder, Festivilla</p>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <!-- Testimonial 2 -->
-                                <div class="box testimonial-box">
-                                    <div class="media">
-                                        <div class="media-left">
-                                            <figure class="image is-64x64">
-                                                <img src="/web/img/testimonials/Funmilayo Amarvi 1.png" alt="User 2">
-                                            </figure>
-                                        </div>
-                                        <div class="media-content">
-                                            <div class="testimonial-text">
-                                                <p class="has-text-weight-semibold testimonial-preview">
-                                                    "Growth Clinic provided rare insights and mental models that were crucial for my business growth. The focus on customer engagement and community management has been pivotal."
-                                                </p>
-                                            </div>
-                                            <p class="has-text-right">- Funmi Amarvi, Founder, PhiliaTech</p>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <!-- Testimonial 3 -->
-                                <div class="box testimonial-box">
-                                    <div class="media">
-                                        <div class="media-left">
-                                            <figure class="image is-64x64">
-                                                <img src="/web/img/testimonials/Raheemah Azeez.png" alt="User 3">
-                                            </figure>
-                                        </div>
-                                        <div class="media-content">
-                                            <div class="testimonial-text">
-                                                <p class="has-text-weight-semibold testimonial-preview">
-                                                    "This program is fantastic! It emphasizes the importance of engaging with customers and managing communities effectively. A solid foundation for anyone in product management or startups."
-                                                </p>
-                                            </div>
-                                            <p class="has-text-right">- Raheemah Azeez, Co-founder, Afrimama Farms</p>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Pricing Section -->
-                            <div class="pricing-container has-text-centered mt-4">
-                                <p class="is-size-5 has-text-weight-semibold">Get Personalized Learning for just</p>
-                                <p class="is-size-3 has-text-weight-bold has-text-success">
-                                    20,000 NGN 
-                                    <span class="is-size-5 has-text-grey-light">
-                                        <s>50,000 NGN</s>
-                                    </span>
-                                </p>
-                                <p class="is-size-6 has-text-grey">Limited-time offer. Invest in your growth today!</p>
-                            </div>
-
-                            <button class="button is-success is-large mt-4">Start Learning</button>
+                            <p>✨ Get personalised learning paths & expert guidance.</p>
+                            <p>🔥 Advanced tools for deeper insights and growth.</p>
+                            <p class="is-size-3 has-text-weight-bold has-text-success">
+                                20,000 NGN
+                            </p>
+                            <a href="https://paystack.com/pay/gcplus" class="button is-success is-medium">Upgrade Now</a>                            
                         </div>
                     </div>
                 </div>
@@ -316,6 +268,7 @@
                         finance.</p>
                     <div class="mt-4">
                         <p class="is-size-6">Subscribe to our newsletter to stay updated. We don't spam.</p>
+                    </br>
                         <button class="button is-success">Subscribe</button>
                     </div>
                 </div>
@@ -323,8 +276,7 @@
                     <h6 class="title is-6">Company</h6>
                     <ul>
                         <li><a href="mailto:growthclinic@gmail.com" class="has-text-white-ter">Contact</a></li>
-                        <li><a href="#benefits" class="has-text-white-ter">Benefits</a></li>
-                        <li><a href="#pricing" class="has-text-white-ter">Pricing</a></li>
+                        <li><a href="#pricingSection" class="has-text-white-ter">Pricing</a></li>
                     </ul>
                 </div>
                 <div class="column">
