@@ -88,20 +88,20 @@ function initializeMobileMenu() {
     });
 }
 
-// Improve the authentication check
+// Check if user is signed in, else redirect to homepage
 function checkAuth() {
     const token = getAuthToken();
     const currentPath = window.location.pathname;
     
     if (token && isTokenExpired(token)) {
         localStorage.removeItem('token');
-        showError('Your session has expired. Please log in again.');
         window.location.href = '/web/index.html';
         return false;
     }
 
     // If on a protected route and not authenticated
-    if (PROTECTED_ROUTES.includes(currentPath) && !token) {
+    const protectedRoutes = ['/web/dashboard.html', '/web/journal.html', '/web/progress.html'];
+    if (protectedRoutes.includes(currentPath) && !token) {
         window.location.href = '/web/index.html';
         return false;
     }
@@ -274,8 +274,7 @@ async function loginUser(event) {
 // Logout user
 function logoutUser() {
     localStorage.removeItem("token");
-    alert("You have been logged out.");
-    window.location.reload();
+    window.location.href = "/web/index.html"; // Redirect to homepage
 }
 
 function disableForm(formId) {

@@ -25,7 +25,7 @@ app = Quart(__name__)
 db = None
 JWT_SECRET_KEY = Config.JWT_SECRET_KEY
 app.config["JWT_SECRET_KEY"] = os.getenv("JWT_SECRET_KEY")  # Use Render environment variable
-jwt = JWTManager(app)  # Initialize JWT authentication
+# jwt = JWTManager(app)  # Initialize JWT authentication
 
 @app.before_serving
 async def before_serving():
@@ -50,19 +50,21 @@ def async_jwt_required():
                     return jsonify({"status": "error", "message": "Missing token"}), 401
                 
                 token = auth_header.split(" ")[1]
-                decoded = jwt.decode(token, JWT_SECRET_KEY, algorithms=["HS256"])
-                
-                # Store the decoded token in the request context
-                request.user_email = decoded.get('sub')
-                if not request.user_email:
+                try:
+                    # Use PyJWT directly
+                    decoded = jwt.decode(token, Config.JWT_SECRET_KEY, algorithms=["HS256"])
+                    request.user_email = decoded.get('sub')
+                    if not request.user_email:
+                        return jsonify({"status": "error", "message": "Invalid token"}), 401
+                    
+                    return await fn(*args, **kwargs)
+                except jwt.InvalidTokenError:
                     return jsonify({"status": "error", "message": "Invalid token"}), 401
-                
-                return await fn(*args, **kwargs)
-            except jwt.InvalidTokenError:
-                return jsonify({"status": "error", "message": "Invalid token"}), 401
+                    
             except Exception as e:
                 logger.error(f"Auth error: {e}")
-                return jsonify({"status": "error", "message": "Authentication error"}), 401
+                return jsonify({"status": "error", "message": "Authentication error"}), 500
+                
         return decorator
     return wrapper
 
