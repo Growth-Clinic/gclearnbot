@@ -26,8 +26,9 @@ async def async_main():
 
             # Initialize database first
             logger.info("Initializing database connection...")
-            db = await init_mongodb()
-            if not db:
+            # Use get_db() instead of init_mongodb directly
+            db = await get_db()
+            if db is None:  # Compare with None explicitly
                 logger.error("Failed to initialize database")
                 return 1
 
