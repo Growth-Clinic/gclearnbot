@@ -5,7 +5,7 @@ from services.lock_manager import LockManager
 from services.application import create_app, start_app
 from services.lesson_manager import LessonService
 from services.content_loader import content_loader
-from services.database import TaskManager, UserManager
+from services.database import TaskManager, UserManager, init_mongodb
 from services.slack.handlers import start_slack_bot
 from hypercorn.config import Config as HypercornConfig
 from hypercorn.asyncio import serve
@@ -24,7 +24,14 @@ async def async_main():
                 logger.error("Could not acquire lock, exiting")
                 return 1
 
-            # Create Quart app first for immediate port binding
+            # Initialize database first
+            logger.info("Initializing database connection...")
+            db = await init_mongodb()
+            if not db:
+                logger.error("Failed to initialize database")
+                return 1
+
+            # Create Quart app
             logger.info("Initializing web application...")
             app = await create_app()
 
@@ -59,7 +66,6 @@ async def async_main():
             if Config.SLACK_BOT_TOKEN and Config.SLACK_APP_TOKEN:
                 try:
                     logger.info("Starting Slack bot...")
-                    from services.slack.handlers import start_slack_bot
                     start_slack_bot()
                     logger.info("Slack bot started successfully")
                 except Exception as e:

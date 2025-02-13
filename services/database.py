@@ -27,13 +27,14 @@ lessons = content_loader.load_content('lessons')
 # Create directories for storage
 async def init_mongodb(max_retries=3, retry_delay=2):
     """Initialize MongoDB connection with retry mechanism"""
+    global db  # Add this to modify the global db variable
+    
     for attempt in range(max_retries):
         try:
             MONGODB_URI = Config.MONGODB_URI
             if not MONGODB_URI:
                 raise ValueError("MONGODB_URI environment variable not set!")
 
-            # Use Motor for async MongoDB operations
             client = AsyncIOMotorClient(
                 MONGODB_URI,
                 tlsCAFile=certifi.where(),
@@ -44,7 +45,7 @@ async def init_mongodb(max_retries=3, retry_delay=2):
             await client.admin.command('ping')
             
             # Get database
-            db = client["gclearnbot"]  # Using a specific database name
+            db = client["gclearnbot"]  # Set the global db variable
             
             # Create essential indices
             await db.users.create_index("email", unique=True)
@@ -64,32 +65,16 @@ async def init_mongodb(max_retries=3, retry_delay=2):
             
             # Ensure an index on user_id for journals collection
             await db.journals.create_index("user_id")
-
-            # Add indices for analytics
-            await db.journals.create_index([("entries.timestamp", -1)])
-            await db.learning_insights.create_index([("insights.timestamp", -1)])
-
-            # Add platform support indices
-            await db.users.create_index([("user_id", 1), ("platform", 1)], unique=True)
             
             logger.info("MongoDB connection successful")
             return db
             
-        except ServerSelectionTimeoutError as e:
+        except Exception as e:
             if attempt == max_retries - 1:
-                logger.error(f"MongoDB connection timeout after {max_retries} attempts: {e}")
+                logger.error(f"MongoDB connection error after {max_retries} attempts: {e}")
                 raise
             logger.warning(f"Attempt {attempt + 1} failed, retrying in {retry_delay}s...")
-            time.sleep(retry_delay)
-        except Exception as e:
-            logger.error(f"MongoDB connection error: {e}")
-            raise
-
-
-# Initialize MongoDB connection
-db = init_mongodb()
-
-
+            await asyncio.sleep(retry_delay)
 
 class DataValidator:
     """Handles data validation for database operations"""

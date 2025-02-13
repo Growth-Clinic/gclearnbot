@@ -17,6 +17,7 @@ import bcrypt
 from flask_jwt_extended import decode_token, verify_jwt_in_request, JWTManager, create_access_token, jwt_required, get_jwt_identity
 import jwt
 from werkzeug.security import generate_password_hash
+from functools import wraps
 
 logger = logging.getLogger(__name__)
 
@@ -38,6 +39,32 @@ async def ensure_context():
     """Ensure app context is available for JWT operations"""
     if not app.app_context:
         await app.app_context().__aenter__()
+
+def async_jwt_required():
+    def wrapper(fn):
+        @wraps(fn)
+        async def decorator(*args, **kwargs):
+            try:
+                auth_header = request.headers.get("Authorization")
+                if not auth_header or not auth_header.startswith("Bearer "):
+                    return jsonify({"status": "error", "message": "Missing token"}), 401
+                
+                token = auth_header.split(" ")[1]
+                decoded = jwt.decode(token, JWT_SECRET_KEY, algorithms=["HS256"])
+                
+                # Store the decoded token in the request context
+                request.user_email = decoded.get('sub')
+                if not request.user_email:
+                    return jsonify({"status": "error", "message": "Invalid token"}), 401
+                
+                return await fn(*args, **kwargs)
+            except jwt.InvalidTokenError:
+                return jsonify({"status": "error", "message": "Invalid token"}), 401
+            except Exception as e:
+                logger.error(f"Auth error: {e}")
+                return jsonify({"status": "error", "message": "Authentication error"}), 401
+        return decorator
+    return wrapper
 
 def setup_routes(app: Quart, application: Application) -> None:
 
@@ -231,26 +258,12 @@ def setup_routes(app: Quart, application: Application) -> None:
             return jsonify({"status": "error", "message": "Server error"}), 500
 
     @app.route('/lessons/<lesson_id>/response', methods=['POST'])
+    @async_jwt_required()
     async def submit_lesson_response(lesson_id):
         """Submit a user response for a lesson"""
         try:
-            # Get the token from Authorization header
-            auth_header = request.headers.get("Authorization")
-            if not auth_header or not auth_header.startswith("Bearer "):
-                return jsonify({"status": "error", "message": "Missing or invalid token"}), 401
-
-            token = auth_header.split(" ")[1]
+            user_email = request.user_email
             
-            try:
-                # Use decode_token from flask_jwt_extended
-                decoded = decode_token(token)
-                user_email = decoded['sub']
-                if not user_email:
-                    return jsonify({"status": "error", "message": "Invalid token"}), 401
-            except Exception as jwt_error:
-                logger.error(f"JWT decode error: {jwt_error}")
-                return jsonify({"status": "error", "message": "Invalid token"}), 401
-
             # Get user data
             user = await db.users.find_one({"email": user_email})
             if not user:
@@ -276,22 +289,12 @@ def setup_routes(app: Quart, application: Application) -> None:
             return jsonify({"status": "error", "message": "Server error"}), 500
 
     @app.route('/progress', methods=['GET'])
+    @async_jwt_required()
     async def get_progress():
         """Fetch user progress"""
         try:
-            auth_header = request.headers.get("Authorization")
-            if not auth_header or not auth_header.startswith("Bearer "):
-                return jsonify({"status": "error", "message": "Missing or invalid token"}), 401
-
-            token = auth_header.split(" ")[1]
-
-            try:
-                decoded = decode_token(token)
-                user_email = decoded['sub']
-            except Exception as jwt_error:
-                logger.error(f"JWT decode error: {jwt_error}")
-                return jsonify({"status": "error", "message": "Invalid token"}), 401
-
+            user_email = request.user_email
+            
             # Get user data
             user_data = await db.users.find_one({"email": user_email})
             if not user_data:
@@ -320,21 +323,11 @@ def setup_routes(app: Quart, application: Application) -> None:
             return jsonify({"status": "error", "message": "Server error"}), 500
 
     @app.route('/journal')
+    @async_jwt_required()
     async def get_journal():
         """Fetch user's journal entries"""
         try:
-            auth_header = request.headers.get("Authorization")
-            if not auth_header or not auth_header.startswith("Bearer "):
-                return jsonify({"status": "error", "message": "Missing or invalid token"}), 401
-
-            token = auth_header.split(" ")[1]
-            
-            try:
-                decoded = decode_token(token)
-                user_email = decoded['sub']
-            except Exception as jwt_error:
-                logger.error(f"JWT decode error: {jwt_error}")
-                return jsonify({"status": "error", "message": "Invalid token"}), 401
+            user_email = request.user_email
                 
             user = await db.users.find_one({"email": user_email})
             if not user:
