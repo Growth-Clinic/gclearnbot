@@ -1,5 +1,5 @@
 from slack_bolt import App
-from services.database import UserManager, JournalManager, TaskManager
+from services.database import UserManager, JournalManager
 from services.progress_tracker import ProgressTracker
 from services.content_loader import content_loader
 import logging

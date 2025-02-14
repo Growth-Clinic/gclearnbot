@@ -4,7 +4,7 @@ from slack_bolt.adapter.socket_mode import SocketModeHandler
 import logging
 from datetime import datetime, timezone
 from services.progress_tracker import ProgressTracker
-from services.database import UserManager, JournalManager, TaskManager
+from services.database import UserManager, JournalManager
 from services.lesson_manager import LessonService
 from services.content_loader import content_loader
 from services.feedback_enhanced import evaluate_response_enhanced, analyze_response_quality, format_feedback_message
@@ -43,10 +43,7 @@ async def handle_message(body, say):
         await say("I got your message!")
 
 # Initialize services
-lesson_service = LessonService(
-    task_manager=TaskManager(),
-    user_manager=UserManager()
-)
+lesson_service = LessonService(user_manager=UserManager())
 
 @app.command("/start")
 async def handle_start_command(ack, say, body, client):  # Added client parameter
