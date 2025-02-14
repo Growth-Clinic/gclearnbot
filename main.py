@@ -5,7 +5,7 @@ from services.lock_manager import LockManager
 from services.application import create_app, start_app
 from services.lesson_manager import LessonService
 from services.content_loader import content_loader
-from services.database import TaskManager, UserManager, get_db
+from services.database import UserManager, get_db
 from services.slack.handlers import start_slack_bot
 from hypercorn.config import Config as HypercornConfig
 from hypercorn.asyncio import serve
@@ -51,10 +51,7 @@ async def async_main():
 
             # Initialize services
             try:
-                lesson_service = LessonService(
-                    task_manager=TaskManager(),
-                    user_manager=UserManager()
-                )
+                lesson_service = LessonService(user_manager=UserManager())
             except Exception as e:
                 logger.error(f"Service initialization failed: {e}")
                 return 1
