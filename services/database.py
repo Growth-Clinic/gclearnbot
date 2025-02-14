@@ -464,13 +464,6 @@ class UserManager:
     async def update_user_progress(user_id: int, lesson_key: str) -> bool:
         """
         Update user's progress with enhanced metrics and proper step tracking.
-
-        Args:
-            user_id: The user's Telegram ID
-            lesson_key: Current lesson identifier
-
-        Returns:
-            bool: True if update was successful, False otherwise
         """
         try:
             # Log the start of progress update
@@ -480,10 +473,9 @@ class UserManager:
                 logger.error(f"Invalid lesson key: {lesson_key}")
                 return False
 
-            # Get current user data
+            # Get current user data - properly await the async operation
             user_data = await asyncio.to_thread(
-                db.users.find_one,
-                {"user_id": user_id}
+                lambda: db.users.find_one({"user_id": user_id})
             )
 
             if not user_data:
@@ -501,11 +493,12 @@ class UserManager:
 
             current_date = datetime.now(timezone.utc).isoformat()
 
-            # Update completed lessons
+            # Update completed lessons - properly await the async operation
             await asyncio.to_thread(
-                db.users.update_one,
-                {"user_id": user_id},
-                {"$addToSet": {"completed_lessons": current_lesson}}
+                lambda: db.users.update_one(
+                    {"user_id": user_id},
+                    {"$addToSet": {"completed_lessons": current_lesson}}
+                )
             )
 
             # Calculate completion metrics
@@ -517,17 +510,18 @@ class UserManager:
             # Calculate completion rate
             completion_rate = (len(completed_steps) / total_steps * 100) if total_steps > 0 else 0
 
-            # Update progress metrics
+            # Update progress metrics - properly await the async operation
             result = await asyncio.to_thread(
-                db.users.update_one,
-                {"user_id": user_id},
-                {"$set": {
-                    "current_lesson": lesson_key,
-                    "last_active": current_date,
-                    "progress_metrics.last_lesson_date": current_date,
-                    "progress_metrics.completion_rate": round(completion_rate, 2),
-                    "progress_metrics.total_responses": len(completed_steps)
-                }}
+                lambda: db.users.update_one(
+                    {"user_id": user_id},
+                    {"$set": {
+                        "current_lesson": lesson_key,
+                        "last_active": current_date,
+                        "progress_metrics.last_lesson_date": current_date,
+                        "progress_metrics.completion_rate": round(completion_rate, 2),
+                        "progress_metrics.total_responses": len(completed_steps)
+                    }}
+                )
             )
 
             success = result.modified_count > 0
@@ -565,16 +559,7 @@ class JournalManager:
     async def save_journal_entry(user_id: str, lesson_key: str, response: str) -> bool:
         """
         Save a user's response to their journal with validation and error handling.
-        
-        Args:
-            user_id: Telegram user ID
-            lesson_key: Current lesson identifier
-            response: User's response text
-            
-        Returns:
-            bool: True if save successful, False otherwise
         """
-
         user_id = str(user_id)
 
         try:
@@ -600,17 +585,18 @@ class JournalManager:
                 logger.error(f"Invalid journal entry for user {user_id}")
                 return False
             
-            # Update or create journal document using asyncio
+            # Update or create journal document - properly await the async operation
             result = await asyncio.to_thread(
-                db.journals.update_one,
-                {"user_id": user_id},
-                {
-                    "$push": {"entries": entry},
-                    "$setOnInsert": {
-                        "created_at": datetime.now(timezone.utc).isoformat()
-                    }
-                },
-                upsert=True
+                lambda: db.journals.update_one(
+                    {"user_id": user_id},
+                    {
+                        "$push": {"entries": entry},
+                        "$setOnInsert": {
+                            "created_at": datetime.now(timezone.utc).isoformat()
+                        }
+                    },
+                    upsert=True
+                )
             )
             
             if result.acknowledged:
