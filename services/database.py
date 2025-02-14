@@ -26,7 +26,7 @@ lessons = content_loader.load_content('lessons')
 
 # Create directories for storage
 async def init_mongodb(max_retries=3, retry_delay=2):
-    """Initialize MongoDB connection with retry mechanism."""
+    """Initialize MongoDB connection with retry mechanism and health check."""
     global db  # Modify the global db variable
     
     for attempt in range(max_retries):
@@ -54,6 +54,18 @@ async def init_mongodb(max_retries=3, retry_delay=2):
                 _ensure_collection_with_index(db, "user_skills", "user_id"),
                 _ensure_collection_with_index(db, "learning_insights", "user_id")
             )
+
+            # Database health check to ensure collections are accessible
+            try:
+                await asyncio.gather(
+                    db.users.find_one(),
+                    db.journals.find_one(),
+                    db.learning_insights.find_one()
+                )
+                logger.info("Database health check passed.")
+            except Exception as e:
+                logger.error(f"Database health check failed: {e}")
+                raise
 
             logger.info("MongoDB connection successful")
             return db
@@ -1230,6 +1242,10 @@ db = None
 async def get_db():
     """Get database instance, initializing if necessary"""
     global db
-    if db is None:
-        db = await init_mongodb()
-    return db
+    try:
+        if db is None:
+            db = await init_mongodb()
+        return db
+    except Exception as e:
+        logger.error(f"Failed to get database connection: {e}")
+        raise
