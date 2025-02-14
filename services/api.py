@@ -93,14 +93,32 @@ def setup_routes(app: Quart, application: Application) -> None:
             # Initialize database connection
             db = await get_db()
 
-            # Check if user already exists
+            # Check if user already exists - using find_one to avoid race conditions
             existing_user = await asyncio.to_thread(
                 db.users.find_one,
                 {"email": email}
             )
-            
+
+            # If user exists but doesn't have a password (maybe from Telegram), update it
             if existing_user:
-                return jsonify({"status": "error", "message": "User already exists"}), 409
+                if not existing_user.get('password'):
+                    result = await asyncio.to_thread(
+                        db.users.update_one,
+                        {"email": email},
+                        {"$set": {"password": generate_password_hash(password)}}
+                    )
+                    if result.modified_count > 0:
+                        token = jwt.encode(
+                            {"sub": email},
+                            JWT_SECRET_KEY,
+                            algorithm="HS256"
+                        )
+                        return jsonify({
+                            "status": "success",
+                            "token": token
+                        }), 200
+                else:
+                    return jsonify({"status": "error", "message": "Email already registered"}), 409
 
             # Generate a UUID for user_id
             user_id = str(uuid4())
@@ -112,7 +130,7 @@ def setup_routes(app: Quart, application: Application) -> None:
                 "email": email,
                 "password": generate_password_hash(password),
                 "platform": "web",
-                "platforms": ["web"],  # Array to track all platforms user is on
+                "platforms": ["web"],
                 "username": username,
                 "first_name": "",
                 "language_code": "en",
@@ -144,8 +162,8 @@ def setup_routes(app: Quart, application: Application) -> None:
 
             # Generate JWT token
             token = jwt.encode(
-                {"sub": email}, 
-                JWT_SECRET_KEY, 
+                {"sub": email},
+                JWT_SECRET_KEY,
                 algorithm="HS256"
             )
 

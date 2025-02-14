@@ -157,7 +157,7 @@ async function initializeApp() {
     initializeMobileMenu();
 }
 
-// Register user
+// Register user with improved error handling
 async function registerUser(event) {
     event?.preventDefault(); // Prevent form submission
     disableForm('registerForm');
@@ -185,7 +185,10 @@ async function registerUser(event) {
 
         if (data.status === "success") {
             localStorage.setItem("token", data.token);
-            window.location.href = '/web/dashboard.html';
+            showSuccess("Registration successful! Redirecting...");
+            setTimeout(() => {
+                window.location.href = '/web/dashboard.html';
+            }, 1000);
         } else {
             showError(data.message || "Registration failed. Please try again.");
         }
@@ -236,7 +239,7 @@ function enableForm(formId) {
     }
 }
 
-// Login user
+// Login user with improved error handling
 async function loginUser(event) {
     event?.preventDefault(); // Prevent form submission
     disableForm('loginForm');
@@ -257,9 +260,17 @@ async function loginUser(event) {
 
         const data = await response.json();
 
+        if (response.status === 404) {
+            showError("This email is not registered. Please sign up first.");
+            return;
+        }
+
         if (data.status === "success") {
             localStorage.setItem("token", data.token);
-            window.location.href = '/web/dashboard.html';
+            showSuccess("Login successful! Redirecting...");
+            setTimeout(() => {
+                window.location.href = '/web/dashboard.html';
+            }, 1000);
         } else {
             showError(data.message || "Login failed. Please check your credentials.");
         }
@@ -336,15 +347,23 @@ function hideLoading(elementId) {
 
 // Add better error handling
 function showError(message, duration = 3000) {
+    // Remove any existing notifications first
+    const existingNotifications = document.querySelectorAll('.notification');
+    existingNotifications.forEach(notification => notification.remove());
+
     const errorDiv = document.createElement('div');
     errorDiv.className = 'notification is-danger';
+    errorDiv.style.position = 'fixed';
+    errorDiv.style.top = '20px';
+    errorDiv.style.right = '20px';
+    errorDiv.style.zIndex = '1000';
     errorDiv.innerHTML = `
         <button class="delete"></button>
         ${message}
     `;
     
     // Add to page
-    document.querySelector('.container').insertBefore(errorDiv, document.querySelector('.container').firstChild);
+    document.body.appendChild(errorDiv);
     
     // Add close button functionality
     errorDiv.querySelector('.delete').addEventListener('click', () => {
@@ -353,7 +372,9 @@ function showError(message, duration = 3000) {
     
     // Auto-remove after duration
     setTimeout(() => {
-        errorDiv.remove();
+        if (errorDiv.parentNode) {
+            errorDiv.remove();
+        }
     }, duration);
 }
 
@@ -610,17 +631,32 @@ async function submitResponse() {
     }
 }
 
-function showSuccess(message) {
-    const notification = document.createElement('div');
-    notification.className = 'notification is-success';
-    notification.innerHTML = `
+function showSuccess(message, duration = 3000) {
+    const successDiv = document.createElement('div');
+    successDiv.className = 'notification is-success';
+    successDiv.style.position = 'fixed';
+    successDiv.style.top = '20px';
+    successDiv.style.right = '20px';
+    successDiv.style.zIndex = '1000';
+    successDiv.innerHTML = `
         <button class="delete"></button>
         ${message}
     `;
-    document.querySelector('.container').insertBefore(notification, document.querySelector('.container').firstChild);
     
-    // Remove after 3 seconds
-    setTimeout(() => notification.remove(), 3000);
+    // Add to page
+    document.body.appendChild(successDiv);
+    
+    // Add close button functionality
+    successDiv.querySelector('.delete').addEventListener('click', () => {
+        successDiv.remove();
+    });
+    
+    // Auto-remove after duration
+    setTimeout(() => {
+        if (successDiv.parentNode) {
+            successDiv.remove();
+        }
+    }, duration);
 }
 
 // Fetch user progress
