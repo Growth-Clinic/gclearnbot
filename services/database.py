@@ -346,7 +346,7 @@ class UserManager:
                 logger.error(f"Invalid user data for user {user.id}")
                 return None
 
-            result = db.users.update_one(
+            result = await db.users.update_one(
                 {"user_id": user_id, "platform": platform},
                 update_fields,
                 upsert=True
@@ -535,7 +535,7 @@ class UserManager:
     async def update_learning_preferences(user_id: int, preferences: Dict[str, Any]) -> bool:
         """Update user's learning preferences."""
         try:
-            result = db.users.update_one(
+            result = await db.users.update_one(
                 {"user_id": user_id},
                 {"$set": {
                     "learning_preferences": preferences
@@ -563,11 +563,11 @@ class JournalManager:
             if not response or not response.strip():
                 logger.warning(f"Empty response from user {user_id}")
                 return False
-                
-            if not lesson_key in lessons:
+
+            if lesson_key not in lessons:
                 logger.error(f"Invalid lesson key: {lesson_key}")
                 return False
-            
+
             # Prepare journal entry
             entry = {
                 "timestamp": datetime.now(timezone.utc).isoformat(),
@@ -580,49 +580,40 @@ class JournalManager:
             if not DataValidator.validate_journal_entry(entry):
                 logger.error(f"Invalid journal entry for user {user_id}")
                 return False
-            
+
             # Update or create journal document
-            result = db.journals.update_one(
-                    {"user_id": user_id},
-                    {
-                        "$push": {"entries": entry},
-                        "$setOnInsert": {
-                            "created_at": datetime.now(timezone.utc).isoformat()
-                        }
-                    },
-                    upsert=True
-                )
-            
+            result = await db.journals.update_one(
+                {"user_id": user_id},
+                {
+                    "$push": {"entries": entry},
+                    "$setOnInsert": {
+                        "created_at": datetime.now(timezone.utc).isoformat()
+                    }
+                },
+                upsert=True
+            )
+
             if result.acknowledged:
                 logger.info(f"Journal entry saved for user {user_id} in lesson {lesson_key}")
                 return True
-            
+
             logger.error(f"Failed to save journal entry for user {user_id}")
             return False
-            
+
         except Exception as e:
             logger.error(f"Error saving journal entry for user {user_id}: {e}", exc_info=True)
             return False
+
 
     @staticmethod
     async def get_user_journal(user_id: int, limit: int = None) -> Optional[Dict[str, Any]]:
         """
         Get a user's journal entries with optional limit.
-        
-        Args:
-            user_id: Telegram user ID
-            limit: Optional maximum number of entries to return
-            
-        Returns:
-            Dictionary containing journal entries or None if not found
         """
         try:
-            # Base query
             query = {"user_id": user_id}
-            
-            # If limit specified, only get recent entries
             if limit:
-                journal = db.journals.aggregate([
+                pipeline = [
                     {"$match": query},
                     {"$unwind": "$entries"},
                     {"$sort": {"entries.timestamp": -1}},
@@ -632,15 +623,17 @@ class JournalManager:
                         "user_id": {"$first": "$user_id"},
                         "entries": {"$push": "$entries"}
                     }}
-                ]).next()
+                ]
+                cursor = db.journals.aggregate(pipeline)
+                journal_list = await cursor.to_list(length=None)
+                journal = journal_list[0] if journal_list else None
             else:
-                journal = db.journals.find_one(query)
-            
+                journal = await db.journals.find_one(query)
+
             if journal:
-                journal.pop('_id', None)  # Remove MongoDB ID
-                
+                journal.pop('_id', None)
             return journal
-            
+
         except Exception as e:
             logger.error(f"Error retrieving journal for user {user_id}: {e}", exc_info=True)
             return None
@@ -649,16 +642,9 @@ class JournalManager:
     async def get_lesson_responses(lesson_key: str, limit: int = 100) -> List[Dict[str, Any]]:
         """
         Get all user responses for a specific lesson.
-        
-        Args:
-            lesson_key: Lesson identifier
-            limit: Maximum number of responses to return
-            
-        Returns:
-            List of responses with user info
         """
         try:
-            responses = db.journals.aggregate([
+            pipeline = [
                 {"$unwind": "$entries"},
                 {"$match": {"entries.lesson": lesson_key}},
                 {"$limit": limit},
@@ -669,10 +655,11 @@ class JournalManager:
                     "response_length": "$entries.response_length",
                     "keywords_used": "$entries.keywords_used"
                 }}
-            ])
-            
-            return list(responses)
-            
+            ]
+            cursor = db.journals.aggregate(pipeline)
+            responses = await cursor.to_list(length=None)
+            return responses
+
         except Exception as e:
             logger.error(f"Error retrieving responses for lesson {lesson_key}: {e}", exc_info=True)
             return []
@@ -681,15 +668,9 @@ class JournalManager:
     async def get_journal_statistics(user_id: int) -> Dict[str, Any]:
         """
         Get statistics about a user's journal entries.
-        
-        Args:
-            user_id: Telegram user ID
-            
-        Returns:
-            Dictionary containing journal statistics
         """
         try:
-            stats = db.journals.aggregate([
+            pipeline = [
                 {"$match": {"user_id": user_id}},
                 {"$unwind": "$entries"},
                 {"$group": {
@@ -699,10 +680,17 @@ class JournalManager:
                     "first_entry": {"$min": "$entries.timestamp"},
                     "last_entry": {"$max": "$entries.timestamp"}
                 }}
-            ]).next()
-            
+            ]
+            cursor = db.journals.aggregate(pipeline)
+            stats_list = await cursor.to_list(length=1)
+            stats = stats_list[0] if stats_list else {
+                "total_entries": 0,
+                "avg_response_length": 0,
+                "first_entry": None,
+                "last_entry": None
+            }
             return stats
-            
+
         except Exception as e:
             logger.error(f"Error calculating journal stats for user {user_id}: {e}", exc_info=True)
             return {
@@ -756,31 +744,16 @@ class FeedbackManager:
     async def get_user_feedback(user_id: int, limit: int = 10) -> List[Dict[str, Any]]:
         """
         Get feedback history for a specific user.
-        
-        Args:
-            user_id: Telegram user ID
-            limit: Maximum number of feedback items to return
-            
-        Returns:
-            List of feedback documents
         """
         try:
-            # Debug logging
-            logger.info(f"Fetching feedback for user {user_id}")
-            
-            cursor = db.feedback.find(
-                {"user_id": user_id}
-            ).sort("timestamp", -1).limit(limit)
-            
-            feedback_list = []
-            for doc in cursor:
+            cursor = db.feedback.find({"user_id": user_id}).sort("timestamp", -1).limit(limit)
+            feedback_list = await cursor.to_list(length=limit)
+            for doc in feedback_list:
                 if '_id' in doc:
                     doc['_id'] = str(doc['_id'])
-                feedback_list.append(doc)
-            
             logger.info(f"Found {len(feedback_list)} feedback items for user {user_id}")
             return feedback_list
-            
+
         except Exception as e:
             logger.error(f"Error retrieving user feedback: {e}", exc_info=True)
             return []
@@ -824,25 +797,13 @@ class FeedbackManager:
     async def mark_as_processed(feedback_id: str, category: str = None) -> bool:
         """
         Mark feedback as processed with optional categorization.
-
-        Args:
-            feedback_id: MongoDB document ID
-            category: Optional feedback category
-            
-        Returns:
-            bool: True if update successful
         """
         try:
-            update = {
-                "$set": {
-                    "processed": True,
-                    "processed_at": datetime.now(timezone.utc).isoformat()
-                }
-            }
+            update = {"$set": {"processed": True, "processed_at": datetime.now(timezone.utc).isoformat()}}
             if category:
                 update["$set"]["category"] = category
 
-            result = db.feedback.update_one({"id": feedback_id}, update)
+            result = await db.feedback.update_one({"id": feedback_id}, update)
             return result.modified_count > 0
 
         except Exception as e:
@@ -876,160 +837,20 @@ class FeedbackAnalyticsManager:
             raise
 
     @staticmethod
-    def track_feedback_rating(user_id: int, rating: str) -> None:
+    async def track_feedback_rating(user_id: int, rating: str) -> None:
         """Track feedback ratings for improvement."""
         try:
-            db.feedback_ratings.update_one(
+            await db.feedback_ratings.update_one(
                 {"user_id": user_id},
                 {"$push": {"ratings": rating}},
                 upsert=True
             )
             logger.info(f"Feedback rating tracked for user {user_id}: {rating}")
-        
+
         except Exception as e:
             logger.error(f"Error tracking feedback rating for user {user_id}: {e}", exc_info=True)
             raise
 
-
-class TaskManager:
-    """Manages CRUD operations for tasks in MongoDB"""
-    
-    @staticmethod
-    def load_tasks() -> Dict[str, List[Dict[str, Any]]]:
-        """
-        Load all tasks from storage.
-        
-        Returns:
-            Dict containing list of tasks with MongoDB _id removed
-        
-        Raises:
-            OperationFailure: If MongoDB query fails
-        """
-        try:
-            tasks = list(db.tasks.find())
-            return {"tasks": [{k:v for k,v in task.items() if k != '_id'} for task in tasks]}
-        except OperationFailure as e:
-            logger.error(f"Failed to load tasks: {e}")
-            raise
-
-    @staticmethod
-    def save_tasks(tasks_data: Dict[str, List[Dict[str, Any]]]) -> None:
-        """
-        Save tasks to storage, replacing existing ones.
-        
-        Args:
-            tasks_data: Dictionary containing list of tasks to save
-            
-        Raises:
-            OperationFailure: If MongoDB operation fails
-        """
-        if not tasks_data.get("tasks"):
-            return
-            
-        try:
-            with db.client.start_session() as session:
-                with session.start_transaction():
-                    db.tasks.delete_many({}, session=session)
-                    db.tasks.insert_many(tasks_data["tasks"], session=session)
-        except OperationFailure as e:
-            logger.error(f"Failed to save tasks: {e}")
-            raise
-
-    @staticmethod
-    def add_task(company: str, lesson_key: str, description: str, requirements: list) -> dict:
-        """
-        Add a new task with auto-incrementing ID.
-        
-        Args:
-            company: Company name
-            lesson_key: Lesson identifier
-            description: Task description
-            requirements: Optional list of requirements
-            
-        Returns:
-            Newly created task dictionary
-            
-        Raises:
-            OperationFailure: If MongoDB operation fails
-        """
-        try:
-            # Get highest existing task ID
-            last_task = db.tasks.find_one(sort=[("task_id", -1)])
-            next_id = (last_task["task_id"] + 1) if last_task else 1
-            
-            task = {
-                "task_id": next_id,
-                "company": company,
-                "lesson": lesson_key,
-                "description": description,
-                "requirements": requirements,
-                "is_active": True,
-                "created_at": datetime.now(timezone.utc)
-            }
-
-            if not DataValidator.validate_task_data(task):
-                logger.error(f"Invalid task data for lesson {lesson_key}")
-                return None
-            
-            result = db.tasks.insert_one(task)
-            if result.acknowledged:
-                logger.info(f"Task #{next_id} created for lesson {lesson_key}")
-                return task
-            return None
-            
-        except OperationFailure as e:
-            logger.error(f"Failed to create task: {e}")
-            raise
-
-    @staticmethod
-    @staticmethod
-    async def get_tasks_for_lesson(lesson_key: str) -> List[Dict[str, Any]]:
-        """
-        Get active tasks for a specific lesson.
-
-        Args:
-            lesson_key: Lesson identifier
-
-        Returns:
-            List of active tasks for the lesson
-        """
-        try:
-            tasks_cursor = db.tasks.find({"lesson": lesson_key, "is_active": True})
-            tasks = await tasks_cursor.to_list(None)  # Convert cursor to list asynchronously
-            return [{k: v for k, v in task.items() if k != '_id'} for task in tasks]
-        except Exception as e:
-            logger.error(f"Failed to get tasks for lesson {lesson_key}: {e}")
-            return []
-
-    @staticmethod
-    def deactivate_task(task_id: int) -> bool:
-        """
-        Deactivate a task by ID.
-        
-        Args:
-            task_id: Task identifier
-            
-        Returns:
-            True if task was deactivated, False if not found
-            
-        Raises:
-            OperationFailure: If MongoDB update fails
-        """
-        try:
-            # Fix: Changed "id" to "task_id" in query to match our schema
-            result = db.tasks.update_one(
-                {"task_id": task_id},  # Changed from "id" to "task_id"
-                {"$set": {"is_active": False}}
-            )
-            success = result.modified_count > 0
-            if success:
-                logger.info(f"Task #{task_id} deactivated successfully")
-            else:
-                logger.warning(f"No task found with ID {task_id}")
-            return success
-        except OperationFailure as e:
-            logger.error(f"Failed to deactivate task {task_id}: {e}")
-            raise
 
 
 class AnalyticsManager:
@@ -1105,20 +926,11 @@ class AnalyticsManager:
             return {}
 
     @staticmethod
-    def calculate_cohort_metrics(start_date: Optional[str] = None, 
-                               end_date: Optional[str] = None) -> Dict[str, Any]:
+    async def calculate_cohort_metrics(start_date: Optional[str] = None, end_date: Optional[str] = None) -> Dict[str, Any]:
         """
         Calculate metrics across all users within a date range.
-        
-        Args:
-            start_date: Optional ISO format start date
-            end_date: Optional ISO format end date
-            
-        Returns:
-            Dictionary containing cohort metrics
         """
         try:
-            # Build date range query
             query = {}
             if start_date or end_date:
                 query['joined_date'] = {}
@@ -1126,34 +938,31 @@ class AnalyticsManager:
                     query['joined_date']['$gte'] = start_date
                 if end_date:
                     query['joined_date']['$lte'] = end_date
-            
-            # Get all users in date range
-            users = list(db.users.find(query))
-            
+
+            cursor = db.users.find(query)
+            users = await cursor.to_list(length=None)
             if not users:
                 return {}
-            
-            # Calculate aggregate metrics
+
             total_users = len(users)
             completion_rates = [u['progress_metrics']['completion_rate'] for u in users]
             avg_completion_rate = sum(completion_rates) / total_users if total_users > 0 else 0
-            
-            # Count users at each lesson
+
             lesson_distribution = {}
             for user in users:
                 current_lesson = user.get('current_lesson')
                 if current_lesson:
                     lesson_distribution[current_lesson] = lesson_distribution.get(current_lesson, 0) + 1
-            
-            # Calculate retention metrics
-            active_last_day = sum(1 for u in users if 
-                                datetime.fromisoformat(u['last_active'].replace('Z', '+00:00')) >
-                                datetime.now(timezone.utc) - timedelta(days=1))
-            
-            active_last_week = sum(1 for u in users if 
-                                 datetime.fromisoformat(u['last_active'].replace('Z', '+00:00')) >
-                                 datetime.now(timezone.utc) - timedelta(days=7))
-            
+
+            active_last_day = sum(
+                1 for u in users if datetime.fromisoformat(u['last_active'].replace('Z', '+00:00')) >
+                datetime.now(timezone.utc) - timedelta(days=1)
+            )
+            active_last_week = sum(
+                1 for u in users if datetime.fromisoformat(u['last_active'].replace('Z', '+00:00')) >
+                datetime.now(timezone.utc) - timedelta(days=7)
+            )
+
             return {
                 "total_users": total_users,
                 "average_completion_rate": round(avg_completion_rate, 2),
@@ -1167,25 +976,18 @@ class AnalyticsManager:
                     "weekly": round((active_last_week / total_users * 100), 2) if total_users > 0 else 0
                 }
             }
-            
+
         except Exception as e:
             logger.error(f"Error calculating cohort metrics: {e}", exc_info=True)
             return {}
 
     @staticmethod
-    def get_lesson_analytics(lesson_key: str) -> Dict[str, Any]:
+    async def get_lesson_analytics(lesson_key: str) -> Dict[str, Any]:
         """
         Get analytics for a specific lesson.
-        
-        Args:
-            lesson_key: The lesson identifier
-            
-        Returns:
-            Dictionary containing lesson analytics
         """
         try:
-            # Get all responses for this lesson
-            responses = list(db.journals.aggregate([
+            pipeline = [
                 {"$unwind": "$entries"},
                 {"$match": {"entries.lesson": lesson_key}},
                 {"$project": {
@@ -1193,26 +995,19 @@ class AnalyticsManager:
                     "keywords_used": "$entries.keywords_used",
                     "timestamp": "$entries.timestamp"
                 }}
-            ]))
-            
+            ]
+            cursor = db.journals.aggregate(pipeline)
+            responses = await cursor.to_list(length=None)
             if not responses:
                 return {}
-            
-            # Calculate response metrics
+
             total_responses = len(responses)
             avg_response_length = sum(r['response_length'] for r in responses) / total_responses if total_responses > 0 else 0
-            
-            # Analyze keywords
+
             all_keywords = [kw for r in responses for kw in r.get('keywords_used', [])]
-            keyword_frequency = {}
-            if all_keywords:
-                keyword_frequency = {kw: all_keywords.count(kw) for kw in set(all_keywords)}
-            
-            # Calculate completion time distribution
-            completion_times = []
-            users_completed = set()
-            
-            user_responses = db.journals.aggregate([
+            keyword_frequency = {kw: all_keywords.count(kw) for kw in set(all_keywords)} if all_keywords else {}
+
+            user_responses_cursor = db.journals.aggregate([
                 {"$unwind": "$entries"},
                 {"$match": {"entries.lesson": lesson_key}},
                 {"$group": {
@@ -1220,11 +1015,9 @@ class AnalyticsManager:
                     "completed_at": {"$min": "$entries.timestamp"}
                 }}
             ])
-            
-            for response in user_responses:
-                users_completed.add(response['_id'])
-                completion_times.append(response['completed_at'])
-            
+            user_responses = await user_responses_cursor.to_list(length=None)
+            users_completed = {response['_id'] for response in user_responses}
+
             return {
                 "total_responses": total_responses,
                 "average_response_length": round(avg_response_length, 2),
@@ -1232,7 +1025,7 @@ class AnalyticsManager:
                 "keyword_frequency": keyword_frequency,
                 "responses_per_day": round(total_responses / (7 if total_responses > 7 else 1), 2)
             }
-            
+
         except Exception as e:
             logger.error(f"Error calculating lesson analytics for {lesson_key}: {e}", exc_info=True)
             return {}

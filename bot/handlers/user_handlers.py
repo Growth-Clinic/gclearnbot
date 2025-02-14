@@ -325,7 +325,7 @@ async def get_journal(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
         context.user_data['journal_page'] = 0
     
     # Fetch journal from MongoDB
-    journal = db.journals.find_one({"user_id": chat_id})
+    journal = await db.journals.find_one({"user_id": chat_id})
     
     if journal and journal.get("entries"):
         entries = journal["entries"]
