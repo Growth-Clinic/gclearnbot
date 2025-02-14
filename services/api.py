@@ -516,7 +516,7 @@ def setup_routes(app: Quart, application: Application) -> None:
         """Health check endpoint"""
         try:
             # Test DB connection
-            await asyncio.to_thread(db.users.find_one)
+            await db.users.find_one
             return {
                 "status": "healthy",
                 "timestamp": datetime.now(timezone.utc).isoformat(),
@@ -531,7 +531,7 @@ def setup_routes(app: Quart, application: Application) -> None:
     async def keep_warm():
         """Periodic warm-up check"""
         try:
-            await asyncio.to_thread(db.users.find_one)
+            await db.users.find_one
             logger.debug("Warm-up successful")
         except Exception as e:
             logger.error(f"Warm-up failed: {e}")

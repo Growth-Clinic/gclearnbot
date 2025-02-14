@@ -2,7 +2,6 @@ from typing import Dict, List, Any, Optional
 from datetime import datetime, timezone
 import logging
 from services.database import db
-import asyncio
 
 logger = logging.getLogger(__name__)
 
@@ -16,15 +15,10 @@ class LearningInsightsManager:
     async def store_learning_insights(user_id: int, insights: Dict[str, Any]) -> bool:
         """
         Store comprehensive learning insights for a user.
-        
-        Args:
-            user_id: The user's ID
-            insights: Dictionary containing various learning insights
         """
         try:
             timestamp = datetime.now(timezone.utc)
             
-            # Prepare insights document
             insight_doc = {
                 "timestamp": timestamp,
                 "emerging_interests": insights.get("emerging_interests", []),
@@ -34,9 +28,7 @@ class LearningInsightsManager:
                 "suggested_paths": insights.get("suggested_paths", [])
             }
             
-            # Update or create insights document
-            result = await asyncio.to_thread(
-                db.learning_insights.update_one,
+            result = await db.learning_insights.update_one(
                 {"user_id": user_id},
                 {
                     "$push": {
@@ -69,15 +61,9 @@ class LearningInsightsManager:
     async def get_user_insights(user_id: int, limit: int = 10) -> Optional[Dict[str, Any]]:
         """
         Get learning insights for a specific user.
-        
-        Args:
-            user_id: The user's ID
-            limit: Maximum number of recent insights to return
         """
         try:
-            # Get user's insights
-            insights = await asyncio.to_thread(
-                db.learning_insights.find_one,
+            insights = await db.learning_insights.find_one(
                 {"user_id": user_id},
                 {"insights": {"$slice": -limit}}  # Get most recent insights
             )
@@ -96,28 +82,22 @@ class LearningInsightsManager:
     async def get_support_recommendations(user_id: int) -> List[Dict[str, Any]]:
         """Get actionable support recommendations for a user."""
         try:
-            insights = await asyncio.to_thread(
-                db.learning_insights.find_one,
-                {"user_id": user_id}
-            )
+            insights = await db.learning_insights.find_one({"user_id": user_id})
             
             if not insights or not insights.get('insights'):
                 return []
             
-            # Get most recent insight
             latest_insight = insights['insights'][-1]
             
             recommendations = []
-            
-            # Generate recommendations from support areas
+
             for area in latest_insight.get('support_areas', []):
                 recommendations.append({
                     "type": "support_needed",
                     "area": area,
                     "priority": "high" if area in latest_insight.get('recurring_gaps', []) else "medium"
                 })
-            
-            # Add recommendations for emerging interests
+
             for interest in latest_insight.get('emerging_interests', []):
                 recommendations.append({
                     "type": "emerging_interest",
@@ -135,15 +115,11 @@ class LearningInsightsManager:
     async def get_learning_trajectory(user_id: int) -> Optional[Dict[str, Any]]:
         """Get detailed learning trajectory analysis for a user."""
         try:
-            insights = await asyncio.to_thread(
-                db.learning_insights.find_one,
-                {"user_id": user_id}
-            )
+            insights = await db.learning_insights.find_one({"user_id": user_id})
             
             if not insights or not insights.get('insights'):
                 return None
             
-            # Get trajectory data from all insights
             trajectories = [
                 insight['learning_trajectory'] 
                 for insight in insights['insights']
@@ -153,7 +129,6 @@ class LearningInsightsManager:
             if not trajectories:
                 return None
             
-            # Analyze progression
             latest = trajectories[-1]
             historical = trajectories[:-1] if len(trajectories) > 1 else []
             
@@ -173,7 +148,6 @@ class LearningInsightsManager:
     async def get_unplanned_skills_report() -> List[Dict[str, Any]]:
         """Generate report of commonly occurring unplanned skills across users."""
         try:
-            # Aggregate unplanned skills across all users
             pipeline = [
                 {"$unwind": "$insights"},
                 {"$unwind": "$insights.unplanned_skills"},
@@ -187,19 +161,17 @@ class LearningInsightsManager:
                 {"$sort": {"count": -1}}
             ]
             
-            results = await asyncio.to_thread(
-                lambda: list(db.learning_insights.aggregate(pipeline))
-            )
-            
-            # Format results
-            skills_report = []
-            for result in results:
-                skills_report.append({
+            results = await db.learning_insights.aggregate(pipeline).to_list(None)
+
+            skills_report = [
+                {
                     "skill": result["_id"],
                     "occurrence_count": result["count"],
                     "unique_users": len(result["users"]),
-                    "potential_gap": result["count"] > 5  # Flag if skill appears frequently
-                })
+                    "potential_gap": result["count"] > 5
+                }
+                for result in results
+            ]
             
             return skills_report
             
@@ -212,7 +184,7 @@ class LearningInsightsManager:
         """Get aggregated insights for admin dashboard."""
         try:
             dashboard_data = {
-                "total_users_analyzed": 0,
+                "total_users_analyzed": await db.learning_insights.count_documents({}),
                 "common_support_areas": [],
                 "emerging_trends": [],
                 "skill_gaps": [],
@@ -220,12 +192,6 @@ class LearningInsightsManager:
                 "timestamp": datetime.now(timezone.utc)
             }
             
-            # Count total users
-            dashboard_data["total_users_analyzed"] = await asyncio.to_thread(
-                db.learning_insights.count_documents, {}
-            )
-            
-            # Aggregate common support areas
             support_areas_pipeline = [
                 {"$unwind": "$insights"},
                 {"$unwind": "$insights.support_areas"},
@@ -238,16 +204,13 @@ class LearningInsightsManager:
                 {"$sort": {"count": -1}},
                 {"$limit": 10}
             ]
-            
-            support_areas = await asyncio.to_thread(
-                lambda: list(db.learning_insights.aggregate(support_areas_pipeline))
-            )
+
+            support_areas = await db.learning_insights.aggregate(support_areas_pipeline).to_list(None)
             dashboard_data["common_support_areas"] = [
                 {"area": area["_id"], "count": area["count"]}
                 for area in support_areas
             ]
             
-            # Get emerging trends
             trends_pipeline = [
                 {"$unwind": "$insights"},
                 {"$unwind": "$insights.emerging_interests"},
@@ -260,22 +223,16 @@ class LearningInsightsManager:
                 {"$sort": {"count": -1}},
                 {"$limit": 10}
             ]
-            
-            trends = await asyncio.to_thread(
-                lambda: list(db.learning_insights.aggregate(trends_pipeline))
-            )
+
+            trends = await db.learning_insights.aggregate(trends_pipeline).to_list(None)
             dashboard_data["emerging_trends"] = [
                 {"trend": trend["_id"], "count": trend["count"]}
                 for trend in trends
             ]
             
-            # Get skill gaps from unplanned skills
             skill_gaps = await LearningInsightsManager.get_unplanned_skills_report()
-            dashboard_data["skill_gaps"] = [
-                gap for gap in skill_gaps if gap["potential_gap"]
-            ]
+            dashboard_data["skill_gaps"] = [gap for gap in skill_gaps if gap["potential_gap"]]
             
-            # Analyze common learning paths
             paths_pipeline = [
                 {"$unwind": "$insights"},
                 {"$unwind": "$insights.suggested_paths"},
@@ -288,10 +245,8 @@ class LearningInsightsManager:
                 {"$sort": {"count": -1}},
                 {"$limit": 5}
             ]
-            
-            paths = await asyncio.to_thread(
-                lambda: list(db.learning_insights.aggregate(paths_pipeline))
-            )
+
+            paths = await db.learning_insights.aggregate(paths_pipeline).to_list(None)
             dashboard_data["learning_paths"] = [
                 {"path": path["_id"], "frequency": path["count"]}
                 for path in paths

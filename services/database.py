@@ -26,8 +26,8 @@ lessons = content_loader.load_content('lessons')
 
 # Create directories for storage
 async def init_mongodb(max_retries=3, retry_delay=2):
-    """Initialize MongoDB connection with retry mechanism"""
-    global db  # Add this to modify the global db variable
+    """Initialize MongoDB connection with retry mechanism."""
+    global db  # Modify the global db variable
     
     for attempt in range(max_retries):
         try:
@@ -40,41 +40,39 @@ async def init_mongodb(max_retries=3, retry_delay=2):
                 tlsCAFile=certifi.where(),
                 serverSelectionTimeoutMS=5000
             )
-            
+
             # Test connection
             await client.admin.command('ping')
-            
+
             # Get database
-            db = client["gclearnbot"]  # Set the global db variable
-            
-            # Create essential indices
-            await db.users.create_index("email", unique=True)
-            
-            # Ensure indices and collections exist
-            collections = await db.list_collection_names()
-            
-            if "user_skills" not in collections:
-                await db.create_collection("user_skills")
-                await db.user_skills.create_index("user_id", unique=True)
-                logger.info("Created user_skills collection with index")
-            
-            if "learning_insights" not in collections:
-                await db.create_collection("learning_insights")
-                await db.learning_insights.create_index("user_id", unique=True)
-                logger.info("Created learning_insights collection with index")
-            
-            # Ensure an index on user_id for journals collection
-            await db.journals.create_index("user_id")
-            
+            db = client["gclearnbot"]
+
+            # Ensure required collections and indices exist
+            await asyncio.gather(
+                db.users.create_index("email", unique=True),
+                db.journals.create_index("user_id"),
+                _ensure_collection_with_index(db, "user_skills", "user_id"),
+                _ensure_collection_with_index(db, "learning_insights", "user_id")
+            )
+
             logger.info("MongoDB connection successful")
             return db
-            
+
         except Exception as e:
             if attempt == max_retries - 1:
                 logger.error(f"MongoDB connection error after {max_retries} attempts: {e}")
                 raise
             logger.warning(f"Attempt {attempt + 1} failed, retrying in {retry_delay}s...")
             await asyncio.sleep(retry_delay)
+
+async def _ensure_collection_with_index(db, collection_name, index_field):
+    """Ensure a collection exists and create an index if needed."""
+    collections = await db.list_collection_names()
+    if collection_name not in collections:
+        await db.create_collection(collection_name)
+        await db[collection_name].create_index(index_field, unique=True)
+        logger.info(f"Created {collection_name} collection with index on {index_field}")
+
 
 class DataValidator:
     """Handles data validation for database operations"""
@@ -972,25 +970,21 @@ class TaskManager:
             raise
 
     @staticmethod
+    @staticmethod
     async def get_tasks_for_lesson(lesson_key: str) -> List[Dict[str, Any]]:
         """
         Get active tasks for a specific lesson.
-        
+
         Args:
             lesson_key: Lesson identifier
-            
+
         Returns:
             List of active tasks for the lesson
         """
         try:
-            # Use asyncio to handle the database call
-            tasks = await asyncio.to_thread(
-                lambda: list(db.tasks.find({
-                    "lesson": lesson_key,
-                    "is_active": True
-                }))
-            )
-            return [{k:v for k,v in task.items() if k != '_id'} for task in tasks]
+            tasks_cursor = db.tasks.find({"lesson": lesson_key, "is_active": True})
+            tasks = await tasks_cursor.to_list(None)  # Convert cursor to list asynchronously
+            return [{k: v for k, v in task.items() if k != '_id'} for task in tasks]
         except Exception as e:
             logger.error(f"Failed to get tasks for lesson {lesson_key}: {e}")
             return []
