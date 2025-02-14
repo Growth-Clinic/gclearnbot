@@ -45,24 +45,29 @@ function initializeAuthDisplay() {
 
 async function initializeProtectedPage() {
     if (!checkAuth()) {
-        document.getElementById('protectedContent').classList.add('is-hidden');
-        document.getElementById('notSignedIn').classList.remove('is-hidden');
+        document.getElementById('protectedContent')?.classList.add('is-hidden');
+        document.getElementById('notSignedIn')?.classList.remove('is-hidden');
         return;
     }
     
-    document.getElementById('protectedContent').classList.remove('is-hidden');
-    document.getElementById('notSignedIn').classList.add('is-hidden');
+    document.getElementById('protectedContent')?.classList.remove('is-hidden');
+    document.getElementById('notSignedIn')?.classList.add('is-hidden');
     
     // Initialize based on current page
     const currentPath = window.location.pathname;
     
-    if (currentPath.includes('dashboard.html')) {
-        await fetchLessons();
-        await fetchProgress();
-    } else if (currentPath.includes('progress.html')) {
-        await fetchProgress();
-    } else if (currentPath.includes('journal.html')) {
-        await fetchJournal();
+    try {
+        if (currentPath.includes('dashboard.html')) {
+            await fetchLessons();
+            await fetchProgress();
+        } else if (currentPath.includes('progress.html')) {
+            await fetchProgress();
+        } else if (currentPath.includes('journal.html')) {
+            await fetchJournal();
+        }
+    } catch (error) {
+        console.error('Error initializing page:', error);
+        showError('Error loading page content. Please refresh the page.');
     }
     
     initializeMobileMenu();
@@ -591,9 +596,20 @@ async function fetchLessons() {
 // Submit user response with feedback display
 async function submitResponse(event) {
     event.preventDefault();
-    const lessonId = document.getElementById("lessonSelect").value;
-    const responseText = document.getElementById("responseText").value;
+    
+    const lessonSelect = document.getElementById("lessonSelect");
+    const responseInput = document.getElementById("responseText");
     const submitButton = document.getElementById('submitButton');
+    const feedbackCard = document.getElementById('feedbackCard');
+    
+    if (!lessonSelect || !responseInput || !submitButton) {
+        console.error('Required form elements not found');
+        showError('Error submitting response. Please refresh the page.');
+        return;
+    }
+    
+    const lessonId = lessonSelect.value;
+    const responseText = responseInput.value;
     const token = getAuthToken();
     
     if (!token) {
@@ -617,57 +633,65 @@ async function submitResponse(event) {
         const data = await response.json();
         
         if (data.status === "success") {
-            // Show feedback card
-            const feedbackCard = document.getElementById('feedbackCard');
-            feedbackCard.classList.remove('is-hidden');
-
-            // Update quality metrics
-            document.getElementById('responseQuality').textContent = 
-                `${data.quality_metrics?.overall_score || 0}%`;
-
-            // Update keywords
-            const keywordsList = document.getElementById('keywordsList');
-            if (data.quality_metrics?.keywords_used) {
-                keywordsList.innerHTML = data.quality_metrics.keywords_used
-                    .map(keyword => `
-                        <span class="tag is-primary is-light">${keyword}</span>
-                    `).join('');
+            // Show feedback card if it exists
+            if (feedbackCard) {
+                feedbackCard.classList.remove('is-hidden');
             }
 
-            // Update detailed feedback
-            const feedbackContent = document.getElementById('feedbackContent');
-            feedbackContent.innerHTML = data.feedback
-                .map(item => `<p>• ${item}</p>`)
-                .join('');
+            // Update quality metrics if elements exist
+            const responseQuality = document.getElementById('responseQuality');
+            if (responseQuality) {
+                responseQuality.textContent = `${data.quality_metrics?.overall_score || 0}%`;
+            }
 
-            // Update skill progress
+            // Update keywords if element exists
+            const keywordsList = document.getElementById('keywordsList');
+            if (keywordsList && data.quality_metrics?.keywords_used) {
+                keywordsList.innerHTML = data.quality_metrics.keywords_used
+                    .map(keyword => `<span class="tag is-primary is-light">${keyword}</span>`)
+                    .join('');
+            }
+
+            // Update detailed feedback if element exists
+            const feedbackContent = document.getElementById('feedbackContent');
+            if (feedbackContent) {
+                feedbackContent.innerHTML = data.feedback
+                    .map(item => `<p>• ${item}</p>`)
+                    .join('');
+            }
+
+            // Update skill progress if elements exist
             if (data.skills) {
                 const skillsList = document.getElementById('skillsList');
-                skillsList.innerHTML = Object.entries(data.skills)
-                    .map(([skill, details]) => `
-                        <div class="mb-3">
-                            <div class="level is-mobile mb-1">
-                                <div class="level-left">
-                                    <span class="has-text-weight-medium">${skill}</span>
+                if (skillsList) {
+                    skillsList.innerHTML = Object.entries(data.skills)
+                        .map(([skill, details]) => `
+                            <div class="mb-3">
+                                <div class="level is-mobile mb-1">
+                                    <div class="level-left">
+                                        <span class="has-text-weight-medium">${skill}</span>
+                                    </div>
+                                    <div class="level-right">
+                                        <span class="has-text-grey">${details.score}%</span>
+                                    </div>
                                 </div>
-                                <div class="level-right">
-                                    <span class="has-text-grey">${details.score}%</span>
-                                </div>
+                                <progress 
+                                    class="progress is-success" 
+                                    value="${details.score}" 
+                                    max="100"
+                                ></progress>
                             </div>
-                            <progress 
-                                class="progress is-success" 
-                                value="${details.score}" 
-                                max="100"
-                            ></progress>
-                        </div>
-                    `).join('');
+                        `).join('');
+                }
             }
 
             // Clear the response text
-            document.getElementById("responseText").value = '';
+            responseInput.value = '';
             
-            // Scroll to feedback
-            feedbackCard.scrollIntoView({ behavior: 'smooth' });
+            // Scroll to feedback if it exists
+            if (feedbackCard) {
+                feedbackCard.scrollIntoView({ behavior: 'smooth' });
+            }
         } else {
             showError(`Error: ${data.message}`);
         }
