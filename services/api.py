@@ -74,7 +74,7 @@ def setup_routes(app: Quart, application: Application) -> None:
 
     """Set up API routes for web access"""
 
-    lesson_service = LessonService(task_manager=None, user_manager=UserManager())  # Adjust as needed
+    lesson_service = LessonService(user_manager=UserManager())
     progress_tracker = ProgressTracker()
 
     @app.route('/register', methods=['POST'])

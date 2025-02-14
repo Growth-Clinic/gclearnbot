@@ -2,7 +2,7 @@ from uuid import uuid4
 import re
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, ForceReply
 from telegram.ext import ContextTypes, ConversationHandler, CommandHandler, MessageHandler, filters
-from services.database import JournalManager, UserManager, FeedbackManager, TaskManager, db, FeedbackAnalyticsManager, AnalyticsManager
+from services.database import JournalManager, UserManager, FeedbackManager, db, FeedbackAnalyticsManager, AnalyticsManager
 from services.feedback_enhanced import evaluate_response_enhanced, analyze_response_quality, format_feedback_message
 from services.progress_tracker import ProgressTracker
 from services.lesson_manager import LessonService
@@ -24,10 +24,7 @@ logger = logging.getLogger(__name__) # Get logger instance
 
 user_data = {} # In-memory storage for user progress
 
-lesson_service = LessonService(
-    task_manager=TaskManager(),
-    user_manager=UserManager()
-)
+lesson_service = LessonService(user_manager=UserManager())
 
 # Add conversation states
 AWAITING_EMAIL = 1

@@ -3,7 +3,7 @@ from telegram.ext import ContextTypes
 from telegram.constants import ParseMode
 from typing import Optional, Dict, Any
 from services.content_loader import content_loader
-from services.database import TaskManager, UserManager
+from services.database import UserManager
 import logging
 
 
@@ -12,15 +12,13 @@ lessons = content_loader.load_content('lessons')
 
 
 class LessonService:
-    def __init__(self, task_manager: TaskManager, user_manager: UserManager):
+    def __init__(self, user_manager: UserManager):
         """
         Initialize LessonService with dependencies.
-        
+
         Args:
-            task_manager: Instance of TaskManager for handling tasks
             user_manager: Instance of UserManager for handling user data
         """
-        self.task_manager = task_manager
         self.user_manager = user_manager
 
     async def _send_error_message(self, chat_id: int, message: str, context: ContextTypes.DEFAULT_TYPE = None) -> None:
