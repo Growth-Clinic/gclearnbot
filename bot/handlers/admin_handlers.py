@@ -1,6 +1,6 @@
 from telegram import Update
 from telegram.ext import ContextTypes
-from services.database import TaskManager, FeedbackManager, UserManager, init_mongodb, AnalyticsManager
+from services.database import FeedbackManager, UserManager, init_mongodb, AnalyticsManager
 from services.content_loader import content_loader
 from services.learning_insights import LearningInsightsManager
 from config.settings import Config
