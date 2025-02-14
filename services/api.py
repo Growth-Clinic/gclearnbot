@@ -93,17 +93,13 @@ def setup_routes(app: Quart, application: Application) -> None:
             # Initialize database connection
             db = await get_db()
 
-            # Check if user already exists - using find_one to avoid race conditions
-            existing_user = await asyncio.to_thread(
-                db.users.find_one,
-                {"email": email}
-            )
-
+            # Check if user already exists - properly awaiting the result
+            existing_user = await db.users.find_one({"email": email})
+            
             # If user exists but doesn't have a password (maybe from Telegram), update it
             if existing_user:
                 if not existing_user.get('password'):
-                    result = await asyncio.to_thread(
-                        db.users.update_one,
+                    result = await db.users.update_one(
                         {"email": email},
                         {"$set": {"password": generate_password_hash(password)}}
                     )
@@ -150,11 +146,8 @@ def setup_routes(app: Quart, application: Application) -> None:
                 }
             }
 
-            # Save user to database
-            result = await asyncio.to_thread(
-                db.users.insert_one,
-                user_data
-            )
+            # Save user to database - properly awaiting the result
+            result = await db.users.insert_one(user_data)
 
             if not result.acknowledged:
                 logger.error("Failed to save user to database")
