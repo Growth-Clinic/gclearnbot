@@ -64,21 +64,125 @@
     <section class="section" id="protectedContent">
         <div class="container">
             <h1 class="title">Your Learning Journal</h1>
-            <p class="subtitle">View your past responses and reflections</p>
-            <!-- Journal Content -->
-            <div class="card">
-                <div class="card-content">
-                    <h2 class="title is-4">Journal Entries</h2>
-                    <div id="journalList" class="content">
-                        <div class="message">
-                            <div class="message-body has-text-centered">
-                                Click "Load Journal" to view your entries
+            <p class="subtitle">Track your learning journey and reflections</p>
+
+            <!-- Streak and Stats Cards -->
+            <div class="columns is-multiline mb-6">
+                <!-- Streak Card -->
+                <div class="column is-4">
+                    <div class="card has-background-primary-light">
+                        <div class="card-content">
+                            <div class="level">
+                                <div class="level-left">
+                                    <div>
+                                        <p class="heading has-text-primary">Current Streak</p>
+                                        <p class="title has-text-primary" id="streakCount">0</p>
+                                    </div>
+                                </div>
+                                <div class="level-right">
+                                    <span class="icon is-large has-text-primary">
+                                        <i class="fas fa-fire fa-2x"></i>
+                                    </span>
+                                </div>
                             </div>
+                            <p class="subtitle is-6 has-text-primary-dark" id="streakMessage">
+                                Keep your reflection streak going!
+                            </p>
                         </div>
                     </div>
-                    <button id="loadJournal" onclick="fetchJournal()" class="button is-primary mt-4">
-                        <span>Load Journal</span>
-                    </button>
+                </div>
+
+                <!-- Total Entries Card -->
+                <div class="column is-4">
+                    <div class="card has-background-info-light">
+                        <div class="card-content">
+                            <div class="level">
+                                <div class="level-left">
+                                    <div>
+                                        <p class="heading has-text-info">Total Entries</p>
+                                        <p class="title has-text-info" id="totalEntries">0</p>
+                                    </div>
+                                </div>
+                                <div class="level-right">
+                                    <span class="icon is-large has-text-info">
+                                        <i class="fas fa-book fa-2x"></i>
+                                    </span>
+                                </div>
+                            </div>
+                            <p class="subtitle is-6 has-text-info-dark">
+                                Your learning journey so far
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Quality Score Card -->
+                <div class="column is-4">
+                    <div class="card has-background-success-light">
+                        <div class="card-content">
+                            <div class="level">
+                                <div class="level-left">
+                                    <div>
+                                        <p class="heading has-text-success">Average Quality</p>
+                                        <p class="title has-text-success" id="qualityScore">0%</p>
+                                    </div>
+                                </div>
+                                <div class="level-right">
+                                    <span class="icon is-large has-text-success">
+                                        <i class="fas fa-star fa-2x"></i>
+                                    </span>
+                                </div>
+                            </div>
+                            <p class="subtitle is-6 has-text-success-dark">
+                                Based on depth and engagement
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Journal Entries -->
+            <div class="card">
+                <header class="card-header">
+                    <p class="card-header-title">
+                        Recent Journal Entries
+                    </p>
+                </header>
+                <div class="card-content">
+                    <div id="journalList" class="content">
+                        <!-- Journal entries will be loaded here -->
+                        <div class="has-text-centered has-text-grey-light">
+                            Loading your journal entries...
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Skills Section -->
+            <div class="card mt-6">
+                <header class="card-header">
+                    <p class="card-header-title">
+                        Skills Development
+                    </p>
+                </header>
+                <div class="card-content">
+                    <div id="skillsList" class="content">
+                        <!-- Skills progress will be loaded here -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Latest Feedback -->
+            <div class="card mt-6">
+                <header class="card-header">
+                    <p class="card-header-title">
+                        Latest Feedback
+                    </p>
+                </header>
+                <div class="card-content">
+                    <div id="feedbackContent" class="content">
+                        <!-- Latest feedback will be loaded here -->
+                    </div>
                 </div>
             </div>
         </div>
@@ -88,7 +192,7 @@
     <section class="section is-hidden" id="notSignedIn">
         <div class="container">
             <div class="notification is-warning">
-                <p>You are not signed in. Please <a href="/web/index.html">log in</a> to access this page.</p>
+                <p>You are not signed in. Please <a href="/web/index.html#loginSection">log in</a> to access this page.</p>
             </div>
         </div>
     </section>
@@ -103,6 +207,9 @@
             }
         }
     </script>
+
+    <!-- Font Awesome for icons -->
+    <script defer src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/js/all.min.js"></script>
 </body>
 
 </html>

@@ -64,19 +64,132 @@
     <section class="section" id="protectedContent">
         <div class="container">
             <h1 class="title">Learning Progress</h1>
-            <p class="subtitle">Track your achievements and completed lessons</p>
-            <!-- Progress Content -->
-            <div class="card">
-                <div class="card-content">
-                    <h2 class="title is-4">Progress Overview</h2>
-                    <div id="progressText" class="content">
-                        <div class="is-loading has-text-centered">
-                            <span>Loading progress...</span>
+            <p class="subtitle">Track your achievements and skill development</p>
+
+            <!-- Overall Progress Stats -->
+            <div class="columns is-multiline mb-6">
+                <div class="column is-3">
+                    <div class="card has-background-primary-light">
+                        <div class="card-content">
+                            <div class="level">
+                                <div class="level-left">
+                                    <div>
+                                        <p class="heading has-text-primary">Overall Progress</p>
+                                        <p class="title has-text-primary" id="overallProgress">0%</p>
+                                    </div>
+                                </div>
+                                <div class="level-right">
+                                    <span class="icon is-large has-text-primary">
+                                        <i class="fas fa-graduation-cap fa-2x"></i>
+                                    </span>
+                                </div>
+                            </div>
                         </div>
                     </div>
-                    <button id="refreshProgress" onclick="fetchProgress()" class="button is-info mt-4">
-                        <span>Refresh Progress</span>
-                    </button>
+                </div>
+
+                <div class="column is-3">
+                    <div class="card has-background-info-light">
+                        <div class="card-content">
+                            <div class="level">
+                                <div class="level-left">
+                                    <div>
+                                        <p class="heading has-text-info">Learning Velocity</p>
+                                        <p class="title has-text-info" id="learningVelocity">-</p>
+                                    </div>
+                                </div>
+                                <div class="level-right">
+                                    <span class="icon is-large has-text-info">
+                                        <i class="fas fa-tachometer-alt fa-2x"></i>
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="column is-3">
+                    <div class="card has-background-success-light">
+                        <div class="card-content">
+                            <div class="level">
+                                <div class="level-left">
+                                    <div>
+                                        <p class="heading has-text-success">Engagement Score</p>
+                                        <p class="title has-text-success" id="engagementScore">0</p>
+                                    </div>
+                                </div>
+                                <div class="level-right">
+                                    <span class="icon is-large has-text-success">
+                                        <i class="fas fa-chart-line fa-2x"></i>
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="column is-3">
+                    <div class="card has-background-warning-light">
+                        <div class="card-content">
+                            <div class="level">
+                                <div class="level-left">
+                                    <div>
+                                        <p class="heading has-text-warning-dark">Active Days</p>
+                                        <p class="title has-text-warning-dark" id="activeDays">0</p>
+                                    </div>
+                                </div>
+                                <div class="level-right">
+                                    <span class="icon is-large has-text-warning-dark">
+                                        <i class="fas fa-calendar-check fa-2x"></i>
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Skill Development Section -->
+            <div class="card mb-6">
+                <header class="card-header">
+                    <p class="card-header-title">
+                        Skill Development
+                    </p>
+                </header>
+                <div class="card-content">
+                    <div id="skillDevelopment" class="content">
+                        <!-- Skills will be loaded here -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Learning Pathways -->
+            <div class="card mb-6">
+                <header class="card-header">
+                    <p class="card-header-title">
+                        Learning Pathways
+                    </p>
+                </header>
+                <div class="card-content">
+                    <div class="content">
+                        <div id="pathwaysList">
+                            <!-- Pathways will be loaded here -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recent Activity -->
+            <div class="card">
+                <header class="card-header">
+                    <p class="card-header-title">
+                        Recent Activity
+                    </p>
+                </header>
+                <div class="card-content">
+                    <div id="recentActivity" class="content">
+                        <!-- Activity will be loaded here -->
+                    </div>
                 </div>
             </div>
         </div>
@@ -101,6 +214,9 @@
             }
         }
     </script>
+
+    <!-- Font Awesome for icons -->
+    <script defer src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/js/all.min.js"></script>
 </body>
 
 </html>

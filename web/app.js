@@ -588,13 +588,13 @@ async function fetchLessons() {
     }
 }
 
-// Submit user response
-async function submitResponse() {
-    event?.preventDefault();
+// Submit user response with feedback display
+async function submitResponse(event) {
+    event.preventDefault();
     const lessonId = document.getElementById("lessonSelect").value;
-    const responseText = document.getElementById("responseText");
-    const token = getAuthToken();
+    const responseText = document.getElementById("responseText").value;
     const submitButton = document.getElementById('submitButton');
+    const token = getAuthToken();
     
     if (!token) {
         showError("Please log in first.");
@@ -605,21 +605,69 @@ async function submitResponse() {
     submitButton.classList.add('is-loading');
 
     try {
-        let response = await fetch(`${API_BASE_URL}/lessons/${lessonId}/response`, {
+        const response = await fetch(`${API_BASE_URL}/lessons/${lessonId}/response`, {
             method: "POST",
             headers: {
                 "Authorization": `Bearer ${token}`,
                 "Content-Type": "application/json"
             },
-            body: JSON.stringify({ response: responseText.value })
+            body: JSON.stringify({ response: responseText })
         });
 
-        let data = await response.json();
+        const data = await response.json();
+        
         if (data.status === "success") {
-            // Show success message
-            showSuccess("Response submitted successfully!");
-            // Clear textarea
-            responseText.value = '';
+            // Show feedback card
+            const feedbackCard = document.getElementById('feedbackCard');
+            feedbackCard.classList.remove('is-hidden');
+
+            // Update quality metrics
+            document.getElementById('responseQuality').textContent = 
+                `${data.quality_metrics?.overall_score || 0}%`;
+
+            // Update keywords
+            const keywordsList = document.getElementById('keywordsList');
+            if (data.quality_metrics?.keywords_used) {
+                keywordsList.innerHTML = data.quality_metrics.keywords_used
+                    .map(keyword => `
+                        <span class="tag is-primary is-light">${keyword}</span>
+                    `).join('');
+            }
+
+            // Update detailed feedback
+            const feedbackContent = document.getElementById('feedbackContent');
+            feedbackContent.innerHTML = data.feedback
+                .map(item => `<p>• ${item}</p>`)
+                .join('');
+
+            // Update skill progress
+            if (data.skills) {
+                const skillsList = document.getElementById('skillsList');
+                skillsList.innerHTML = Object.entries(data.skills)
+                    .map(([skill, details]) => `
+                        <div class="mb-3">
+                            <div class="level is-mobile mb-1">
+                                <div class="level-left">
+                                    <span class="has-text-weight-medium">${skill}</span>
+                                </div>
+                                <div class="level-right">
+                                    <span class="has-text-grey">${details.score}%</span>
+                                </div>
+                            </div>
+                            <progress 
+                                class="progress is-success" 
+                                value="${details.score}" 
+                                max="100"
+                            ></progress>
+                        </div>
+                    `).join('');
+            }
+
+            // Clear the response text
+            document.getElementById("responseText").value = '';
+            
+            // Scroll to feedback
+            feedbackCard.scrollIntoView({ behavior: 'smooth' });
         } else {
             showError(`Error: ${data.message}`);
         }
@@ -661,113 +709,403 @@ function showSuccess(message, duration = 3000) {
 
 // Fetch user progress
 async function fetchProgress() {
-    const token = getAuthToken();
-    if (!token) {
-        showError("Please log in first.");
-        return;
-    }
-
-    const progressText = document.getElementById("progressText");
-    progressText.innerHTML = '<div class="has-text-centered">Loading...</div>';
-
     try {
+        const token = getAuthToken();
+        if (!token) {
+            throw new Error('No auth token found');
+        }
+
+        showLoading('progressText');
+
         const response = await fetch(`${API_BASE_URL}/progress`, {
             headers: {
-                "Authorization": `Bearer ${token}`,
-                "Content-Type": "application/json"
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
             }
         });
 
-        if (response.status === 404 || response.status === 500) {
-            progressText.innerHTML = `
-                <div class="notification is-info">
-                    <p>No progress data yet! Start your learning journey to track your progress.</p>
-                    <p class="mt-3">
-                        <a href="/web/dashboard.html" class="button is-primary">Go to Learning Dashboard</a>
-                    </p>
-                </div>`;
-            return;
-        }
-
         const data = await response.json();
-        console.log("Progress API Response:", data);  // ✅ Log full API response
 
         if (data.status === "success") {
-            let progressDiv = document.getElementById("progressText");
-            progressDiv.innerHTML = `<p>Completed Lessons: ${data.progress.completed_lessons.length}</p>`;
+            // Update overall stats
+            document.getElementById('overallProgress').textContent = 
+                `${data.progress.completion_rate || 0}%`;
+            document.getElementById('learningVelocity').textContent = 
+                `${data.progress.learning_velocity || 0} lessons/week`;
+            document.getElementById('engagementScore').textContent = 
+                data.progress.engagement_score || 0;
+            document.getElementById('activeDays').textContent = 
+                data.progress.active_days || 0;
 
-            let lessonList = "<ul>";
-            data.progress.completed_lessons.forEach(lesson => {
-                lessonList += `<li>${lesson}</li>`;
-            });
-            lessonList += "</ul>";
+            // Update skill development
+            if (data.progress.skills) {
+                const skillDevelopment = document.getElementById('skillDevelopment');
+                skillDevelopment.innerHTML = Object.entries(data.progress.skills)
+                    .map(([skill, details]) => `
+                        <div class="mb-4">
+                            <div class="level is-mobile mb-2">
+                                <div class="level-left">
+                                    <span class="has-text-weight-medium">${skill}</span>
+                                </div>
+                                <div class="level-right">
+                                    <div class="tags has-addons">
+                                        <span class="tag is-dark">${details.level}</span>
+                                        <span class="tag is-primary">${details.score}%</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <progress 
+                                class="progress is-primary" 
+                                value="${details.score}" 
+                                max="100"
+                            ></progress>
+                            ${details.recent_achievements ? `
+                                <div class="is-size-7 has-text-grey mt-1">
+                                    ${details.recent_achievements}
+                                </div>
+                            ` : ''}
+                        </div>
+                    `).join('');
+            }
 
-            progressDiv.innerHTML += lessonList;
-        } else {
-            showError(`Error: ${data.message}`);
+            // Update learning pathways
+            if (data.progress.pathways) {
+                const pathwaysList = document.getElementById('pathwaysList');
+                pathwaysList.innerHTML = data.progress.pathways
+                    .map(pathway => `
+                        <div class="box">
+                            <div class="level is-mobile">
+                                <div class="level-left">
+                                    <div>
+                                        <p class="is-size-5 mb-2">${pathway.name}</p>
+                                        <p class="has-text-grey">${pathway.description}</p>
+                                    </div>
+                                </div>
+                                <div class="level-right">
+                                    <div class="tags has-addons">
+                                        <span class="tag is-dark">Progress</span>
+                                        <span class="tag is-primary">${pathway.progress}%</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <progress 
+                                class="progress is-primary mt-3" 
+                                value="${pathway.progress}" 
+                                max="100"
+                            ></progress>
+                        </div>
+                    `).join('');
+            }
+
+            // Update recent activity
+            if (data.progress.recent_activity) {
+                const recentActivity = document.getElementById('recentActivity');
+                recentActivity.innerHTML = data.progress.recent_activity
+                    .map(activity => `
+                        <div class="box">
+                            <div class="level is-mobile">
+                                <div class="level-left">
+                                    <div class="icon-text">
+                                        <span class="icon has-text-primary">
+                                            <i class="fas ${getActivityIcon(activity.type)}"></i>
+                                        </span>
+                                        <span>${activity.description}</span>
+                                    </div>
+                                </div>
+                                <div class="level-right">
+                                    <span class="has-text-grey is-size-7">
+                                        ${formatDate(activity.timestamp)}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    `).join('');
+            }
         }
     } catch (error) {
-        progressText.innerHTML = `
-            <div class="notification is-info">
-                <p>No progress data yet! Start your learning journey to track your progress.</p>
-                <p class="mt-3">
-                    <a href="/web/dashboard.html" class="button is-primary">Go to Learning Dashboard</a>
-                </p>
-            </div>`;
+        console.error('Error fetching progress:', error);
+        document.getElementById('progressText').innerHTML = `
+            <div class="notification is-danger is-light">
+                Error loading progress. Please try again later.
+            </div>
+        `;
     } finally {
-        hideLoading('refreshProgress');
+        hideLoading('progressText');
     }
 }
 
-// Fetch journal entries
-async function fetchJournal() {
-    const token = getAuthToken();
-    if (!token) {
-        showError("Please log in first.");
-        return;
+// Helper function for activity icons
+function getActivityIcon(type) {
+    const icons = {
+        'lesson_complete': 'fa-check-circle',
+        'skill_increase': 'fa-level-up-alt',
+        'streak_milestone': 'fa-fire',
+        'feedback_received': 'fa-comment',
+        'behavioral_insight': 'fa-lightbulb',
+        'pathway_progress': 'fa-route',
+        'default': 'fa-circle'
+    };
+    return icons[type] || icons.default;
+}
+
+// Helper function for date formatting
+function formatDate(timestamp) {
+    const date = new Date(timestamp);
+    const now = new Date();
+    const diffDays = Math.floor((now - date) / (1000 * 60 * 60 * 24));
+    
+    if (diffDays === 0) {
+        return date.toLocaleTimeString('en-GB', { 
+            hour: '2-digit', 
+            minute: '2-digit' 
+        });
+    } else if (diffDays === 1) {
+        return 'Yesterday';
+    } else if (diffDays < 7) {
+        return date.toLocaleDateString('en-GB', { weekday: 'long' });
+    } else {
+        return date.toLocaleDateString('en-GB', { 
+            day: 'numeric', 
+            month: 'short'
+        });
     }
+}
 
-    const journalList = document.getElementById("journalList");
-    journalList.innerHTML = '<li class="list-group-item">Loading...</li>';
-
+// Update dashboard stats
+async function updateDashboardStats() {
     try {
-        const response = await fetch(`${API_BASE_URL}/journal`, {
+        const token = getAuthToken();
+        if (!token) return;
+
+        const response = await fetch(`${API_BASE_URL}/dashboard/stats`, {
             headers: {
-                "Authorization": `Bearer ${token}`,
-                "Content-Type": "application/json"
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
             }
         });
-
-        if (response.status === 404) {
-            journalList.innerHTML = `
-                <div class="notification is-info">
-                    <p>No journal entries yet! Start your learning journey to begin documenting your progress.</p>
-                    <p class="mt-3">
-                        <a href="/web/dashboard.html" class="button is-primary">Go to Learning Dashboard</a>
-                    </p>
-                </div>`;
-            return;
-        }
 
         const data = await response.json();
 
         if (data.status === "success") {
-            journalList.innerHTML = "";
-            data.journal.forEach(entry => {
-                let listItem = document.createElement("li");
-                listItem.className = "list-group-item";
-                listItem.textContent = `📖 ${entry.lesson}: ${entry.response}`;
-                journalList.appendChild(listItem);
-            });
+            // Update current lesson
+            if (data.current_lesson) {
+                document.getElementById('currentLesson').textContent = 
+                    formatLessonName(data.current_lesson);
+            }
+
+            // Update completion rate
+            if (data.completion_rate !== undefined) {
+                document.getElementById('completionRate').textContent = 
+                    `${data.completion_rate}%`;
+            }
+
+            // Update learning streak
+            if (data.streak !== undefined) {
+                const streakElement = document.getElementById('learningStreak');
+                streakElement.textContent = `${data.streak} days`;
+                
+                // Add streak celebration if milestone
+                if (data.streak_milestone) {
+                    streakElement.classList.add('has-text-success');
+                    showSuccess(`🎉 Congratulations! You've reached a ${data.streak} day streak!`);
+                }
+            }
         }
     } catch (error) {
-        journalList.innerHTML = `
-            <div class="notification is-info">
-                <p>No journal entries yet! Start your learning journey to begin documenting your progress.</p>
-                <p class="mt-3">
-                    <a href="/web/dashboard.html" class="button is-primary">Go to Learning Dashboard</a>
-                </p>
-            </div>`;
+        console.error('Error updating dashboard stats:', error);
+    }
+}
+
+// Helper function to format lesson names
+function formatLessonName(lessonId) {
+    const parts = lessonId.split('_');
+    const lessonNum = parts[1];
+    const stepNum = parts[3];
+    
+    if (stepNum) {
+        return `Lesson ${lessonNum} - Step ${stepNum}`;
+    }
+    return `Lesson ${lessonNum}`;
+}
+
+// Fetch journal entries
+async function formatJournalEntry(entry) {
+    const date = new Date(entry.timestamp).toLocaleDateString();
+    const keywords = entry.keywords_used || [];
+    
+    return `
+        <div class="box mb-5 fade-in">
+            <div class="level is-mobile mb-2">
+                <div class="level-left">
+                    <div class="level-item">
+                        <span class="icon-text">
+                            <span class="icon has-text-primary">
+                                <i class="fas fa-book"></i>
+                            </span>
+                            <strong>${entry.lesson}</strong>
+                        </span>
+                    </div>
+                </div>
+                <div class="level-right">
+                    <div class="level-item">
+                        <span class="icon-text has-text-grey">
+                            <span class="icon">
+                                <i class="fas fa-calendar"></i>
+                            </span>
+                            <span>${date}</span>
+                        </span>
+                    </div>
+                </div>
+            </div>
+            <p class="mb-3">${entry.response}</p>
+            ${keywords.length ? `
+                <div class="tags">
+                    ${keywords.map(keyword => `
+                        <span class="tag is-primary is-light">
+                            ${keyword}
+                        </span>
+                    `).join('')}
+                </div>
+            ` : ''}
+            ${entry.quality_score ? `
+                <div class="level is-mobile mt-3">
+                    <div class="level-left">
+                        <div class="level-item">
+                            <span class="icon-text has-text-success">
+                                <span class="icon">
+                                    <i class="fas fa-chart-line"></i>
+                                </span>
+                                <span>Quality Score: ${entry.quality_score}%</span>
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            ` : ''}
+        </div>
+    `;
+}
+
+async function formatSkillProgress(skills) {
+    return skills.map(skill => `
+        <div class="mb-4">
+            <div class="level is-mobile mb-2">
+                <div class="level-left">
+                    <span class="has-text-weight-medium">${skill.name}</span>
+                </div>
+                <div class="level-right">
+                    <span class="has-text-grey">${skill.level}%</span>
+                </div>
+            </div>
+            <progress 
+                class="progress is-primary" 
+                value="${skill.level}" 
+                max="100"
+            >
+                ${skill.level}%
+            </progress>
+        </div>
+    `).join('');
+}
+
+async function updateJournalMetrics(data) {
+    // Update streak
+    const streakCount = document.getElementById('streakCount');
+    const streakMessage = document.getElementById('streakMessage');
+    if (data.streak) {
+        streakCount.textContent = data.streak;
+        if (data.streak >= 7) {
+            streakMessage.textContent = '🎉 Amazing weekly streak!';
+        } else if (data.streak >= 3) {
+            streakMessage.textContent = '🔥 Great consistency!';
+        }
+    }
+
+    // Update total entries
+    const totalEntries = document.getElementById('totalEntries');
+    if (totalEntries) {
+        totalEntries.textContent = data.total_entries || 0;
+    }
+
+    // Update quality score
+    const qualityScore = document.getElementById('qualityScore');
+    if (qualityScore) {
+        qualityScore.textContent = `${Math.round(data.average_quality || 0)}%`;
+    }
+}
+
+async function fetchJournal() {
+    try {
+        const token = getAuthToken();
+        if (!token) {
+            throw new Error('No auth token found');
+        }
+
+        showLoading('journalList');
+
+        // Fetch journal entries
+        const response = await fetch(`${API_BASE_URL}/journal`, {
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            }
+        });
+
+        const data = await response.json();
+
+        if (data.status === "success") {
+            // Update metrics
+            await updateJournalMetrics({
+                streak: data.metrics?.streak || 0,
+                total_entries: data.journal?.length || 0,
+                average_quality: data.metrics?.average_quality || 0
+            });
+
+            // Format and display entries
+            const journalList = document.getElementById('journalList');
+            if (data.journal && data.journal.length > 0) {
+                const entriesHTML = await Promise.all(
+                    data.journal.map(entry => formatJournalEntry(entry))
+                );
+                journalList.innerHTML = entriesHTML.join('');
+            } else {
+                journalList.innerHTML = `
+                    <div class="notification is-info is-light">
+                        <p>No journal entries yet! Start your learning journey to begin documenting your progress.</p>
+                        <p class="mt-3">
+                            <a href="/web/dashboard.html" class="button is-primary">
+                                Go to Learning Dashboard
+                            </a>
+                        </p>
+                    </div>
+                `;
+            }
+
+            // Update skills section if available
+            if (data.skills) {
+                const skillsList = document.getElementById('skillsList');
+                skillsList.innerHTML = await formatSkillProgress(data.skills);
+            }
+
+            // Update feedback section if available
+            if (data.latest_feedback) {
+                const feedbackContent = document.getElementById('feedbackContent');
+                feedbackContent.innerHTML = `
+                    <div class="notification is-success is-light">
+                        <p class="mb-2"><strong>Latest Feedback:</strong></p>
+                        <p>${data.latest_feedback}</p>
+                    </div>
+                `;
+            }
+        }
+    } catch (error) {
+        console.error('Error fetching journal:', error);
+        document.getElementById('journalList').innerHTML = `
+            <div class="notification is-danger is-light">
+                <p>Error loading journal entries. Please try again later.</p>
+            </div>
+        `;
+    } finally {
+        hideLoading('journalList');
     }
 }
 
