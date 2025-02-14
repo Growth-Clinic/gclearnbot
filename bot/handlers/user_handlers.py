@@ -1,5 +1,7 @@
-from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
-from telegram.ext import ContextTypes
+from uuid import uuid4
+import re
+from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, ForceReply
+from telegram.ext import ContextTypes, ConversationHandler, CommandHandler, MessageHandler, filters
 from services.database import JournalManager, UserManager, FeedbackManager, TaskManager, db, FeedbackAnalyticsManager, AnalyticsManager
 from services.feedback_enhanced import evaluate_response_enhanced, analyze_response_quality, format_feedback_message
 from services.progress_tracker import ProgressTracker
@@ -11,7 +13,6 @@ from services.lesson_helpers import get_lesson_structure, is_actual_lesson, get_
 from services.learning_insights import LearningInsightsManager
 import logging
 from datetime import datetime, timezone
-import re
 
 
 # Configure logging
@@ -27,6 +28,19 @@ lesson_service = LessonService(
     task_manager=TaskManager(),
     user_manager=UserManager()
 )
+
+# Add conversation states
+AWAITING_EMAIL = 1
+
+# Email validation regex
+EMAIL_REGEX = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+
+async def cancel_email_collection(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    """Cancel email collection process."""
+    await update.message.reply_text(
+        "Email collection cancelled. You can use /start anytime to try again."
+    )
+    return ConversationHandler.END
 
 async def ask_for_email(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Prompt user for email if not provided yet"""
@@ -59,48 +73,147 @@ async def save_email(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await UserManager.update_user_info(chat_id, {"email": email})
     await context.bot.send_message(chat_id, f"✅ Your email {email} has been linked successfully!")
 
+async def initialize_new_user(user_id: str, email: str = None, platform: str = 'telegram', user_data: dict = None) -> dict:
+    """Initialize a new user with standard defaults."""
+    base_data = {
+        "user_id": user_id,
+        "email": email,
+        "platform": platform,
+        "platforms": [platform],
+        "username": user_data.get('username') if user_data else None,
+        "first_name": user_data.get('first_name', '') if user_data else '',
+        "last_name": user_data.get('last_name', '') if user_data else '',
+        "language_code": user_data.get('language_code', 'en') if user_data else 'en',
+        "joined_date": datetime.now(timezone.utc).isoformat(),
+        "current_lesson": "lesson_1",
+        "completed_lessons": [],
+        "last_active": datetime.now(timezone.utc).isoformat(),
+        "learning_preferences": {
+            "preferred_language": user_data.get('language_code', 'en') if user_data else 'en',
+            "notification_enabled": True
+        },
+        "progress_metrics": {
+            "total_responses": 0,
+            "average_response_length": 0,
+            "completion_rate": 0,
+            "last_lesson_date": None
+        }
+    }
+    
+    # For web platform, add any web-specific fields
+    if platform == 'web':
+        base_data["username"] = email.split('@')[0]
+    
+    return base_data
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    """Start command handler with lesson choices"""
+    """Start command handler with email collection"""
     user = update.message.from_user
-    await UserManager.save_user_info(user)
     
-    welcome_text = """
-Welcome to Growth Clinic! 🌱
-
-Ready to future-proof your career and drive high-growth businesses? Our bite-sized, task-based lessons equip you with essential mental models and skills to thrive in today's fast-paced tech landscape.
-
-🌟 Choose Your Learning Path:
-
-Design Thinking: Solve real-world problems creatively.
-Business Modelling: Turn your ideas into sustainable ventures.
-Market Thinking: Scale your product to millions.
-User Thinking: Understand and engage your audience.
-Agile Project Thinking: Execute your ideas efficiently.
-Let's get started and transform your skills! 🚀
-
-Need help? Type /help or check the menu beside the text box.
-"""
+    # Check if user already exists
+    existing_user = await UserManager.get_user_by_telegram_id(user.id)
     
-    # Load only main lessons (not steps)
-    lessons = content_loader.get_full_lessons()
+    if existing_user and existing_user.get('email'):
+        # User already has email, proceed normally
+        welcome_text = """
+Welcome back to Growth Clinic! 🌱
+
+Ready to continue your learning journey? Choose your path:
+        """
+        await show_lesson_menu(update, context)
+    else:
+        # Ask for email
+        await update.message.reply_text(
+            "Welcome to Growth Clinic! 🌱\n\n"
+            "To get started and sync your progress across platforms, "
+            "please share your email address.\n\n"
+            "Your email will only be used for account synchronization.",
+            reply_markup=ForceReply(selective=True, input_field_placeholder="Enter your email")
+        )
+        return AWAITING_EMAIL
     
-    # Create keyboard with lesson choices, filtering out congratulation messages
+async def handle_email(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    """Handle email submission from user with improved error handling."""
+    email = update.message.text.strip().lower()
+    user = update.message.from_user
+    
+    if not re.match(EMAIL_REGEX, email):
+        await update.message.reply_text(
+            "Please provide a valid email address.",
+            reply_markup=ForceReply(selective=True)
+        )
+        return AWAITING_EMAIL
+    
+    try:
+        existing_user = await UserManager.get_user_by_email(email)
+        
+        if existing_user:
+            # Link Telegram account to existing user
+            await UserManager.link_telegram_account(
+                email=email,
+                telegram_id=user.id,
+                telegram_data={
+                    "username": user.username,
+                    "first_name": user.first_name,
+                    "last_name": user.last_name,
+                    "language_code": user.language_code
+                }
+            )
+            await update.message.reply_text(
+                f"Welcome back! Your Telegram account has been linked to {email}. "
+                "Your progress will be synced across platforms."
+            )
+        else:
+            # Create new user with standard defaults
+            user_data = await initialize_new_user(
+                str(uuid4()),
+                email=email,
+                platform='telegram',
+                user_data=user.__dict__
+            )
+            
+            success = await UserManager.save_user_info(user_data)
+            if not success:
+                raise Exception("Failed to save user data")
+                
+            await update.message.reply_text(
+                f"Thanks! Your account has been created with {email}."
+            )
+        
+        # Show lesson menu
+        await show_lesson_menu(update, context)
+        return ConversationHandler.END
+        
+    except Exception as e:
+        logger.error(f"Error handling email submission: {e}")
+        await update.message.reply_text(
+            "Sorry, there was an error processing your email. Please try again."
+        )
+        return AWAITING_EMAIL
+    
+async def show_lesson_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Show the main lesson menu to users"""
+    # Get main lessons
+    lessons = content_loader.get_full_lessons(platform='telegram')
+    
     keyboard = []
     for lesson_id, lesson in lessons.items():
-        # Skip intro lesson, congratulation messages, and ensure it's a full lesson
         if (lesson_id != "lesson_1" and 
             not "congratulations" in lesson_id.lower() and 
             lesson.get("type") == "full_lesson"):
             keyboard.append([
                 InlineKeyboardButton(
-                    f"📚 {lesson.get('description')}",  # Show action-oriented description
+                    f"📚 {lesson.get('description')}",
                     callback_data=lesson_id
                 )
             ])
     
     reply_markup = InlineKeyboardMarkup(keyboard)
-    await update.message.reply_text(welcome_text, reply_markup=reply_markup)
+    await update.message.reply_text(
+        "Welcome to Growth Clinic! 🌱\n\n"
+        "Choose your learning path:",
+        reply_markup=reply_markup
+    )
 
 async def handle_start_choice(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Handle user's choice between lessons and tasks"""

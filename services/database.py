@@ -260,6 +260,46 @@ class DataValidator:
 
 class UserManager:
     @staticmethod
+    async def get_user_by_telegram_id(telegram_id: int) -> Optional[Dict[str, Any]]:
+        """Get user by Telegram ID"""
+        try:
+            user = await asyncio.to_thread(
+                db.users.find_one,
+                {"telegram_id": telegram_id}
+            )
+            if user:
+                user.pop('_id', None)
+            return user
+        except Exception as e:
+            logger.error(f"Error getting user by telegram_id: {e}")
+            return None
+
+    @staticmethod
+    async def link_telegram_account(email: str, telegram_id: int, telegram_data: Dict[str, Any]) -> bool:
+        """Link Telegram account to existing user"""
+        try:
+            result = await asyncio.to_thread(
+                db.users.update_one,
+                {"email": email},
+                {
+                    "$set": {
+                        "telegram_id": telegram_id,
+                        "username": telegram_data.get("username"),
+                        "first_name": telegram_data.get("first_name", ""),
+                        "last_name": telegram_data.get("last_name", ""),
+                        "last_active": datetime.now(timezone.utc).isoformat()
+                    },
+                    "$addToSet": {
+                        "platforms": "telegram"
+                    }
+                }
+            )
+            return result.modified_count > 0
+        except Exception as e:
+            logger.error(f"Error linking Telegram account: {e}")
+            return False
+
+    @staticmethod
     async def save_user_info(user, platform: str = 'telegram', email: str = None) -> Dict[str, Any]:
         """Save comprehensive user information when they start using the bot or link their email."""
         try:

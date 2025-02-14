@@ -2,11 +2,12 @@ from quart import Quart
 from services.api import setup_routes
 from services.database import init_mongodb
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
-from telegram.ext import Application, CommandHandler, MessageHandler, CallbackQueryHandler, filters
+from telegram.ext import Application, CommandHandler, MessageHandler, CallbackQueryHandler, filters, ConversationHandler
 from telegram import BotCommand
 from bot.handlers.user_handlers import (
     start, resume_command, get_journal, help_command, handle_response, 
-    handle_message, handle_start_choice, progress_command, handle_journal_navigation
+    handle_message, handle_start_choice, progress_command, handle_journal_navigation, AWAITING_EMAIL,
+    handle_email, cancel_email_collection
 )
 from bot.handlers.admin_handlers import adminhelp_command, list_users, analytics_command, user_analytics_command, lesson_analytics_command, learning_insights_command
 from services.error_handler import error_handler
@@ -59,6 +60,16 @@ async def initialize_application() -> Application:
         application.add_handler(CommandHandler("progress", progress_command))
         application.add_handler(CommandHandler("journal", get_journal))
         application.add_handler(CommandHandler("help", help_command))
+
+        # Add conversation handler for email collection
+        conv_handler = ConversationHandler(
+            entry_points=[CommandHandler("start", start)],
+            states={
+                AWAITING_EMAIL: [MessageHandler(filters.TEXT & ~filters.COMMAND, handle_email)]
+            },
+            fallbacks=[CommandHandler("cancel", cancel_email_collection)]
+        )
+        application.add_handler(conv_handler)
         
         # Admin handlers
         application.add_handler(CommandHandler("adminhelp", adminhelp_command))

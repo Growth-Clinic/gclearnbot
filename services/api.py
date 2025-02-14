@@ -18,6 +18,8 @@ from flask_jwt_extended import decode_token, verify_jwt_in_request, JWTManager, 
 import jwt
 from werkzeug.security import generate_password_hash
 from functools import wraps
+from uuid import uuid4
+
 
 logger = logging.getLogger(__name__)
 
@@ -100,19 +102,34 @@ def setup_routes(app: Quart, application: Application) -> None:
             if existing_user:
                 return jsonify({"status": "error", "message": "User already exists"}), 409
 
+            # Generate a UUID for user_id
+            user_id = str(uuid4())
+            username = email.split('@')[0]
+
             # Create user data structure
             user_data = {
-                "user_id": str(hash(email)),  # Generate a unique user ID
+                "user_id": user_id,
                 "email": email,
                 "password": generate_password_hash(password),
                 "platform": "web",
-                "username": email.split('@')[0],
+                "platforms": ["web"],  # Array to track all platforms user is on
+                "username": username,
                 "first_name": "",
                 "language_code": "en",
                 "joined_date": datetime.now(timezone.utc).isoformat(),
                 "current_lesson": "lesson_1",
                 "completed_lessons": [],
-                "last_active": datetime.now(timezone.utc).isoformat()
+                "last_active": datetime.now(timezone.utc).isoformat(),
+                "learning_preferences": {
+                    "preferred_language": "en",
+                    "notification_enabled": True
+                },
+                "progress_metrics": {
+                    "total_responses": 0,
+                    "average_response_length": 0,
+                    "completion_rate": 0,
+                    "last_lesson_date": None
+                }
             }
 
             # Save user to database
