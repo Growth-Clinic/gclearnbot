@@ -155,7 +155,7 @@ body {
   border-radius: 16px;
   border: none;
   box-shadow: 0 4px 24px rgba(0, 0, 0, 0.06);
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  transition: all 0.3s ease;
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -294,45 +294,6 @@ body {
   color: var(--gc-black) !important;
 }
 
-/* Progress Bar Enhancements */
-.progress.is-primary::-webkit-progress-value {
-  transition: width 0.3s ease;
-}
-
-.progress.is-primary::-moz-progress-bar {
-  transition: width 0.3s ease;
-}
-
-/* Tags Styling */
-.tags .tag.is-primary.is-light {
-  background-color: rgba(32, 191, 85, 0.1);
-  color: var(--gc-pastel);
-  font-weight: 500;
-}
-
-/* Icon Text Alignment */
-.icon-text {
-  align-items: center;
-}
-
-.icon-text .icon {
-  margin-right: 0.5rem;
-}
-
-/* Animations */
-.fade-in {
-  animation: fadeIn 0.5s ease-in;
-}
-
-.fade-out {
-  opacity: 0;
-}
-
-@keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
-
 /* Responsive Adjustments */
 @media screen and (max-width: 768px) {
   .hero .title {
@@ -357,4 +318,18 @@ body {
     gap: 0.5rem;
     width: 100%;
   }
+}
+
+/* Animations */
+.fade-in {
+  animation: fadeIn 0.5s ease-in;
+}
+
+.fade-out {
+  opacity: 0;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }

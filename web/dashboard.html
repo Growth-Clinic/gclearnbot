@@ -65,69 +65,6 @@
         <div class="container">
             <h1 class="title">Learning Dashboard</h1>
 
-            <!-- Quick Stats -->
-            <div class="columns is-multiline mb-6">
-                <div class="column is-4">
-                    <div class="card has-background-primary-light">
-                        <div class="card-content">
-                            <div class="level">
-                                <div class="level-left">
-                                    <div>
-                                        <p class="heading has-text-primary">Current Lesson</p>
-                                        <p class="title has-text-primary" id="currentLesson">-</p>
-                                    </div>
-                                </div>
-                                <div class="level-right">
-                                    <span class="icon is-large has-text-primary">
-                                        <i class="fas fa-book-open fa-2x"></i>
-                                    </span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="column is-4">
-                    <div class="card has-background-info-light">
-                        <div class="card-content">
-                            <div class="level">
-                                <div class="level-left">
-                                    <div>
-                                        <p class="heading has-text-info">Completion Rate</p>
-                                        <p class="title has-text-info" id="completionRate">0%</p>
-                                    </div>
-                                </div>
-                                <div class="level-right">
-                                    <span class="icon is-large has-text-info">
-                                        <i class="fas fa-chart-line fa-2x"></i>
-                                    </span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="column is-4">
-                    <div class="card has-background-success-light">
-                        <div class="card-content">
-                            <div class="level">
-                                <div class="level-left">
-                                    <div>
-                                        <p class="heading has-text-success">Learning Streak</p>
-                                        <p class="title has-text-success" id="learningStreak">0 days</p>
-                                    </div>
-                                </div>
-                                <div class="level-right">
-                                    <span class="icon is-large has-text-success">
-                                        <i class="fas fa-fire fa-2x"></i>
-                                    </span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
             <!-- Lesson Selection -->
             <div id="lessonSelectCard" class="card mb-4">
                 <div class="card-content">
@@ -162,15 +99,16 @@
                 </div>
             </div>
 
-            <!-- Response Form -->
+            <!-- Response Form (hidden by default) -->
             <div id="responseCard" class="card mb-4 is-hidden">
                 <div class="card-content">
-                    <h2 class="title is-4">Your Response</h2>
-                    <p class="subtitle is-6">Share your thoughts and learning reflections</p>
+                    <h2 class="title">Your Response</h2>
+                    <p class="subtitle">Share your thoughts and learning reflections</p>
                     <form id="responseForm" onsubmit="submitResponse(event)">
                         <div class="field">
                             <div class="control">
-                                <textarea id="responseText" class="textarea" placeholder="Write your response..." required minlength="10"></textarea>
+                                <textarea id="responseText" class="textarea" placeholder="Write your response..."
+                                    required minlength="10"></textarea>
                             </div>
                         </div>
                         <div class="field">
@@ -184,38 +122,23 @@
                 </div>
             </div>
 
-            <!-- Feedback Display -->
-            <div id="feedbackCard" class="card mb-4 is-hidden">
+            <div id="responseMessage" class="notification is-success is-hidden">
+                Response submitted successfully!
+            </div>
+
+            <!-- Progress Overview (hidden by default) -->
+            <div id="progressCard" class="card mb-4 is-hidden">
                 <div class="card-content">
-                    <h3 class="title is-4">Response Analysis</h3>
-                    
-                    <!-- Quality Metrics -->
-                    <div class="columns is-multiline mb-4">
-                        <div class="column is-6">
-                            <div class="notification is-primary is-light">
-                                <p class="heading">Response Quality</p>
-                                <p class="title is-4" id="responseQuality">-</p>
-                            </div>
-                        </div>
-                        <div class="column is-6">
-                            <div class="notification is-info is-light">
-                                <p class="heading">Key Concepts Used</p>
-                                <div id="keywordsList" class="tags"></div>
-                            </div>
-                        </div>
-                    </div>
+                    <h2 class="title">Your Progress</h2>
+                    <div id="progressText" class="content"></div>
+                </div>
+            </div>
 
-                    <!-- Detailed Feedback -->
-                    <div id="detailedFeedback" class="notification is-success is-light">
-                        <h4 class="title is-5">Feedback</h4>
-                        <div id="feedbackContent"></div>
-                    </div>
-
-                    <!-- Skill Progress -->
-                    <div id="skillProgress" class="mt-4">
-                        <h4 class="title is-5">Skill Development</h4>
-                        <div id="skillsList"></div>
-                    </div>
+            <!-- Journal Preview (hidden by default) -->
+            <div id="journalCard" class="card is-hidden">
+                <div class="card-content">
+                    <h2 class="title">Your Journal</h2>
+                    <div id="journalList" class="content"></div>
                 </div>
             </div>
         </div>
@@ -225,7 +148,7 @@
     <section class="section is-hidden" id="notSignedIn">
         <div class="container">
             <div class="notification is-warning">
-                <p>You are not signed in. Please <a href="/web/index.html#loginSection">log in</a> to access this page.</p>
+                <p>You are not signed in. Please <a href="/web/index.html">log in</a> to access this page.</p>
             </div>
         </div>
     </section>
@@ -241,9 +164,6 @@
             }
         }
     </script>
-    
-    <!-- Font Awesome for icons -->
-    <script defer src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/js/all.min.js"></script>
 </body>
 
 </html>
