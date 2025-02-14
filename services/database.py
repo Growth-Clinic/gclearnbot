@@ -263,10 +263,7 @@ class UserManager:
     async def get_user_by_telegram_id(telegram_id: int) -> Optional[Dict[str, Any]]:
         """Get user by Telegram ID"""
         try:
-            user = await asyncio.to_thread(
-                db.users.find_one,
-                {"telegram_id": telegram_id}
-            )
+            user = await db.users.find_one({"telegram_id": telegram_id})
             if user:
                 user.pop('_id', None)
             return user
@@ -278,8 +275,7 @@ class UserManager:
     async def link_telegram_account(email: str, telegram_id: int, telegram_data: Dict[str, Any]) -> bool:
         """Link Telegram account to existing user"""
         try:
-            result = await asyncio.to_thread(
-                db.users.update_one,
+            result = await db.users.update_one(
                 {"email": email},
                 {
                     "$set": {
@@ -371,8 +367,7 @@ class UserManager:
             # Convert user_id to string if it's not already
             user_id = str(user_id)
 
-            user_data = await asyncio.to_thread(
-                db.users.find_one,
+            user_data = await db.users.find_one(
                 {"user_id": user_id, "platform": platform}
             )
             
@@ -380,8 +375,7 @@ class UserManager:
                 # Ensure `current_lesson` exists, default to lesson_1
                 if "current_lesson" not in user_data:
                     user_data["current_lesson"] = "lesson_1"
-                    await asyncio.to_thread(
-                        db.users.update_one,
+                    await db.users.update_one(
                         {"user_id": user_id, "platform": platform},
                         {"$set": {"current_lesson": "lesson_1"}}
                     )
@@ -407,8 +401,7 @@ class UserManager:
             Dictionary containing user information or None if not found
         """
         try:
-            user_data = await asyncio.to_thread(
-                db.users.find_one,
+            user_data = await db.users.find_one(
                 {"email": email}
             )
             if user_data:
@@ -435,8 +428,7 @@ class UserManager:
         try:
             user_id = str(user_id)  # Ensure it's a string
 
-            result = await asyncio.to_thread(
-                db.users.update_one,
+            result = await db.users.update_one(
                 {"user_id": user_id},
                 {"$set": data},
                 upsert=True
@@ -474,9 +466,7 @@ class UserManager:
                 return False
 
             # Get current user data - properly await the async operation
-            user_data = await asyncio.to_thread(
-                lambda: db.users.find_one({"user_id": user_id})
-            )
+            user_data = await db.users.find_one({"user_id": user_id})
 
             if not user_data:
                 logger.error(f"User {user_id} not found")
@@ -494,12 +484,10 @@ class UserManager:
             current_date = datetime.now(timezone.utc).isoformat()
 
             # Update completed lessons - properly await the async operation
-            await asyncio.to_thread(
-                lambda: db.users.update_one(
+            await db.users.update_one(
                     {"user_id": user_id},
                     {"$addToSet": {"completed_lessons": current_lesson}}
                 )
-            )
 
             # Calculate completion metrics
             completed_lessons = user_data.get('completed_lessons', [])
@@ -511,8 +499,7 @@ class UserManager:
             completion_rate = (len(completed_steps) / total_steps * 100) if total_steps > 0 else 0
 
             # Update progress metrics - properly await the async operation
-            result = await asyncio.to_thread(
-                lambda: db.users.update_one(
+            result = await db.users.update_one(
                     {"user_id": user_id},
                     {"$set": {
                         "current_lesson": lesson_key,
@@ -522,7 +509,6 @@ class UserManager:
                         "progress_metrics.total_responses": len(completed_steps)
                     }}
                 )
-            )
 
             success = result.modified_count > 0
             if success:
@@ -585,9 +571,8 @@ class JournalManager:
                 logger.error(f"Invalid journal entry for user {user_id}")
                 return False
             
-            # Update or create journal document - properly await the async operation
-            result = await asyncio.to_thread(
-                lambda: db.journals.update_one(
+            # Update or create journal document
+            result = db.journals.update_one(
                     {"user_id": user_id},
                     {
                         "$push": {"entries": entry},
@@ -597,7 +582,6 @@ class JournalManager:
                     },
                     upsert=True
                 )
-            )
             
             if result.acknowledged:
                 logger.info(f"Journal entry saved for user {user_id} in lesson {lesson_key}")
@@ -730,9 +714,7 @@ class FeedbackManager:
 
         try:
             # Get the current max ID and increment it
-            current_max_id = await asyncio.to_thread(
-                lambda: db.feedback.find_one(sort=[("id", -1)]) or {}
-            )
+            current_max_id = await db.feedback.find_one(sort=[("id", -1)]) or {}
             new_id = (current_max_id.get("id", 0) + 1)
 
             feedback_data = {
@@ -747,10 +729,7 @@ class FeedbackManager:
                 logger.error(f"Invalid feedback data for user {user_id}")
                 return False
             
-            result = await asyncio.to_thread(
-                db.feedback.insert_one,
-                feedback_data
-            )
+            result = await db.feedback.insert_one(feedback_data)
             
             success = result.acknowledged
             if success:
@@ -868,8 +847,7 @@ class FeedbackAnalyticsManager:
     async def save_feedback_analytics(user_id: int, lesson_id: str, feedback_results: dict) -> None:
         """Store feedback data for continuous improvement."""
         try:
-            await asyncio.to_thread(
-                db.feedback_analytics.update_one,
+            await db.feedback_analytics.update_one(
                 {"user_id": user_id},
                 {"$push": {
                     "lessons": {
@@ -1059,14 +1037,8 @@ class AnalyticsManager:
 
         try:
             # Get user data and journal entries using asyncio
-            user_data = await asyncio.to_thread(
-                db.users.find_one,
-                {"user_id": user_id}
-            )
-            journal = await asyncio.to_thread(
-                db.journals.find_one,
-                {"user_id": user_id}
-            )
+            user_data = await db.users.find_one({"user_id": user_id})
+            journal = await db.journals.find_one({"user_id": user_id})
             
             if not user_data or not journal or not journal.get('entries'):
                 logger.warning(f"No data found for user {user_id}")
