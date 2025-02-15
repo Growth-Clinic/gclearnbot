@@ -728,7 +728,7 @@ async function fetchJournal() {
     }
 
     const journalList = document.getElementById("journalList");
-    journalList.innerHTML = '<li class="list-group-item">Loading...</li>';
+    journalList.innerHTML = '<div class="has-text-centered">Loading...</div>';
 
     try {
         const response = await fetch(`${API_BASE_URL}/journal`, {
@@ -752,21 +752,65 @@ async function fetchJournal() {
         const data = await response.json();
 
         if (data.status === "success") {
-            journalList.innerHTML = "";
+            journalList.innerHTML = ""; // Clear loading message
+            
+            if (data.journal.length === 0) {
+                journalList.innerHTML = `
+                    <div class="notification is-info">
+                        <p>No journal entries yet! Start your learning journey to begin documenting your progress.</p>
+                        <p class="mt-3">
+                            <a href="/web/dashboard.html" class="button is-primary">Go to Learning Dashboard</a>
+                        </p>
+                    </div>`;
+                return;
+            }
+
+            // Sort entries by date (newest first)
+            data.journal.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+
             data.journal.forEach(entry => {
-                let listItem = document.createElement("li");
-                listItem.className = "list-group-item";
-                listItem.textContent = `📖 ${entry.lesson}: ${entry.response}`;
-                journalList.appendChild(listItem);
+                const date = new Date(entry.timestamp).toLocaleDateString('en-GB', {
+                    day: 'numeric',
+                    month: 'short',
+                    year: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                });
+
+                const entryElement = document.createElement('div');
+                entryElement.className = 'box mb-4';
+                entryElement.innerHTML = `
+                    <article class="media">
+                        <div class="media-content">
+                            <div class="content">
+                                <p>
+                                    <strong class="has-text-success">📚 ${entry.lesson}</strong>
+                                    <small class="is-block has-text-grey">${date}</small>
+                                </p>
+                                <div class="mt-3 mb-3">
+                                    ${entry.response}
+                                </div>
+                                ${entry.keywords_used && entry.keywords_used.length > 0 ? `
+                                    <div class="tags are-small">
+                                        ${entry.keywords_used.map(keyword => 
+                                            `<span class="tag is-success is-light">${keyword}</span>`
+                                        ).join('')}
+                                    </div>
+                                ` : ''}
+                            </div>
+                        </div>
+                    </article>
+                `;
+                journalList.appendChild(entryElement);
             });
         }
     } catch (error) {
         journalList.innerHTML = `
-            <div class="notification is-info">
-                <p>No journal entries yet! Start your learning journey to begin documenting your progress.</p>
-                <p class="mt-3">
-                    <a href="/web/dashboard.html" class="button is-primary">Go to Learning Dashboard</a>
-                </p>
+            <div class="notification is-danger">
+                <p>Error loading journal entries. Please try again later.</p>
+                <button onclick="fetchJournal()" class="button is-danger is-light mt-3">
+                    Try Again
+                </button>
             </div>`;
     }
 }
