@@ -525,32 +525,23 @@ async function fetchLessons() {
     }
 
     try {
-        console.log("Fetching lessons from:", `${API_BASE_URL}/lessons`);
-
         const response = await fetch(`${API_BASE_URL}/lessons`, {
             method: "GET",
             headers: { 
-                "Authorization": `Bearer ${token}`,
+                "Authorization": `Bearer ${token}`,  // Make sure this line exists
                 "Content-Type": "application/json"
             }
         });
 
-        console.log("Response Status:", response.status);
-
         const data = await response.json();
-        console.log("Raw API Response:", data);
         
         if (data.status === "success" && Array.isArray(data.lessons)) {
-            console.log("Total Lessons Fetched:", data.lessons.length);
-
-            // Debugging: Log all lessons
-            console.log("Lessons Data:", JSON.stringify(data.lessons, null, 2));
-
             const selectElement = document.getElementById('lessonSelect');
             if (!selectElement) return;
 
             selectElement.innerHTML = '<option value="">What would you like to learn?</option>';
 
+            // Filter out lesson_1, steps, and congratulations
             const mainLessons = data.lessons.filter(lesson => {
                 return (
                     lesson.lesson_id !== "lesson_1" && 
@@ -558,19 +549,15 @@ async function fetchLessons() {
                     !lesson.lesson_id.toLowerCase().includes("congratulations")
                 );
             });
-            
-            console.log("Filtered Lessons After Debugging:", mainLessons);
 
-            // Sorting
-            const sortedLessons = mainLessons.sort((a, b) => {
+            // Sort lessons by number
+            mainLessons.sort((a, b) => {
                 const aNum = parseInt(a.lesson_id.split('_')[1]) || 0;
                 const bNum = parseInt(b.lesson_id.split('_')[1]) || 0;
                 return aNum - bNum;
             });
 
-            console.log("Sorted Lessons:", sortedLessons);
-
-            sortedLessons.forEach(lesson => {
+            mainLessons.forEach(lesson => {
                 if (lesson.lesson_id && lesson.title) {
                     const option = document.createElement('option');
                     option.value = lesson.lesson_id;
@@ -593,6 +580,7 @@ async function submitResponse() {
     event?.preventDefault();
     const lessonId = document.getElementById("lessonSelect").value;
     const responseText = document.getElementById("responseText");
+    const responseCard = document.getElementById('responseCard');
     const token = getAuthToken();
     const submitButton = document.getElementById('submitButton');
     
@@ -616,8 +604,26 @@ async function submitResponse() {
 
         let data = await response.json();
         if (data.status === "success") {
-            // Show success message
-            showSuccess("Response submitted successfully!");
+            // Create feedback card if it doesn't exist
+            let feedbackCard = document.getElementById('feedbackCard');
+            if (!feedbackCard) {
+                feedbackCard = document.createElement('div');
+                feedbackCard.id = 'feedbackCard';
+                feedbackCard.className = 'card mb-4';
+                responseCard.parentNode.insertBefore(feedbackCard, responseCard.nextSibling);
+            }
+
+            // Format and display feedback
+            feedbackCard.innerHTML = `
+                <div class="card-content">
+                    <h2 class="title is-4">Response Feedback</h2>
+                    <div class="content">
+                        ${formatFeedback(data.feedback)}
+                    </div>
+                </div>
+            `;
+            feedbackCard.scrollIntoView({ behavior: 'smooth' });
+
             // Clear textarea
             responseText.value = '';
         } else {
@@ -629,6 +635,47 @@ async function submitResponse() {
     } finally {
         submitButton.classList.remove('is-loading');
     }
+}
+
+// Helper function to format feedback with Bulma styles
+function formatFeedback(feedback) {
+    if (!feedback) return '';
+
+    let formattedFeedback = '';
+
+    // Format success feedback with checkmarks
+    if (feedback.success_points) {
+        formattedFeedback += '<div class="notification is-success is-light">';
+        feedback.success_points.forEach(point => {
+            formattedFeedback += `<p>✅ ${point}</p>`;
+        });
+        formattedFeedback += '</div>';
+    }
+
+    // Format improvement suggestions with lightbulbs
+    if (feedback.improvement_points) {
+        formattedFeedback += '<div class="notification is-info is-light">';
+        feedback.improvement_points.forEach(point => {
+            formattedFeedback += `<p>💡 ${point}</p>`;
+        });
+        formattedFeedback += '</div>';
+    }
+
+    // Format engagement score if available
+    if (feedback.engagement_score) {
+        formattedFeedback += `
+            <div class="level mt-4">
+                <div class="level-item has-text-centered">
+                    <div>
+                        <p class="heading">Engagement Score</p>
+                        <p class="title">${feedback.engagement_score}/100</p>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
+    return formattedFeedback;
 }
 
 function showSuccess(message, duration = 3000) {
