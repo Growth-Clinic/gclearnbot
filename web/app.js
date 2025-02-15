@@ -690,30 +690,67 @@ async function fetchProgress() {
         }
 
         const data = await response.json();
-        console.log("Progress API Response:", data);  // ✅ Log full API response
 
         if (data.status === "success") {
-            let progressDiv = document.getElementById("progressText");
-            progressDiv.innerHTML = `<p>Completed Lessons: ${data.progress.completed_lessons.length}</p>`;
+            const completedLessons = data.progress.completed_lessons || [];
+            
+            // Calculate completion percentage
+            const totalLessons = 24; // Total number of lessons
+            const completionPercentage = Math.round((completedLessons.length / totalLessons) * 100);
 
-            let lessonList = "<ul>";
-            data.progress.completed_lessons.forEach(lesson => {
-                lessonList += `<li>${lesson}</li>`;
-            });
-            lessonList += "</ul>";
+            progressText.innerHTML = `
+                <div class="box">
+                    <h3 class="title is-4">Overall Progress</h3>
+                    
+                    <!-- Progress bar -->
+                    <div class="block">
+                        <p class="mb-2">Completion: ${completionPercentage}%</p>
+                        <progress class="progress is-success" value="${completionPercentage}" max="100">
+                            ${completionPercentage}%
+                        </progress>
+                    </div>
 
-            progressDiv.innerHTML += lessonList;
+                    <!-- Stats boxes -->
+                    <div class="columns is-multiline mt-4">
+                        <div class="column is-6">
+                            <div class="notification is-success is-light">
+                                <p class="heading">Completed Lessons</p>
+                                <p class="title is-4">${completedLessons.length} of ${totalLessons}</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Completed lessons list -->
+                    ${completedLessons.length > 0 ? `
+                        <div class="mt-5">
+                            <h4 class="title is-5">Completed Lessons:</h4>
+                            <div class="tags">
+                                ${completedLessons.map(lesson => `
+                                    <span class="tag is-success is-medium">
+                                        📚 ${lesson}
+                                    </span>
+                                `).join('')}
+                            </div>
+                        </div>
+                    ` : ''}
+                </div>
+            `;
         } else {
-            showError(`Error: ${data.message}`);
+            progressText.innerHTML = `
+                <div class="notification is-danger">
+                    <p>Error loading progress data. Please try again.</p>
+                </div>
+            `;
         }
     } catch (error) {
         progressText.innerHTML = `
-            <div class="notification is-info">
-                <p>No progress data yet! Start your learning journey to track your progress.</p>
-                <p class="mt-3">
-                    <a href="/web/dashboard.html" class="button is-primary">Go to Learning Dashboard</a>
-                </p>
-            </div>`;
+            <div class="notification is-danger">
+                <p>Error loading progress. Please try again later.</p>
+                <button onclick="fetchProgress()" class="button is-danger is-light mt-3">
+                    Try Again
+                </button>
+            </div>
+        `;
     } finally {
         hideLoading('refreshProgress');
     }
