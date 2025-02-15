@@ -286,76 +286,12 @@ body {
   color: var(--gc-pastel) !important;
 }
 
-.has-text-success {
-  color: #20BF55 !important;
-}
-
-.has-text-warning {
-  color: #F09524 !important;
-}
-
 .has-background-primary {
   background-color: var(--gc-pastel) !important;
 }
 
 .has-text-dark {
   color: var(--gc-black) !important;
-}
-
-/* Feedback Styling */
-#feedbackCard {
-  transition: all 0.3s ease;
-}
-
-.feedback-list {
-  list-style: none !important;
-  margin-left: 0 !important;
-}
-
-.feedback-item {
-  display: flex;
-  align-items: flex-start;
-  margin-bottom: 1rem;
-  padding: 0.5rem;
-  border-radius: 6px;
-}
-
-.feedback-item .icon {
-  margin-right: 0.75rem;
-  margin-top: 0.25rem;
-}
-
-.box {
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-  transition: all 0.3s ease;
-}
-
-.box:hover {
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-}
-
-.level-item .title {
-  margin-bottom: 0 !important;
-}
-
-.tag {
-  font-weight: 500;
-}
-
-/* Progress bar animation */
-.progress::-webkit-progress-value {
-  transition: width 0.5s ease;
-}
-
-/* Emoji animations */
-.has-emoji {
-  display: inline-block;
-  animation: bounce 0.5s ease;
-}
-
-@keyframes bounce {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-3px); }
 }
 
 /* Responsive Adjustments */

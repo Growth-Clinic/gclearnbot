@@ -595,8 +595,6 @@ async function submitResponse() {
     const responseText = document.getElementById("responseText");
     const token = getAuthToken();
     const submitButton = document.getElementById('submitButton');
-    const feedbackCard = document.getElementById('feedbackCard');
-    const feedbackContent = document.getElementById('feedbackContent');
     
     if (!token) {
         showError("Please log in first.");
@@ -605,7 +603,6 @@ async function submitResponse() {
 
     // Show loading state
     submitButton.classList.add('is-loading');
-    feedbackCard?.classList.add('is-hidden');
 
     try {
         let response = await fetch(`${API_BASE_URL}/lessons/${lessonId}/response`, {
@@ -621,25 +618,8 @@ async function submitResponse() {
         if (data.status === "success") {
             // Show success message
             showSuccess("Response submitted successfully!");
-            
-            // Show feedback if available
-            if (data.feedback) {
-                feedbackCard?.classList.remove('is-hidden');
-                feedbackContent.innerHTML = formatFeedback(data.feedback);
-                
-                // Scroll to feedback
-                feedbackCard.scrollIntoView({ behavior: 'smooth' });
-            }
-            
             // Clear textarea
             responseText.value = '';
-            
-            // If next lesson is available, show it
-            if (data.next_lesson) {
-                setTimeout(() => {
-                    loadLesson(data.next_lesson);
-                }, 2000);
-            }
         } else {
             showError(`Error: ${data.message}`);
         }
@@ -649,79 +629,6 @@ async function submitResponse() {
     } finally {
         submitButton.classList.remove('is-loading');
     }
-}
-
-// Format feedback for web display
-function formatFeedback(feedback) {
-    let formattedFeedback = '';
-
-    // Response Analysis section
-    if (feedback.quality_metrics) {
-        formattedFeedback += `
-            <div class="box">
-                <h3 class="title is-5">📝 Response Analysis</h3>
-                <div class="content">
-                    <ul class="feedback-list">
-                        ${feedback.quality_metrics.word_count ? `
-                            <li>
-                                <span class="icon has-text-info"><i class="fas fa-pencil-alt"></i></span>
-                                <span>Length: ${feedback.quality_metrics.word_count} words</span>
-                                ${feedback.quality_metrics.word_count >= 50 ? 
-                                    '<span class="tag is-success ml-2">Excellent detail!</span>' : 
-                                    feedback.quality_metrics.word_count >= 30 ? 
-                                    '<span class="tag is-info ml-2">Good length</span>' : ''}
-                            </li>` : ''}
-                    </ul>
-                </div>
-            </div>`;
-    }
-
-    // Feedback points
-    if (feedback.points && feedback.points.length) {
-        formattedFeedback += `
-            <div class="box mt-4">
-                <h3 class="title is-5">💡 Key Points</h3>
-                <div class="content">
-                    <ul class="feedback-list">
-                        ${feedback.points.map(point => `
-                            <li class="feedback-item ${point.type === 'success' ? 'has-text-success' : 'has-text-warning'}">
-                                <span class="icon">
-                                    <i class="fas ${point.type === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle'}"></i>
-                                </span>
-                                <span>${point.message}</span>
-                            </li>
-                        `).join('')}
-                    </ul>
-                </div>
-            </div>`;
-    }
-
-    // Progress information
-    if (feedback.progress) {
-        formattedFeedback += `
-            <div class="box mt-4">
-                <h3 class="title is-5">📊 Progress Update</h3>
-                <div class="content">
-                    <div class="level">
-                        <div class="level-item has-text-centered">
-                            <div>
-                                <p class="heading">Completion</p>
-                                <p class="title is-4">${feedback.progress.completion_rate}%</p>
-                            </div>
-                        </div>
-                        ${feedback.progress.streak ? `
-                            <div class="level-item has-text-centered">
-                                <div>
-                                    <p class="heading">Current Streak</p>
-                                    <p class="title is-4">${feedback.progress.streak} 🔥</p>
-                                </div>
-                            </div>` : ''}
-                    </div>
-                </div>
-            </div>`;
-    }
-
-    return formattedFeedback;
 }
 
 function showSuccess(message, duration = 3000) {
