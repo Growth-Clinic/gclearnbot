@@ -375,3 +375,11 @@ Why these insights were useful to me was that they showed how the interactions t
 ---
 
 I've made the edits to chapter 4 and saved them both in the project files and on GitHub, after my limits reset, I'll start work on Part 2 of the book which starts with chapter 5.
+
+
+
+
+## 17 Feb 2025
+
+### 12:39 AM
+Okay, I have gotten to the parts of the book that are purely ideas, like visions of what could be. I'll need the masters' help in understand how best to present this part. Till later in the day then.
