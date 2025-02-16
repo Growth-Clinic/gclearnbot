@@ -365,3 +365,9 @@ I have finished with introduction and chapter 1, and I am currently on chapter 2
 Why these insights were useful to me was that they showed how the interactions they enabled created connections and bonds between their members and in most cases, bonds to the brand itself. It is bonds like these that make a brand a de-facto stabdard or household name in their industry.
 
 - In some places where we use community as the name, the words it represents can be better suited there. So I was wondering if we could put those words in bracket. For instance in The Future of Community-Led Growth where we say: "The communities that thrive will be those that:", we could write this part as: "The communities (individuals, businesses, organisations, countries) that thrive will be those that:"
+
+### 9:21 PM
+
+#### Notes on chapter 4
+- Add this title to Sean Burrowes; Sean Burrowes (former COO at Ingressive and Director of Business Development at Semicolon), or something along these lines.
+- In Value Creation under How These Components Work Together, change "Community members identify local problems" to "Partners and Community members identify local problems"
