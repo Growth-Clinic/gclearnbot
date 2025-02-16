@@ -72,6 +72,15 @@
 
 ## Part 3: Future Horizons
 
+```
+Note from Claude: For Part 3, I could ask targeted questions about your vision and experience that would help shape the Future Horizons chapters. For example:
+
+How do you envision communities participating in AI development through GIOS?
+What unique perspectives can Nigerian communities bring to AI development?
+What patterns have you observed in how communities learn that could inform future AI learning systems?
+What challenges do you anticipate in implementing these systems?
+```
+
 ### Chapter 8: Community-Led AI Development
 * The role of communities in AI evolution
 * Democratising AI development
@@ -103,6 +112,16 @@
 * Resources and connections
 
 ## Appendices
+
+```
+Note from Claude: For the Appendices, we could significantly simplify them to focus on what we have. Instead of detailed templates and frameworks, we could include:
+
+Basic Community Building Guidelines (based on your experience)
+The Case Studies in Detail (once you share them)
+Perhaps a simple Getting Started Guide
+
+This way, we keep the focus on the proven examples and insights while leaving room for expansion in future editions.
+```
 
 ### A. Implementation Templates
 * Community structure templates
