@@ -339,3 +339,29 @@ I was finally able to get responses saved and journals and progress displaying! 
 ### 2:02 AM
 
 I am super tired as I type this, so please excuse me. I was able to revert the code and work on the styling incrementally. That worked well and now they are all styled. I just need to figure out how to get and show/display feedback on the user's end.
+
+
+
+
+## 16 Feb 2025
+
+### 3:43 PM
+
+I stopped working on the app to get a change of pace. It is at a good place to show the basic idea I have, and my head is to full to think through how to finish up displaying feedback to users, so I paused it for now.
+
+I have been thinking seriously about how to make the most of the project and publicising my efforts and work has been a recurring idea. This is why I initially wanted to publish a research paper, but writing a book seems simpler and if I do the book well, I could even make money from it. So I started writing a book on the system and process behind this project; GIS and GIOS and it is going fine. 
+
+I have finished with introduction and chapter 1, and I am currently on chapter 2 when I reached my limits on Claude. Let me document my notes on the chapter 2, so I can continue from there when I come back.
+
+#### Notes on chapter 2
+- Instead of How Communities Become Markets, let's change that heading to How Communities Create Markets. It is more fitting.
+- In the write up for altMBA, they use digital tools like Slack, Discourse, and Zoom. They've stopped using WordPress as they said it was hard to allow different people to engage on the lessons with WordPress which shows them trying to enable and create the space for many to many interactions. 
+- Is there a way we can add some of the story bits I noted about altMBA? Like I had interview Marie Schacht when she was the provost there and she said gave some interesting insights like:
+
+“People add the learning time to their calendars and for them, it is time with other people, not just time to learn”
+
+“Members who completed courses 4 years ago still keep in touch and meet up with others they met in the week 1 groups”
+
+Why these insights were useful to me was that they showed how the interactions they enabled created connections and bonds between their members and in most cases, bonds to the brand itself. It is bonds like these that make a brand a de-facto stabdard or household name in their industry.
+
+- In some places where we use community as the name, the words it represents can be better suited there. So I was wondering if we could put those words in bracket. For instance in The Future of Community-Led Growth where we say: "The communities that thrive will be those that:", we could write this part as: "The communities (individuals, businesses, organisations, countries) that thrive will be those that:"
