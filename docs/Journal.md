@@ -371,3 +371,7 @@ Why these insights were useful to me was that they showed how the interactions t
 #### Notes on chapter 4
 - Add this title to Sean Burrowes; Sean Burrowes (former COO at Ingressive and Director of Business Development at Semicolon), or something along these lines.
 - In Value Creation under How These Components Work Together, change "Community members identify local problems" to "Partners and Community members identify local problems"
+
+---
+
+I've made the edits to chapter 4 and saved them both in the project files and on GitHub, after my limits reset, I'll start work on Part 2 of the book which starts with chapter 5.
