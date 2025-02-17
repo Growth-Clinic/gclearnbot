@@ -612,43 +612,52 @@ async function submitResponse(event) {
 // Helper function to format feedback with Bulma styles
 function formatFeedback(feedback) {
     if (!feedback) return '';
-
+  
     let formattedFeedback = '';
-
-    // Handle success points
+  
+    // Success Points
     if (feedback.success_points && feedback.success_points.length > 0) {
-        formattedFeedback += '<div class="notification is-success is-light">';
-        feedback.success_points.forEach(point => {
-            formattedFeedback += `<p>${point}</p>`;
-        });
-        formattedFeedback += '</div>';
+      formattedFeedback += '<div class="notification is-success is-light">';
+      formattedFeedback += '<p class="title is-5">✅ What You Did Well:</p>';
+      feedback.success_points.forEach(point => {
+        formattedFeedback += `<p>${point}</p>`;
+      });
+      formattedFeedback += '</div>';
     }
-
-    // Handle improvement points
+  
+    // Improvement Points
     if (feedback.improvement_points && feedback.improvement_points.length > 0) {
-        formattedFeedback += '<div class="notification is-info is-light">';
-        feedback.improvement_points.forEach(point => {
-            formattedFeedback += `<p>${point}</p>`;
-        });
-        formattedFeedback += '</div>';
+      formattedFeedback += '<div class="notification is-info is-light">';
+      formattedFeedback += '<p class="title is-5">💡 Areas to Improve:</p>';
+      feedback.improvement_points.forEach(point => {
+        formattedFeedback += `<p>${point}</p>`;
+      });
+      formattedFeedback += '</div>';
     }
-
-    // Show engagement score
+  
+    // Overall Feedback
     if (feedback.engagement_score !== undefined) {
-        formattedFeedback += `
-            <div class="level mt-4">
-                <div class="level-item has-text-centered">
-                    <div>
-                        <p class="heading">Engagement Score</p>
-                        <p class="title">${feedback.engagement_score}/100</p>
-                    </div>
-                </div>
-            </div>
-        `;
+      let overallFeedback = '';
+      if (feedback.engagement_score >= 90) {
+        overallFeedback = '🌟 Excellent work! Your response is detailed, well-structured, and aligns perfectly with the lesson.';
+      } else if (feedback.engagement_score >= 70) {
+        overallFeedback = '👍 Good job! Your response is solid but could use a bit more detail or better alignment with the lesson.';
+      } else if (feedback.engagement_score >= 50) {
+        overallFeedback = '👀 Fair effort! Your response is okay but needs improvement in detail, structure, or relevance.';
+      } else {
+        overallFeedback = '🚧 Needs work! Your response is too short, lacks structure, or doesn\'t align with the lesson.';
+      }
+  
+      formattedFeedback += `
+        <div class="notification is-warning is-light mt-4">
+          <p class="title is-5">📝 Overall Feedback:</p>
+          <p>${overallFeedback}</p>
+        </div>
+      `;
     }
-
+  
     return formattedFeedback;
-}
+  }
 
 function showSuccess(message, duration = 3000) {
     const successDiv = document.createElement('div');
