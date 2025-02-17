@@ -902,3 +902,5 @@ document.getElementById('lessonSelect')?.addEventListener('change', (e) => {
         loadLesson(e.target.value);
     }
 });
+
+window.submitResponse = submitResponse;
