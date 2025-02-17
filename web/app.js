@@ -143,22 +143,6 @@ function updateAuthNavigation() {
     }
 }
 
-// Initialize app and manage login state
-async function initializeApp() {
-    const token = getAuthToken();
-    if (token) {
-        document.getElementById('loginSection')?.classList.add('is-hidden');
-        document.getElementById('dashboardSection')?.classList.remove('is-hidden');
-        await fetchLessons();
-    } else {
-        document.getElementById('loginSection')?.classList.remove('is-hidden');
-        document.getElementById('dashboardSection')?.classList.add('is-hidden');
-        initializeAuthDisplay();
-    }
-
-    initializeMobileMenu();
-}
-
 // Register user with improved error handling
 async function registerUser(event) {
     event?.preventDefault(); // Prevent form submission
@@ -199,45 +183,6 @@ async function registerUser(event) {
     } finally {
         registerButton.classList.remove('is-loading');
         enableForm('registerForm');
-    }
-}
-
-// Add this to prevent double submission
-function disableForm(formId) {
-    const form = document.getElementById(formId);
-    if (form) {
-        const inputs = form.getElementsByTagName('input');
-        const buttons = form.getElementsByTagName('button');
-        
-        // Disable all inputs
-        for (let input of inputs) {
-            input.disabled = true;
-        }
-        
-        // Disable all buttons
-        for (let button of buttons) {
-            button.disabled = true;
-            button.classList.add('is-loading');
-        }
-    }
-}
-
-function enableForm(formId) {
-    const form = document.getElementById(formId);
-    if (form) {
-        const inputs = form.getElementsByTagName('input');
-        const buttons = form.getElementsByTagName('button');
-        
-        // Enable all inputs
-        for (let input of inputs) {
-            input.disabled = false;
-        }
-        
-        // Enable all buttons
-        for (let button of buttons) {
-            button.disabled = false;
-            button.classList.remove('is-loading');
-        }
     }
 }
 
