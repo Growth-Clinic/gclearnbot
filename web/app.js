@@ -525,7 +525,10 @@ async function fetchLessons() {
 
 // Submit response with rule-based feedback
 async function submitResponse(event) {
-    event?.preventDefault();
+    if (event) {
+        event.preventDefault();
+        event.stopPropagation();
+    }
     const lessonId = document.getElementById("lessonSelect").value;
     const responseText = document.getElementById("responseText").value;
     const responseCard = document.getElementById('responseCard');

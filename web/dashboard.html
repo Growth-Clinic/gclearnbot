@@ -104,7 +104,7 @@
                 <div class="card-content">
                     <h2 class="title">Your Response</h2>
                     <p class="subtitle">Share your thoughts and learning reflections</p>
-                    <form id="responseForm" onsubmit="submitResponse(event)">
+                    <form id="responseForm" onsubmit="return false;">
                         <div class="field">
                             <div class="control">
                                 <textarea id="responseText" class="textarea" placeholder="Write your response..."
@@ -113,7 +113,7 @@
                         </div>
                         <div class="field">
                             <div class="control">
-                                <button type="submit" id="submitButton" class="button is-success">
+                                <button onclick="submitResponse(event)" id="submitButton" class="button is-success">
                                     <span>Submit Response</span>
                                 </button>
                             </div>
