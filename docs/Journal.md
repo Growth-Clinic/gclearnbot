@@ -383,3 +383,6 @@ I've made the edits to chapter 4 and saved them both in the project files and on
 
 ### 12:39 AM
 Okay, I have gotten to the parts of the book that are purely ideas, like visions of what could be. I'll need the masters' help in understand how best to present this part. Till later in the day then.
+
+### 11:49 AM
+I am making progress with the book, so much so, that I can share it for others to help me review. Now I'd like to get it in the hands of a non-techie, a techie, a senior techie, a senior manager and someone with a PhD.
