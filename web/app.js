@@ -1,4 +1,4 @@
-import { webFeedbackAnalyzer } from './feedback.js';
+import { webFeedbackAnalyzer } from '/web/feedback.js';
 
 const API_BASE_URL = "https://gclearnbot.onrender.com"; 
 const PROTECTED_ROUTES = ['/web/dashboard.html', '/web/journal.html', '/web/progress.html'];
