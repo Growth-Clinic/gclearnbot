@@ -71,16 +71,23 @@ The effectiveness of this approach wasn't just in the concepts taught, but in ho
 
 The success at AFF caught the attention of Hugo Obi, founder of Maliyo Games. As his team prepared to launch a new fintech product, he saw the value in my learning system. Despite initial reluctance and high pricing on my part, Hugo insisted on bringing this training to his team.
 
-The Maliyo Games experience proved particularly valuable because:
-1. The team provided direct feedback on improving the training
-2. Their suggestions helped refine and enhance the mental models
-3. Their success demonstrated the system's applicability across different domains
+### Recognizing Natural Learning Patterns
 
-Hugo's experience as an entrepreneur also provided valuable insights into how to productize and scale the training system. His understanding of startup needs helped shape how I delivered and structured the learning experience.
+As I continued to develop and refine the Time To Learn Skills (TTLS) approach, I began to notice something fascinating: this process wasn't entirely novel. In fact, it was already occurring naturally in many learning environments, just without the systematic framework I had developed.
+
+Two personal experiences vividly illustrated this insight. The first came during my journey of learning to skate. As a complete novice terrified of falling, I was introduced to a guide who embodied the essence of smart micro-content and mental model creation. His instructions were precise and actionable: "Bend your knees slightly when standing to maintain balance," "Move your hips to create momentum," "If you feel like you're falling, lower your center of gravity."
+
+Each of these instructions was a miniature mental model - a bite-sized piece of knowledge that transformed an complex skill into manageable, actionable steps. Within a short time, I was moving on skates, not expertly, but significantly better than when I started. I realized this was exactly the TTLS process in action: breaking down a complex skill, providing clear mental models, and enabling quick progression.
+
+A similar experience unfolded when I learned salsa dancing. The instructor broke down the intricate dance into simple, digestible steps: "1, 2, 3... 5, 6, 7" - basic forward and backward movements, side-to-side transitions. Each step was a piece of micro-content, and as these pieces were combined, they formed a comprehensive mental model of salsa dancing.
+
+What struck me was how these learning experiences mirrored the systematic approach I had developed, but occurred entirely organically. The key difference was awareness and intentionality. Most people were already using these learning techniques instinctively, but without a structured framework to understand and optimize them.
+
+These experiences reinforced a crucial insight: effective learning is already happening all around us. Our task is not to reinvent learning, but to understand, systematize, and optimize the natural learning processes that humans have always used.
 
 ### The Future of Learning Systems
 
-This evolution from Learn by Doing to a comprehensive learning engine reveals several key principles for building effective learning systems:
+This evolution reveals several key principles for building effective learning systems:
 
 1. **Focus on Mental Models**
    - Break down complex skills into understandable components
