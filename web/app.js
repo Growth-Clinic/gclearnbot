@@ -522,9 +522,6 @@ async function fetchLessons() {
     }
 }
 
-// Submit user response
-// Import the feedback analyzer
-import { webFeedbackAnalyzer } from './feedback.js';
 
 // Submit response with rule-based feedback
 async function submitResponse(event) {
