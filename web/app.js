@@ -1,3 +1,5 @@
+import { webFeedbackAnalyzer } from './feedback.js';
+
 const API_BASE_URL = "https://gclearnbot.onrender.com"; 
 const PROTECTED_ROUTES = ['/web/dashboard.html', '/web/journal.html', '/web/progress.html'];
 
@@ -576,10 +578,14 @@ async function fetchLessons() {
 }
 
 // Submit user response
-async function submitResponse() {
+// Import the feedback analyzer
+import { webFeedbackAnalyzer } from './feedback.js';
+
+// Submit response with rule-based feedback
+async function submitResponse(event) {
     event?.preventDefault();
     const lessonId = document.getElementById("lessonSelect").value;
-    const responseText = document.getElementById("responseText");
+    const responseText = document.getElementById("responseText").value;
     const responseCard = document.getElementById('responseCard');
     const token = getAuthToken();
     const submitButton = document.getElementById('submitButton');
@@ -593,18 +599,27 @@ async function submitResponse() {
     submitButton.classList.add('is-loading');
 
     try {
-        let response = await fetch(`${API_BASE_URL}/lessons/${lessonId}/response`, {
+        // First, get rule-based feedback
+        const feedbackResult = webFeedbackAnalyzer.generateFeedback(responseText, lessonId);
+        const formattedFeedback = webFeedbackAnalyzer.formatFeedbackForDisplay(feedbackResult);
+
+        // Then save response and feedback to server
+        const response = await fetch(`${API_BASE_URL}/lessons/${lessonId}/response`, {
             method: "POST",
             headers: {
                 "Authorization": `Bearer ${token}`,
                 "Content-Type": "application/json"
             },
-            body: JSON.stringify({ response: responseText.value })
+            body: JSON.stringify({ 
+                response: responseText,
+                feedback_metrics: feedbackResult.quality_metrics,
+                keywords_found: feedbackResult.keywords_found
+            })
         });
 
-        let data = await response.json();
+        const data = await response.json();
         if (data.status === "success") {
-            // Create feedback card if it doesn't exist
+            // Create or get feedback card
             let feedbackCard = document.getElementById('feedbackCard');
             if (!feedbackCard) {
                 feedbackCard = document.createElement('div');
@@ -613,19 +628,31 @@ async function submitResponse() {
                 responseCard.parentNode.insertBefore(feedbackCard, responseCard.nextSibling);
             }
 
-            // Format and display feedback
+            // Combine feedback components
+            const feedbackContent = {
+                success_points: [
+                    "✅ Response saved successfully!",
+                    ...formattedFeedback.success_points
+                ],
+                improvement_points: formattedFeedback.improvement_points,
+                engagement_score: formattedFeedback.engagement_score
+            };
+
+            // Display the feedback
             feedbackCard.innerHTML = `
                 <div class="card-content">
                     <h2 class="title is-4">Response Feedback</h2>
                     <div class="content">
-                        ${formatFeedback(data.feedback)}
+                        ${formatFeedback(feedbackContent)}
                     </div>
                 </div>
             `;
+            
+            // Smooth scroll to feedback
             feedbackCard.scrollIntoView({ behavior: 'smooth' });
 
-            // Clear textarea
-            responseText.value = '';
+            // Clear response input
+            document.getElementById("responseText").value = '';
         } else {
             showError(`Error: ${data.message}`);
         }
@@ -643,26 +670,26 @@ function formatFeedback(feedback) {
 
     let formattedFeedback = '';
 
-    // Format success feedback with checkmarks
-    if (feedback.success_points) {
+    // Handle success points
+    if (feedback.success_points && feedback.success_points.length > 0) {
         formattedFeedback += '<div class="notification is-success is-light">';
         feedback.success_points.forEach(point => {
-            formattedFeedback += `<p>✅ ${point}</p>`;
+            formattedFeedback += `<p>${point}</p>`;
         });
         formattedFeedback += '</div>';
     }
 
-    // Format improvement suggestions with lightbulbs
-    if (feedback.improvement_points) {
+    // Handle improvement points
+    if (feedback.improvement_points && feedback.improvement_points.length > 0) {
         formattedFeedback += '<div class="notification is-info is-light">';
         feedback.improvement_points.forEach(point => {
-            formattedFeedback += `<p>💡 ${point}</p>`;
+            formattedFeedback += `<p>${point}</p>`;
         });
         formattedFeedback += '</div>';
     }
 
-    // Format engagement score if available
-    if (feedback.engagement_score) {
+    // Show engagement score
+    if (feedback.engagement_score !== undefined) {
         formattedFeedback += `
             <div class="level mt-4">
                 <div class="level-item has-text-centered">

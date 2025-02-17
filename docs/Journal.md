@@ -394,3 +394,6 @@ I have gotten to the appendices of the book! Yippee! A few things I want to corr
 2. Share the community experience map template Google sheet to claude so it can take more insights from there to improve appendix A
    1. To further improve appendix A, can there be a fictional story (and it will be stated that the story is fictional, completely AI-generated), that helps to make the framework relatable? Right now it just feels like I am reading lists and lists.
 3. Add the Gigson story to Appendix B, so we'd have 4 case studies. And it should share the full story for each and then give the key patterns, background, innovation process and all.
+
+### 9:14 PM
+- Can we paginate the journals page so it is easier to browse through long entries?
