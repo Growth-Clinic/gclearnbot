@@ -575,13 +575,12 @@ async function submitResponse(event) {
 
             // Combine feedback components
             const feedbackContent = {
-                success_points: [
-                    "✅ Response saved successfully!",
-                    ...formattedFeedback.success_points
-                ],
+                success_points: formattedFeedback.success_points,
                 improvement_points: formattedFeedback.improvement_points,
                 engagement_score: formattedFeedback.engagement_score
             };
+
+            showSuccess("Response saved successfully!"); // Show as separate notification
 
             // Display the feedback
             feedbackCard.innerHTML = `
