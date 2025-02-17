@@ -386,3 +386,11 @@ Okay, I have gotten to the parts of the book that are purely ideas, like visions
 
 ### 11:49 AM
 I am making progress with the book, so much so, that I can share it for others to help me review. Now I'd like to get it in the hands of a non-techie, a techie, a senior techie, a senior manager and someone with a PhD.
+
+### 4:18 PM
+I have gotten to the appendices of the book! Yippee! A few things I want to correct when my limits are reset on Claude:
+
+1. Give an updated outline with the appendices we've created
+2. Share the community experience map template Google sheet to claude so it can take more insights from there to improve appendix A
+   1. To further improve appendix A, can there be a fictional story (and it will be stated that the story is fictional, completely AI-generated), that helps to make the framework relatable? Right now it just feels like I am reading lists and lists.
+3. Add the Gigson story to Appendix B, so we'd have 4 case studies. And it should share the full story for each and then give the key patterns, background, innovation process and all.
