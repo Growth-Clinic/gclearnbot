@@ -1,4 +1,5 @@
 import { getRelatedWords } from '/web/synonyms.js';
+import nlp from 'compromise';
 
 // Feedback rules configuration similar to feedback_config.py
 const LESSON_FEEDBACK_RULES = {
@@ -531,91 +532,65 @@ class WebFeedbackAnalyzer {
 
     // Enhanced keyword matching
     _matchKeyword(text, keyword) {
-        // Convert to lowercase for case-insensitive matching
+        // Convert text and keyword to lowercase for consistency
         text = text.toLowerCase();
         keyword = keyword.toLowerCase();
     
-        // Direct match
-        if (text.includes(keyword)) {
-            console.log(`Direct match found for "${keyword}"`);
-            return true;
+        // Use the lemmatizer to get the base form of the keyword
+        const lemmatizedKeyword = lemmatize(keyword);
+        // Split the response into words and lemmatize each one
+        const lemmatizedWords = text.split(/\s+/).map(word => lemmatize(word));
+    
+        // Handle multi-word phrases
+        if (keyword.includes(' ')) {
+            // Lemmatize each word in the phrase and rejoin them
+            const lemmatizedPhrase = keyword.split(' ').map(w => lemmatize(w)).join(' ');
+            const phraseRegex = new RegExp(`\\b${lemmatizedPhrase}\\b`, 'i');
+            if (phraseRegex.test(text)) {
+                console.log(`Multi-word phrase match found for "${keyword}"`);
+                return true;
+            }
+        } else {
+            // For single words, check if the lemmatized keyword is present in the lemmatized words of the text
+            if (lemmatizedWords.includes(lemmatizedKeyword)) {
+                console.log(`Lemmatized match found for "${keyword}" as "${lemmatizedKeyword}"`);
+                return true;
+            }
         }
     
-        // Stem the keyword and text words
-        const stemmedKeyword = this.stemmer.stem(keyword);
-        const textWords = text.split(/\s+/).map(word => this.stemmer.stem(word));
-    
-        // Check for stem matches
-        if (textWords.includes(stemmedKeyword)) {
-            console.log(`Stem match found for "${keyword}" -> "${stemmedKeyword}"`);
-            return true;
-        }
-    
-        // Get all related words including synonyms and word forms
-        const relatedWords = getRelatedWords(keyword);
-        
-        // Stem all related words for better matching
-        const stemmedRelatedWords = relatedWords.map(word => this.stemmer.stem(word));
-        
-        // Check if any related word (or its stemmed version) appears in the text
-        const relatedMatch = relatedWords.some(word => text.includes(word)) ||
-                            stemmedRelatedWords.some(stemmedWord => textWords.includes(stemmedWord));
-    
-        if (relatedMatch) {
+        // Optionally, also check using your synonyms function if you still want that extra layer.
+        const relatedWords = getRelatedWords(keyword);  // your existing function
+        const lemmatizedRelated = relatedWords.map(word => lemmatize(word));
+        if (lemmatizedRelated.some(relWord => lemmatizedWords.includes(relWord))) {
             console.log(`Related word match found for "${keyword}"`);
+            return true;
         }
     
-        return relatedMatch;
-    }
+        return false;
+    }    
 
     // Extract keywords from response
     extractKeywords(response, lessonId) {
         console.log('Extracting keywords for lesson:', lessonId);
-        
-        // Find the correct lesson rule
         const lessonRule = this._findLessonRule(lessonId);
         
         if (!lessonRule) {
             console.warn(`No rules found for lesson: ${lessonId}`);
             return [];
         }
-    
+        
         const criteria = lessonRule.criteria;
         const foundKeywords = new Set();
-        const lowercaseResponse = response.toLowerCase();
         
-        console.log('Criteria:', criteria);
-        
-        Object.values(criteria).forEach((rule, criterionIndex) => {
-            console.log(`Checking criterion ${criterionIndex}:`, rule.keywords);
-            
+        Object.values(criteria).forEach(rule => {
             rule.keywords.forEach(keyword => {
-                // Multiple matching strategies
-                const keywordLower = keyword.toLowerCase();
-                
-                // Whole word match with word boundaries
-                const wholeWordRegex = new RegExp(`\\b${keywordLower}\\b`, 'i');
-                
-                // Partial match
-                const partialMatch = lowercaseResponse.includes(keywordLower);
-                
-                // Stemmed match using existing Stemmer
-                const stemmedKeyword = this.stemmer.stem(keywordLower);
-                const stemmedResponseWords = lowercaseResponse.split(/\s+/).map(word => this.stemmer.stem(word));
-                
-                // Check for match
-                const isMatch = 
-                    wholeWordRegex.test(lowercaseResponse) || 
-                    partialMatch || 
-                    stemmedResponseWords.includes(stemmedKeyword);
-                
-                if (isMatch) {
+                if (this._matchKeyword(response, keyword)) {
                     console.log(`Matched keyword: ${keyword}`);
                     foundKeywords.add(keyword);
                 }
             });
         });
-    
+        
         const keywordsArray = Array.from(foundKeywords);
         console.log('Found keywords:', keywordsArray);
         return keywordsArray;
@@ -722,6 +697,18 @@ class WebFeedbackAnalyzer {
         return Math.round(score);
     }
 }
+
+function lemmatize(word) {
+    // Create a document for the word
+    const doc = nlp(word);
+    // Try to convert verbs to their infinitive form
+    let base = doc.verbs().toInfinitive().out('text');
+    // If it doesn’t return anything, try treating it as a noun
+    if (!base || base.trim() === '') {
+      base = doc.nouns().toSingular().out('text');
+    }
+    return base || word;
+  }
 
 class Stemmer {
     stem(word) {
