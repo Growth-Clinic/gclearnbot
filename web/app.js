@@ -635,7 +635,8 @@ async function submitResponse(event) {
                 success_points: formattedFeedback.success_points,
                 improvement_points: formattedFeedback.improvement_points,
                 engagement_score: formattedFeedback.engagement_score,
-                keywords_found: feedbackResult.keywords_found
+                keywords_found: feedbackResult.keywords_found,
+                feedback: feedbackResult.feedback
             };
 
             // Add personalized insights if available
@@ -709,11 +710,19 @@ function formatFeedback(feedback) {
       formattedFeedback += '</div>';
     }
   
-    // Personalized Insights
-    if (feedback.personalized_insights && feedback.personalized_insights.length > 0) {
+    // Personalized Insights (NEW)
+    const personalizedInsights = feedback.feedback 
+        ? feedback.feedback.filter(f => 
+            !f.startsWith('✅') && 
+            !f.startsWith('⚠️') && 
+            !f.startsWith('💡')
+        ) 
+        : [];
+    
+    if (personalizedInsights.length > 0) {
       formattedFeedback += '<div class="notification is-warning is-light">';
       formattedFeedback += '<p class="title is-5">🌟 Personalized Insights:</p>';
-      feedback.personalized_insights.forEach(insight => {
+      personalizedInsights.forEach(insight => {
         formattedFeedback += `<p>${insight}</p>`;
       });
       formattedFeedback += '</div>';
