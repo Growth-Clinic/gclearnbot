@@ -784,7 +784,7 @@ async function fetchProgress() {
 }
 
 // Fetch journal entries
-async function fetchJournal() {
+async function fetchJournal(page = 1, perPage = 10) {
     const token = getAuthToken();
     if (!token) {
         showError("Please log in first.");
@@ -792,33 +792,23 @@ async function fetchJournal() {
     }
 
     const journalList = document.getElementById("journalList");
-    journalList.innerHTML = '<div class="has-text-centered">Loading...</div>';
+    const paginationContainer = document.getElementById("journalPagination");
+    journalList.innerHTML = '<div class="has-text-centered">Loading journal entries...</div>';
 
     try {
-        const response = await fetch(`${API_BASE_URL}/journal`, {
+        const response = await fetch(`${API_BASE_URL}/journal?page=${page}&per_page=${perPage}`, {
             headers: {
                 "Authorization": `Bearer ${token}`,
                 "Content-Type": "application/json"
             }
         });
 
-        if (response.status === 404) {
-            journalList.innerHTML = `
-                <div class="notification is-info">
-                    <p>No journal entries yet! Start your learning journey to begin documenting your progress.</p>
-                    <p class="mt-3">
-                        <a href="/web/dashboard.html" class="button is-primary">Go to Learning Dashboard</a>
-                    </p>
-                </div>`;
-            return;
-        }
-
         const data = await response.json();
 
         if (data.status === "success") {
-            journalList.innerHTML = ""; // Clear loading message
-            
-            if (data.journal.length === 0) {
+            journalList.innerHTML = "";
+
+            if (!data.journal || data.journal.length === 0) {
                 journalList.innerHTML = `
                     <div class="notification is-info">
                         <p>No journal entries yet! Start your learning journey to begin documenting your progress.</p>
@@ -826,12 +816,11 @@ async function fetchJournal() {
                             <a href="/web/dashboard.html" class="button is-primary">Go to Learning Dashboard</a>
                         </p>
                     </div>`;
+                paginationContainer.classList.add('is-hidden');
                 return;
             }
 
-            // Sort entries by date (newest first)
-            data.journal.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
-
+            // Render journal entries
             data.journal.forEach(entry => {
                 const date = new Date(entry.timestamp).toLocaleDateString('en-GB', {
                     day: 'numeric',
@@ -868,29 +857,69 @@ async function fetchJournal() {
                 journalList.appendChild(entryElement);
             });
 
-            // Add pagination controls
+            // Update pagination controls
             if (data.pagination) {
-                const paginationElement = document.createElement('nav');
-                paginationElement.className = 'pagination is-centered';
-                paginationElement.innerHTML = `
-                    <button class="pagination-previous" 
-                            ${data.pagination.current_page <= 1 ? 'disabled' : ''}
-                            onclick="fetchJournal(${data.pagination.current_page - 1}, ${perPage})">
-                        Previous
-                    </button>
-                    <button class="pagination-next"
-                            ${data.pagination.current_page >= data.pagination.total_pages ? 'disabled' : ''}
-                            onclick="fetchJournal(${data.pagination.current_page + 1}, ${perPage})">
-                        Next
-                    </button>
-                    <ul class="pagination-list">
-                        <li><span class="pagination-ellipsis">Page ${data.pagination.current_page} of ${data.pagination.total_pages}</span></li>
-                    </ul>
-                `;
-                journalList.appendChild(paginationElement);
+                paginationContainer.classList.remove('is-hidden');
+                const { current_page, total_pages } = data.pagination;
+
+                // Update Previous/Next buttons
+                const prevButton = paginationContainer.querySelector('.pagination-previous');
+                const nextButton = paginationContainer.querySelector('.pagination-next');
+                
+                prevButton.disabled = current_page <= 1;
+                nextButton.disabled = current_page >= total_pages;
+                
+                prevButton.onclick = () => fetchJournal(current_page - 1, perPage);
+                nextButton.onclick = () => fetchJournal(current_page + 1, perPage);
+
+                // Generate page numbers
+                const paginationList = paginationContainer.querySelector('.pagination-list');
+                paginationList.innerHTML = '';
+
+                // Helper function to add page number
+                const addPageNumber = (pageNum) => {
+                    const li = document.createElement('li');
+                    const a = document.createElement('a');
+                    a.className = `pagination-link ${pageNum === current_page ? 'is-current' : ''}`;
+                    a.textContent = pageNum;
+                    a.onclick = () => fetchJournal(pageNum, perPage);
+                    li.appendChild(a);
+                    paginationList.appendChild(li);
+                };
+
+                // Add ellipsis element
+                const addEllipsis = () => {
+                    const li = document.createElement('li');
+                    const span = document.createElement('span');
+                    span.className = 'pagination-ellipsis';
+                    span.innerHTML = '&hellip;';
+                    li.appendChild(span);
+                    paginationList.appendChild(li);
+                };
+
+                // Generate page numbers with ellipsis
+                if (total_pages <= 7) {
+                    for (let i = 1; i <= total_pages; i++) {
+                        addPageNumber(i);
+                    }
+                } else {
+                    addPageNumber(1);
+                    if (current_page > 3) addEllipsis();
+                    
+                    for (let i = Math.max(2, current_page - 1); 
+                         i <= Math.min(total_pages - 1, current_page + 1); i++) {
+                        addPageNumber(i);
+                    }
+                    
+                    if (current_page < total_pages - 2) addEllipsis();
+                    addPageNumber(total_pages);
+                }
+            } else {
+                paginationContainer.classList.add('is-hidden');
             }
         }
     } catch (error) {
+        console.error('Error fetching journal:', error);
         journalList.innerHTML = `
             <div class="notification is-danger">
                 <p>Error loading journal entries. Please try again later.</p>
@@ -898,6 +927,7 @@ async function fetchJournal() {
                     Try Again
                 </button>
             </div>`;
+        paginationContainer.classList.add('is-hidden');
     }
 }
 

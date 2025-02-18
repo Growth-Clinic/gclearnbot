@@ -498,25 +498,58 @@ const LESSON_FEEDBACK_RULES = {
 class WebFeedbackAnalyzer {
     constructor() {
         this.rules = LESSON_FEEDBACK_RULES;
+        this.stemmer = new Stemmer();  // Simple Porter stemmer implementation
+    }
+
+    // Add this new method for enhanced keyword matching
+    _matchKeyword(text, keyword) {
+        // Convert to lowercase for case-insensitive matching
+        text = text.toLowerCase();
+        keyword = keyword.toLowerCase();
+
+        // Direct match
+        if (text.includes(keyword)) return true;
+
+        // Stem the keyword and text words
+        const stemmedKeyword = this.stemmer.stem(keyword);
+        const textWords = text.split(/\s+/).map(word => this.stemmer.stem(word));
+
+        // Check for stem matches
+        if (textWords.includes(stemmedKeyword)) return true;
+
+        // Check for common synonyms (you can expand this list)
+        const synonyms = this._getSynonyms(keyword);
+        return synonyms.some(synonym => text.includes(synonym));
+    }
+
+    // Simple synonym lookup (expand based on your needs)
+    _getSynonyms(word) {
+        const synonymMap = {
+            'analyze': ['examine', 'study', 'investigate'],
+            'understand': ['comprehend', 'grasp', 'realize'],
+            'improve': ['enhance', 'upgrade', 'optimize'],
+            'create': ['develop', 'build', 'design'],
+            // Add more synonyms as needed
+        };
+        return synonymMap[word.toLowerCase()] || [];
     }
 
     // Extract keywords from response
     extractKeywords(response, lessonId) {
-        if (!this.rules[lessonId]) {
-            return [];
-        }
+        if (!this.rules[lessonId]) return [];
 
         const criteria = this.rules[lessonId].criteria;
-        const keywords = new Set();
+        const foundKeywords = new Set();
         
-        // Collect all keywords for this lesson
         Object.values(criteria).forEach(rule => {
-            rule.keywords.forEach(keyword => keywords.add(keyword.toLowerCase()));
+            rule.keywords.forEach(keyword => {
+                if (this._matchKeyword(response, keyword)) {
+                    foundKeywords.add(keyword);
+                }
+            });
         });
 
-        // Find matches in response
-        const responseLower = response.toLowerCase();
-        return Array.from(keywords).filter(keyword => responseLower.includes(keyword));
+        return Array.from(foundKeywords);
     }
 
     // Analyze response quality
@@ -608,6 +641,25 @@ class WebFeedbackAnalyzer {
         if (meetsExpectations) score += 30;
         
         return Math.round(score);
+    }
+}
+
+class Stemmer {
+    stem(word) {
+        // Basic implementation of Porter Stemmer algorithm
+        word = word.toLowerCase();
+        
+        // Handle basic plural forms
+        if (word.endsWith('ies')) return word.slice(0, -3) + 'y';
+        if (word.endsWith('es')) return word.slice(0, -2);
+        if (word.endsWith('s')) return word.slice(0, -1);
+        
+        // Handle common suffixes
+        if (word.endsWith('ing')) return word.slice(0, -3);
+        if (word.endsWith('ed')) return word.slice(0, -2);
+        if (word.endsWith('ly')) return word.slice(0, -2);
+        
+        return word;
     }
 }
 
