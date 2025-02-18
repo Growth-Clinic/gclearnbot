@@ -576,7 +576,11 @@ async function submitResponse(event) {
 
     try {
         // Use web feedback analyzer for enhanced keyword matching
-        const feedbackResult = webFeedbackAnalyzer.generateFeedback(responseText, lessonId);
+        const feedbackResult = await webFeedbackAnalyzer.generatePersonalizedFeedback(
+            responseText, 
+            lessonId,
+            userId
+        );
         console.log('Response text:', responseText);
         console.log('Lesson ID:', lessonId);
         console.log('Lesson rules:', webFeedbackAnalyzer.rules[lessonId]);

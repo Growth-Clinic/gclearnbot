@@ -737,6 +737,86 @@ class WebFeedbackAnalyzer {
         
         return Math.round(score);
     }
+
+    async generatePersonalizedFeedback(response, lessonId, userId) {
+        // Get base feedback first
+        const baseFeedback = this.generateFeedback(response, lessonId);
+        
+        try {
+            // Get personalization data from backend
+            const personalData = await fetch(`/api/feedback/personalization/${userId}`, {
+                headers: {
+                    'Authorization': `Bearer ${getAuthToken()}`,
+                    'Content-Type': 'application/json'
+                }
+            }).then(res => res.json());
+            
+            if (!personalData || !personalData.status === 'success') {
+                return baseFeedback;
+            }
+            
+            const data = personalData.data;
+            let personalizedFeedback = [...baseFeedback.feedback];
+            
+            // Add strength-based feedback if applicable
+            if (data.top_strengths && data.top_strengths.length > 0) {
+                const strength = data.top_strengths[0];
+                const template = await this.getTemplate('strength_template');
+                if (template) {
+                    personalizedFeedback.push(template.replace(
+                        '{strength_area}', strength
+                    ));
+                }
+            }
+            
+            // Add improvement-based feedback if needed
+            if (data.top_weaknesses && data.top_weaknesses.length > 0) {
+                const weakness = data.top_weaknesses[0];
+                const template = await this.getTemplate('improvement_template');
+                if (template) {
+                    personalizedFeedback.push(template.replace(
+                        '{weakness_area}', weakness
+                    ));
+                }
+            }
+            
+            // Add progress feedback if user has sufficient history
+            if (data.response_count > 5) {
+                const progressTemplate = await this.getTemplate('progress_template');
+                if (progressTemplate) {
+                    personalizedFeedback.push(progressTemplate.replace(
+                        '{skill_area}', data.top_strengths[0] || 'analysis'
+                    ));
+                }
+            }
+            
+            return {
+                ...baseFeedback,
+                feedback: personalizedFeedback,
+                personalized: true
+            };
+            
+        } catch (error) {
+            console.error('Error generating personalized feedback:', error);
+            return baseFeedback;
+        }
+    }
+    
+    async getTemplate(templateKey) {
+        try {
+            const response = await fetch(`/api/feedback/templates/${templateKey}`, {
+                headers: {
+                    'Authorization': `Bearer ${getAuthToken()}`,
+                    'Content-Type': 'application/json'
+                }
+            });
+            const data = await response.json();
+            return data.template;
+        } catch (error) {
+            console.error('Error fetching template:', error);
+            return null;
+        }
+    }
 }
 
 // Export for use in app.js

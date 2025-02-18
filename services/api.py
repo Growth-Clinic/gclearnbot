@@ -1,10 +1,11 @@
 from quart import Quart, request, jsonify, ResponseReturnValue, send_from_directory
-from services.database import get_db, AnalyticsManager, UserManager, JournalManager
+from services.database import get_db, AnalyticsManager, UserManager, JournalManager, FeedbackAnalyticsManager
 from services.lesson_manager import LessonService
 from services.progress_tracker import ProgressTracker
 from services.learning_insights import LearningInsightsManager
 from services.content_loader import content_loader
 from services.utils import verify_password
+from services.feedback_templates import FEEDBACK_TEMPLATES
 from config.settings import Config
 from datetime import datetime, timezone
 import os
@@ -615,3 +616,21 @@ def setup_routes(app: Quart, application: Application) -> None:
         except Exception as e:
             logger.error(f"Error getting insights dashboard: {e}")
             return jsonify({"error": str(e)}), 500
+        
+    @app.route('/feedback/personalization/<user_id>')
+    @async_jwt_required()
+    async def get_personalization_data(user_id):
+        try:
+            data = await FeedbackAnalyticsManager.get_personalization_data(user_id)
+            return jsonify({"status": "success", "data": data})
+        except Exception as e:
+            return jsonify({"status": "error", "message": str(e)}), 500
+
+    @app.route('/feedback/templates/<template_key>')
+    @async_jwt_required()
+    async def get_template(template_key):
+        try:
+            template = FEEDBACK_TEMPLATES.get(template_key)
+            return jsonify({"status": "success", "template": template})
+        except Exception as e:
+            return jsonify({"status": "error", "message": str(e)}), 500

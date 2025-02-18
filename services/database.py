@@ -12,6 +12,8 @@ from services.utils import extract_keywords_from_response
 from services.lesson_helpers import get_lesson_structure, is_actual_lesson, get_total_lesson_steps
 import time
 import asyncio
+from collections import Counter
+from services.feedback_templates import FEEDBACK_TEMPLATES
 
 # Configure logging
 logging.basicConfig(
@@ -52,7 +54,9 @@ async def init_mongodb(max_retries=3, retry_delay=2):
                 db.users.create_index("email", unique=True),
                 db.journals.create_index("user_id"),
                 _ensure_collection_with_index(db, "user_skills", "user_id"),
-                _ensure_collection_with_index(db, "learning_insights", "user_id")
+                _ensure_collection_with_index(db, "learning_insights", "user_id"),
+                db.feedback_analytics.create_index("user_id"),
+                db.feedback_analytics.create_index([("user_id", 1), ("entries.lesson_id", 1)])
             )
 
             # Database health check to ensure collections are accessible
@@ -843,6 +847,7 @@ class FeedbackAnalyticsManager:
     async def save_feedback_analytics(user_id: int, lesson_id: str, feedback_results: dict) -> None:
         """Store feedback data for continuous improvement."""
         try:
+            # Keep existing functionality
             await db.feedback_analytics.update_one(
                 {"user_id": user_id},
                 {"$push": {
@@ -856,10 +861,81 @@ class FeedbackAnalyticsManager:
                 }},
                 upsert=True
             )
+            
+            # Add analysis of strengths/weaknesses
+            entry_data = feedback_results.get("quality_metrics", {})
+            await db.feedback_analytics.update_one(
+                {"user_id": user_id},
+                {"$push": {
+                    "entries": {
+                        "timestamp": datetime.now(timezone.utc),
+                        "lesson_id": lesson_id,
+                        "strengths": entry_data.get("strengths", []),
+                        "weaknesses": entry_data.get("weaknesses", []),
+                    }
+                }}
+            )
+            
             logger.info(f"Feedback analytics saved for user {user_id} and lesson {lesson_id}")
         except Exception as e:
-            logger.error(f"Error saving feedback analytics for user {user_id}: {e}", exc_info=True)
+            logger.error(f"Error saving feedback analytics: {e}", exc_info=True)
             raise
+
+    @staticmethod
+    async def get_personalization_data(user_id: int) -> dict:
+        """Get personalized data for feedback templates."""
+        try:
+            analytics = await db.feedback_analytics.find_one({"user_id": user_id})
+            if not analytics:
+                return {}
+                
+            entries = analytics.get("entries", [])
+            if not entries:
+                return {}
+            
+            # Get recurring patterns
+            strengths = Counter()
+            weaknesses = Counter()
+            
+            for entry in entries[-5:]:
+                strengths.update(entry.get("strengths", []))
+                weaknesses.update(entry.get("weaknesses", []))
+            
+            return {
+                "top_strengths": [s for s, _ in strengths.most_common(2)],
+                "top_weaknesses": [w for w, _ in weaknesses.most_common(2)],
+                "response_count": len(entries)
+            }
+            
+        except Exception as e:
+            logger.error(f"Error getting personalization data: {e}")
+            return {}
+
+    @staticmethod
+    async def update_recurring_patterns(user_id: int) -> None:
+        """Update recurring patterns in user's feedback analytics."""
+        try:
+            analytics = await db.feedback_analytics.find_one({"user_id": user_id})
+            if not analytics or len(analytics.get("entries", [])) < 3:
+                return
+                
+            entries = analytics["entries"][-5:]
+            patterns = {
+                "consistent_strengths": [s for s, _ in Counter(
+                    s for e in entries for s in e.get("strengths", [])
+                ).most_common(3)],
+                "consistent_weaknesses": [w for w, _ in Counter(
+                    w for e in entries for w in e.get("weaknesses", [])
+                ).most_common(3)]
+            }
+            
+            await db.feedback_analytics.update_one(
+                {"user_id": user_id},
+                {"$set": {"recurring_patterns": patterns}}
+            )
+            
+        except Exception as e:
+            logger.error(f"Error updating recurring patterns: {e}")
 
     @staticmethod
     async def track_feedback_rating(user_id: int, rating: str) -> None:
