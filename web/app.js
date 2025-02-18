@@ -587,12 +587,13 @@ async function submitResponse(event) {
             userEmail,  // Use email as userId since that's what we have in the token
             token       // Pass the token
         );
+
         console.log('Response text:', responseText);
         console.log('Lesson ID:', lessonId);
         console.log('Lesson rules:', webFeedbackAnalyzer.rules[lessonId]);
         console.log('Feedback result:', feedbackResult);
         console.log('Found keywords:', feedbackResult.keywords_found);
-        const formattedFeedback = webFeedbackAnalyzer.formatFeedbackForDisplay(feedbackResult);
+        console.log('Personalized Feedback Result:', feedbackResult);
 
         // Send enhanced feedback data to server
         const response = await fetch(`${API_BASE_URL}/lessons/${lessonId}/response`, {
@@ -627,6 +628,8 @@ async function submitResponse(event) {
             // Show the feedback card before inserting content
             feedbackCard.classList.remove('is-hidden');
 
+            const formattedFeedback = webFeedbackAnalyzer.formatFeedbackForDisplay(feedbackResult);
+
             // Combine feedback components
             const feedbackContent = {
                 success_points: formattedFeedback.success_points,
@@ -634,6 +637,23 @@ async function submitResponse(event) {
                 engagement_score: formattedFeedback.engagement_score,
                 keywords_found: feedbackResult.keywords_found
             };
+
+            // Add personalized insights if available
+            let personalizedContent = '';
+            if (feedbackResult.personalized && feedbackResult.feedback) {
+                const personalizedInsights = feedbackResult.feedback.filter(
+                    f => !Object.values(formattedFeedback).flat().includes(f)
+                );
+                
+                if (personalizedInsights.length > 0) {
+                    personalizedContent = `
+                        <div class="notification is-warning is-light mt-4">
+                            <p class="title is-5">🌟 Personalized Insights:</p>
+                            ${personalizedInsights.map(insight => `<p>${insight}</p>`).join('')}
+                        </div>
+                    `;
+                }
+            }
 
             showSuccess("Response saved successfully!"); // Show as separate notification
 
@@ -689,6 +709,16 @@ function formatFeedback(feedback) {
       formattedFeedback += '</div>';
     }
   
+    // Personalized Insights
+    if (feedback.personalized_insights && feedback.personalized_insights.length > 0) {
+      formattedFeedback += '<div class="notification is-warning is-light">';
+      formattedFeedback += '<p class="title is-5">🌟 Personalized Insights:</p>';
+      feedback.personalized_insights.forEach(insight => {
+        formattedFeedback += `<p>${insight}</p>`;
+      });
+      formattedFeedback += '</div>';
+    }
+  
     // Overall Feedback
     if (feedback.engagement_score !== undefined) {
       let overallFeedback = '';
@@ -711,7 +741,7 @@ function formatFeedback(feedback) {
     }
   
     return formattedFeedback;
-  }
+}
 
 function showSuccess(message, duration = 3000) {
     const successDiv = document.createElement('div');
