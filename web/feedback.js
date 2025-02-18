@@ -511,12 +511,20 @@ class WebFeedbackAnalyzer {
         if (this.rules[lessonId]) {
             return this.rules[lessonId];
         }
-
+    
+        // Try to match the base lesson to its first step
+        const baseMatch = lessonId.match(/^(lesson_\d+)$/);
+        if (baseMatch) {
+            const firstStepRule = `${baseMatch[1]}_step_1`;
+            console.log('Attempting to match first step:', firstStepRule);
+            return this.rules[firstStepRule];
+        }
+    
         // Try matching main lesson steps
         const stepMatch = Object.keys(this.rules).find(ruleKey => 
             ruleKey.startsWith(lessonId + '_step_')
         );
-
+    
         console.log('Matched step rule:', stepMatch);
         return stepMatch ? this.rules[stepMatch] : null;
     }

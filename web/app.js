@@ -529,7 +529,18 @@ async function submitResponse(event) {
         event.preventDefault();
         event.stopPropagation();
     }
-    const lessonId = document.getElementById("lessonSelect").value;
+    
+    // Get the full lesson ID from the select element
+    const lessonSelect = document.getElementById("lessonSelect");
+    let lessonId = lessonSelect.value;
+    
+    // If only the main lesson is selected, default to the first step
+    if (lessonId.match(/^lesson_\d+$/)) {
+        // Modify to get the first step of the lesson
+        lessonId = `${lessonId}_step_1`;
+        console.log('Adjusted lesson ID:', lessonId);
+    }
+    
     console.log('Selected lesson ID:', lessonId);
     console.log('Available rules:', Object.keys(webFeedbackAnalyzer.rules));
 
@@ -550,6 +561,7 @@ async function submitResponse(event) {
         // Use web feedback analyzer for enhanced keyword matching
         const feedbackResult = webFeedbackAnalyzer.generateFeedback(responseText, lessonId);
         console.log('Response text:', responseText);
+        console.log('Lesson ID:', lessonId);
         console.log('Lesson rules:', webFeedbackAnalyzer.rules[lessonId]);
         console.log('Feedback result:', feedbackResult);
         console.log('Found keywords:', feedbackResult.keywords_found);
@@ -568,8 +580,8 @@ async function submitResponse(event) {
                 keywords_found: {
                     // Include both original and enhanced keyword matching
                     standard: feedbackResult.keywords_found,
-                    stemmed: feedbackResult.stemmed_keywords,
-                    synonyms: feedbackResult.synonym_keywords
+                    stemmed_keywords: [], // Add this if you modify the analyzer
+                    synonym_keywords: [] // Add this if you modify the analyzer
                 }
             })
         });
