@@ -546,6 +546,8 @@ async function submitResponse(event) {
     try {
         // Use web feedback analyzer for enhanced keyword matching
         const feedbackResult = webFeedbackAnalyzer.generateFeedback(responseText, lessonId);
+        console.log('feedbackResult:', feedbackResult);
+        console.log('keywords_found:', feedbackResult.keywords_found);
         const formattedFeedback = webFeedbackAnalyzer.formatFeedbackForDisplay(feedbackResult);
 
         // Send enhanced feedback data to server
@@ -598,9 +600,9 @@ async function submitResponse(event) {
                     <div class="mt-3">
                         <h3 class="subtitle is-6">Keywords Matched:</h3>
                         <div class="tags">
-                            ${feedbackResult.keywords_found.map(keyword => 
+                            ${feedbackResult.keywords_found ? feedbackResult.keywords_found.map(keyword => 
                                 `<span class="tag is-primary is-light">${keyword}</span>`
-                            ).join('')}
+                            ).join('') : 'No keywords matched'}
                         </div>
                     </div>
                 </div>
