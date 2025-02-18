@@ -527,19 +527,6 @@ class WebFeedbackAnalyzer {
         console.log('Matched step rule:', stepMatch);
         return stepMatch ? this.rules[stepMatch] : null;
     }
-
-    // Enhanced keyword matching
-    _matchKeyword(text, keyword) {
-        text = text.toLowerCase();
-        keyword = keyword.toLowerCase();
-    
-        // Use wink-nlp to lemmatize words before matching
-        const lemmatizedKeyword = lemmatize(keyword);
-        const lemmatizedWords = text.split(/\s+/).map(word => lemmatize(word));
-    
-        // Exact match, lemmatized match, or similarity match
-        return lemmatizedWords.includes(lemmatizedKeyword) || _isSimilar(lemmatizedWords, lemmatizedKeyword);
-    }
     
     // Helper function to check word similarity
     _isSimilar(words, keyword) {
@@ -595,6 +582,19 @@ class WebFeedbackAnalyzer {
         }
     
         return jaro + (prefixLength * 0.1 * (1 - jaro));
+    }
+
+    // Enhanced keyword matching
+    _matchKeyword(text, keyword) {
+        text = text.toLowerCase();
+        keyword = keyword.toLowerCase();
+    
+        // Use wink-nlp to lemmatize words before matching
+        const lemmatizedKeyword = lemmatize(keyword);
+        const lemmatizedWords = text.split(/\s+/).map(word => lemmatize(word));
+    
+        // Exact match, lemmatized match, or similarity match
+        return lemmatizedWords.includes(lemmatizedKeyword) || _isSimilar(lemmatizedWords, lemmatizedKeyword);
     }        
 
     // Extract keywords from response
