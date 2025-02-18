@@ -503,6 +503,24 @@ class WebFeedbackAnalyzer {
         this.stemmer = new Stemmer();  // Simple Porter stemmer implementation
     }
 
+    // Enhanced method to find the correct lesson rule
+    _findLessonRule(lessonId) {
+        console.log('Finding rule for:', lessonId);
+        
+        // If direct match exists, return it
+        if (this.rules[lessonId]) {
+            return this.rules[lessonId];
+        }
+
+        // Try matching main lesson steps
+        const stepMatch = Object.keys(this.rules).find(ruleKey => 
+            ruleKey.startsWith(lessonId + '_step_')
+        );
+
+        console.log('Matched step rule:', stepMatch);
+        return stepMatch ? this.rules[stepMatch] : null;
+    }
+
     // Enhanced keyword matching
     _matchKeyword(text, keyword) {
         // Convert to lowercase for case-insensitive matching
@@ -573,15 +591,22 @@ class WebFeedbackAnalyzer {
 
     // Generate feedback based on rules
     generateFeedback(response, lessonId) {
-        if (!this.rules[lessonId]) {
+        console.log('Generating feedback for:', lessonId);
+        
+        // Find the correct lesson rule
+        const lessonRule = this._findLessonRule(lessonId);
+        
+        if (!lessonRule) {
+            console.warn(`No rules found for lesson: ${lessonId}`);
             return {
                 feedback: ["Thank you for your response!"],
+                keywords_found: [],
                 quality_metrics: this.analyzeResponseQuality(response)
             };
         }
 
         const foundKeywords = this.extractKeywords(response, lessonId);
-        const criteria = this.rules[lessonId].criteria;
+        const criteria = lessonRule.criteria;
         const feedback = [];
         let meetsExpectations = true;
 
@@ -614,6 +639,9 @@ class WebFeedbackAnalyzer {
         } else if (quality.word_count < 20) {
             feedback.push("💡 Consider providing more details in your response.");
         }
+
+        console.log('Generated feedback:', feedback);
+        console.log('Found keywords:', foundKeywords);
 
         return {
             feedback,
