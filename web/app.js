@@ -580,9 +580,6 @@ async function submitResponse(event) {
         const payload = JSON.parse(window.atob(base64));
         const userEmail = payload.sub; // This is the email we stored in the token
 
-        // Show loading state
-        submitButton.classList.add('is-loading');
-
         // Use webFeedbackAnalyzer with the email as userId
         const feedbackResult = await webFeedbackAnalyzer.generatePersonalizedFeedback(
             responseText, 
