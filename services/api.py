@@ -305,17 +305,26 @@ def setup_routes(app: Quart, application: Application) -> None:
             user_id = user.get('user_id')
             data = await request.get_json()
             response_text = data.get("response")
+            keywords_found = data.get("keywords_found", {})
 
             if not user_id or not response_text:
                 return jsonify({"status": "error", "message": "Missing user_id or response"}), 400
 
-            # Save journal entry
-            await JournalManager.save_journal_entry(user_id, lesson_id, response_text)
+            # Save journal entry with enhanced keyword tracking
+            await JournalManager.save_journal_entry(user_id, lesson_id, response_text, {
+                "standard_keywords": keywords_found.get('standard', []),
+                "stemmed_keywords": keywords_found.get('stemmed', []),
+                "synonym_keywords": keywords_found.get('synonyms', [])
+            })
 
             # Update progress
             await UserManager.update_user_progress(user_id, lesson_id)
 
-            return jsonify({"status": "success", "message": "Response saved"}), 200
+            return jsonify({
+                "status": "success", 
+                "message": "Response saved",
+                "keywords": keywords_found
+            }), 200
 
         except Exception as e:
             logger.error(f"Error submitting response for lesson {lesson_id}: {e}")

@@ -574,7 +574,9 @@ class JournalManager:
                 "lesson": lesson_key,
                 "response": response.strip(),
                 "response_length": len(response.strip()),
-                "keywords_used": extract_keywords_from_response(response, lesson_key)
+                "keywords_used": extract_keywords_from_response(response, lesson_key),
+                # Add new keyword tracking
+                "enhanced_keywords": keywords or {}
             }
 
             if not DataValidator.validate_journal_entry(entry):

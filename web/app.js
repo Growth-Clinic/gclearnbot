@@ -544,11 +544,11 @@ async function submitResponse(event) {
     submitButton.classList.add('is-loading');
 
     try {
-        // First, get rule-based feedback
+        // Use web feedback analyzer for enhanced keyword matching
         const feedbackResult = webFeedbackAnalyzer.generateFeedback(responseText, lessonId);
         const formattedFeedback = webFeedbackAnalyzer.formatFeedbackForDisplay(feedbackResult);
 
-        // Then save response and feedback to server
+        // Send enhanced feedback data to server
         const response = await fetch(`${API_BASE_URL}/lessons/${lessonId}/response`, {
             method: "POST",
             headers: {
@@ -558,7 +558,12 @@ async function submitResponse(event) {
             body: JSON.stringify({ 
                 response: responseText,
                 feedback_metrics: feedbackResult.quality_metrics,
-                keywords_found: feedbackResult.keywords_found
+                keywords_found: {
+                    // Include both original and enhanced keyword matching
+                    standard: feedbackResult.keywords_found,
+                    stemmed: feedbackResult.stemmed_keywords, // Add this if you modify the analyzer
+                    synonyms: feedbackResult.synonym_keywords // Add this if you modify the analyzer
+                }
             })
         });
 
@@ -577,7 +582,8 @@ async function submitResponse(event) {
             const feedbackContent = {
                 success_points: formattedFeedback.success_points,
                 improvement_points: formattedFeedback.improvement_points,
-                engagement_score: formattedFeedback.engagement_score
+                engagement_score: formattedFeedback.engagement_score,
+                keywords_found: feedbackResult.keywords_found
             };
 
             showSuccess("Response saved successfully!"); // Show as separate notification
@@ -588,6 +594,14 @@ async function submitResponse(event) {
                     <h2 class="title is-4">Response Feedback</h2>
                     <div class="content">
                         ${formatFeedback(feedbackContent)}
+                    </div>
+                    <div class="mt-3">
+                        <h3 class="subtitle is-6">Keywords Matched:</h3>
+                        <div class="tags">
+                            ${feedbackResult.keywords_found.map(keyword => 
+                                `<span class="tag is-primary is-light">${keyword}</span>`
+                            ).join('')}
+                        </div>
                     </div>
                 </div>
             `;
