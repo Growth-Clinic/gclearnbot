@@ -1,3 +1,5 @@
+import { getRelatedWords } from '/web/synonyms.js';
+
 // Feedback rules configuration similar to feedback_config.py
 const LESSON_FEEDBACK_RULES = {
     "lesson_2_step_1": {
@@ -501,37 +503,43 @@ class WebFeedbackAnalyzer {
         this.stemmer = new Stemmer();  // Simple Porter stemmer implementation
     }
 
-    // Add this new method for enhanced keyword matching
+    // Enhanced keyword matching
     _matchKeyword(text, keyword) {
         // Convert to lowercase for case-insensitive matching
         text = text.toLowerCase();
         keyword = keyword.toLowerCase();
-
+    
         // Direct match
-        if (text.includes(keyword)) return true;
-
+        if (text.includes(keyword)) {
+            console.log(`Direct match found for "${keyword}"`);
+            return true;
+        }
+    
         // Stem the keyword and text words
         const stemmedKeyword = this.stemmer.stem(keyword);
         const textWords = text.split(/\s+/).map(word => this.stemmer.stem(word));
-
+    
         // Check for stem matches
-        if (textWords.includes(stemmedKeyword)) return true;
-
-        // Check for common synonyms (you can expand this list)
-        const synonyms = this._getSynonyms(keyword);
-        return synonyms.some(synonym => text.includes(synonym));
-    }
-
-    // Simple synonym lookup (expand based on your needs)
-    _getSynonyms(word) {
-        const synonymMap = {
-            'analyze': ['examine', 'study', 'investigate'],
-            'understand': ['comprehend', 'grasp', 'realize'],
-            'improve': ['enhance', 'upgrade', 'optimize'],
-            'create': ['develop', 'build', 'design'],
-            // Add more synonyms as needed
-        };
-        return synonymMap[word.toLowerCase()] || [];
+        if (textWords.includes(stemmedKeyword)) {
+            console.log(`Stem match found for "${keyword}" -> "${stemmedKeyword}"`);
+            return true;
+        }
+    
+        // Get all related words including synonyms and word forms
+        const relatedWords = getRelatedWords(keyword);
+        
+        // Stem all related words for better matching
+        const stemmedRelatedWords = relatedWords.map(word => this.stemmer.stem(word));
+        
+        // Check if any related word (or its stemmed version) appears in the text
+        const relatedMatch = relatedWords.some(word => text.includes(word)) ||
+                            stemmedRelatedWords.some(stemmedWord => textWords.includes(stemmedWord));
+    
+        if (relatedMatch) {
+            console.log(`Related word match found for "${keyword}"`);
+        }
+    
+        return relatedMatch;
     }
 
     // Extract keywords from response

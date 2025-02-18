@@ -546,8 +546,10 @@ async function submitResponse(event) {
     try {
         // Use web feedback analyzer for enhanced keyword matching
         const feedbackResult = webFeedbackAnalyzer.generateFeedback(responseText, lessonId);
-        console.log('feedbackResult:', feedbackResult);
-        console.log('keywords_found:', feedbackResult.keywords_found);
+        console.log('Response text:', responseText);
+        console.log('Lesson rules:', webFeedbackAnalyzer.rules[lessonId]);
+        console.log('Feedback result:', feedbackResult);
+        console.log('Found keywords:', feedbackResult.keywords_found);
         const formattedFeedback = webFeedbackAnalyzer.formatFeedbackForDisplay(feedbackResult);
 
         // Send enhanced feedback data to server
