@@ -568,8 +568,8 @@ async function submitResponse(event) {
                 keywords_found: {
                     // Include both original and enhanced keyword matching
                     standard: feedbackResult.keywords_found,
-                    stemmed: feedbackResult.stemmed_keywords, // Add this if you modify the analyzer
-                    synonyms: feedbackResult.synonym_keywords // Add this if you modify the analyzer
+                    stemmed: feedbackResult.stemmed_keywords,
+                    synonyms: feedbackResult.synonym_keywords
                 }
             })
         });
@@ -601,14 +601,6 @@ async function submitResponse(event) {
                     <h2 class="title is-4">Response Feedback</h2>
                     <div class="content">
                         ${formatFeedback(feedbackContent)}
-                    </div>
-                    <div class="mt-3">
-                        <h3 class="subtitle is-6">Keywords Matched:</h3>
-                        <div class="tags">
-                            ${feedbackResult.keywords_found ? feedbackResult.keywords_found.map(keyword => 
-                                `<span class="tag is-primary is-light">${keyword}</span>`
-                            ).join('') : 'No keywords matched'}
-                        </div>
                     </div>
                 </div>
             `;
