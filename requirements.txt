@@ -16,3 +16,4 @@ aiohttp>=3.8.0             # Required for slack-bolt async functionality
 bcrypt>=3.2.0              # For password hashing
 flask-jwt-extended>=4.2.0  # For JWT token handling
 motor>=3.1.1               # Async MongoDB driver
+nltk>=3.6.0                #
