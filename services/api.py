@@ -361,9 +361,11 @@ def setup_routes(app: Quart, application: Application) -> None:
     @app.route('/journal')
     @async_jwt_required()
     async def get_journal():
-        """Fetch user's journal entries"""
+        """Fetch user's journal entries with pagination"""
         try:
             user_email = request.user_email
+            page = request.args.get('page', 1, type=int)
+            per_page = request.args.get('per_page', 10, type=int)
             
             # Get database instance
             db = await get_db()
@@ -372,10 +374,26 @@ def setup_routes(app: Quart, application: Application) -> None:
             if not user:
                 return jsonify({"status": "error", "message": "User not found"}), 404
 
-            journal = await JournalManager.get_user_journal(user['user_id'])
+            journal = await JournalManager.get_user_journal(user['user_id'], page, per_page)
+            
             if journal:
-                return jsonify({"status": "success", "journal": journal["entries"]}), 200
-            return jsonify({"status": "error", "message": "No journal entries found"}), 404
+                return jsonify({
+                    "status": "success",
+                    "journal": journal['entries'],
+                    "pagination": {
+                        "current_page": journal['current_page'],
+                        "per_page": journal['per_page'],
+                        "total_pages": journal['total_pages'],
+                        "total_entries": journal['total']
+                    }
+                }), 200
+                
+            return jsonify({"status": "success", "journal": [], "pagination": {
+                "current_page": 1,
+                "per_page": per_page,
+                "total_pages": 0,
+                "total_entries": 0
+            }}), 200
 
         except Exception as e:
             logger.error(f"Error fetching journal: {e}")

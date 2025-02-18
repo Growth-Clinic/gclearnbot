@@ -867,6 +867,28 @@ async function fetchJournal() {
                 `;
                 journalList.appendChild(entryElement);
             });
+
+            // Add pagination controls
+            if (data.pagination) {
+                const paginationElement = document.createElement('nav');
+                paginationElement.className = 'pagination is-centered';
+                paginationElement.innerHTML = `
+                    <button class="pagination-previous" 
+                            ${data.pagination.current_page <= 1 ? 'disabled' : ''}
+                            onclick="fetchJournal(${data.pagination.current_page - 1}, ${perPage})">
+                        Previous
+                    </button>
+                    <button class="pagination-next"
+                            ${data.pagination.current_page >= data.pagination.total_pages ? 'disabled' : ''}
+                            onclick="fetchJournal(${data.pagination.current_page + 1}, ${perPage})">
+                        Next
+                    </button>
+                    <ul class="pagination-list">
+                        <li><span class="pagination-ellipsis">Page ${data.pagination.current_page} of ${data.pagination.total_pages}</span></li>
+                    </ul>
+                `;
+                journalList.appendChild(paginationElement);
+            }
         }
     } catch (error) {
         journalList.innerHTML = `

@@ -606,36 +606,53 @@ class JournalManager:
 
 
     @staticmethod
-    async def get_user_journal(user_id: int, limit: int = None) -> Optional[Dict[str, Any]]:
-        """
-        Get a user's journal entries with optional limit.
-        """
+    async def get_user_journal(user_id: int, page: int = 1, per_page: int = 10) -> Optional[Dict[str, Any]]:
+        """Get a user's journal entries with pagination."""
         try:
-            query = {"user_id": user_id}
-            if limit:
-                pipeline = [
-                    {"$match": query},
-                    {"$unwind": "$entries"},
-                    {"$sort": {"entries.timestamp": -1}},
-                    {"$limit": limit},
-                    {"$group": {
-                        "_id": "$_id",
-                        "user_id": {"$first": "$user_id"},
-                        "entries": {"$push": "$entries"}
-                    }}
-                ]
-                cursor = db.journals.aggregate(pipeline)
-                journal_list = await cursor.to_list(length=None)
-                journal = journal_list[0] if journal_list else None
-            else:
-                journal = await db.journals.find_one(query)
+            # Calculate skip value
+            skip = (page - 1) * per_page
 
-            if journal:
-                journal.pop('_id', None)
-            return journal
+            pipeline = [
+                {"$match": {"user_id": user_id}},
+                # First get total count
+                {
+                    "$facet": {
+                        "metadata": [{"$count": "total"}],
+                        "entries": [
+                            {"$unwind": "$entries"},
+                            {"$sort": {"entries.timestamp": -1}},
+                            {"$skip": skip},
+                            {"$limit": per_page},
+                            {
+                                "$group": {
+                                    "_id": "$_id",
+                                    "entries": {"$push": "$entries"}
+                                }
+                            }
+                        ]
+                    }
+                }
+            ]
+
+            result = await db.journals.aggregate(pipeline).to_list(None)
+            
+            if not result or not result[0].get('entries'):
+                return None
+                
+            # Get total count and entries
+            total = result[0]['metadata'][0]['total'] if result[0]['metadata'] else 0
+            entries = result[0]['entries'][0]['entries'] if result[0]['entries'] else []
+            
+            return {
+                "entries": entries,
+                "total": total,
+                "current_page": page,
+                "per_page": per_page,
+                "total_pages": (total + per_page - 1) // per_page
+            }
 
         except Exception as e:
-            logger.error(f"Error retrieving journal for user {user_id}: {e}", exc_info=True)
+            logger.error(f"Error retrieving journal for user {user_id}: {e}")
             return None
 
     @staticmethod

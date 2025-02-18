@@ -32,7 +32,7 @@ Last Updated: February 2025
 
 from functools import lru_cache
 import re
-from typing import Dict, List, Any, Optional
+from typing import Dict, List, Any, Optional, Set
 from datetime import datetime, timedelta
 import logging
 import math
@@ -41,6 +41,9 @@ from collections import Counter
 from services.feedback_config import LESSON_FEEDBACK_RULES
 from services.database import db
 from services.learning_insights import LearningInsightsManager
+from nltk.stem import PorterStemmer
+from nltk.corpus import wordnet
+import nltk
 
 logger = logging.getLogger(__name__)
 
@@ -58,11 +61,48 @@ def get_feedback_rules(lesson_id: str) -> Dict[str, Any]:
     """
     return LESSON_FEEDBACK_RULES.get(lesson_id, {})
 
+# Initialize NLTK data
+try:
+    nltk.data.find('corpora/wordnet')
+except LookupError:
+    nltk.download('wordnet')
+
 class DynamicSkillAnalyzer:
     """
     Analyzes user responses dynamically to identify skills and learning patterns
     without relying on predefined lesson mappings.
     """
+
+    def __init__(self):
+        """Initialize with stemming capability"""
+        self.stemmer = PorterStemmer()
+        
+    def _get_synonyms(self, word: str) -> Set[str]:
+        """Get synonyms for a word using WordNet."""
+        synonyms = set()
+        for syn in wordnet.synsets(word):
+            for lemma in syn.lemmas():
+                synonyms.add(lemma.name().lower())
+        return synonyms
+
+    def _check_pattern_match(self, text: str, pattern: str) -> bool:
+        """Enhanced pattern matching using stems and synonyms."""
+        text_lower = text.lower()
+        pattern_lower = pattern.lower()
+        
+        # Direct match
+        if pattern_lower in text_lower:
+            return True
+            
+        # Stem match
+        text_stems = {self.stemmer.stem(word) for word in text_lower.split()}
+        pattern_stem = self.stemmer.stem(pattern_lower)
+        if pattern_stem in text_stems:
+            return True
+            
+        # Synonym match
+        pattern_synonyms = self._get_synonyms(pattern_lower)
+        return any(syn in text_lower for syn in pattern_synonyms)
     
     # Core skill indicators that can be detected from language patterns
     SKILL_INDICATORS = {
@@ -120,30 +160,27 @@ class DynamicSkillAnalyzer:
     }
 
     @classmethod
-    def analyze_response(cls, response_text: str) -> Dict[str, Any]:
-        """
-        Analyzes a response to identify skills and their application levels.
-        """
+    def analyze_response(self, response_text: str) -> Dict[str, Any]:
+        """Analyzes a response with enhanced pattern matching."""
         text = response_text.lower()
         
-        # Analyze core skills
+        # Analyze core skills with enhanced matching
         skills = {}
-        for skill, config in cls.SKILL_INDICATORS.items():
+        for skill, config in self.SKILL_INDICATORS.items():
             matches = sum(1 for pattern in config['patterns'] 
-                        if re.search(pattern, text))
+                         if self._check_pattern_match(text, pattern))
             if matches:
-                # Calculate weighted score (0-100)
                 base_score = min(100, (matches / len(config['patterns'])) * 100)
                 weighted_score = base_score * config['weight']
                 skills[skill] = {
                     'score': round(weighted_score, 2),
                     'matches': matches,
-                    'level': cls._determine_skill_level(weighted_score)
+                    'level': self._determine_skill_level(weighted_score)
                 }
         
         # Analyze contextual application
         context_scores = {}
-        for context, patterns in cls.CONTEXT_INDICATORS.items():
+        for context, patterns in self.CONTEXT_INDICATORS.items():
             matches = sum(1 for pattern in patterns if re.search(pattern, text))
             if matches:
                 context_scores[context] = min(100, (matches / len(patterns)) * 100)
@@ -151,7 +188,7 @@ class DynamicSkillAnalyzer:
         return {
             'skills': skills,
             'context': context_scores,
-            'overall_score': cls._calculate_overall_score(skills, context_scores)
+            'overall_score': self._calculate_overall_score(skills, context_scores)
         }
 
     @classmethod
