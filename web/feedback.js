@@ -1,6 +1,4 @@
 import { getRelatedWords } from '/web/synonyms.js';
-import * as nlp from 'https://unpkg.com/compromise@14.6.0?module';
-
 
 // Feedback rules configuration similar to feedback_config.py
 const LESSON_FEEDBACK_RULES = {
@@ -699,16 +697,56 @@ class WebFeedbackAnalyzer {
 }
 
 function lemmatize(word) {
-    // Create a document for the word
-    const doc = nlp(word);
-    // Try to convert verbs to their infinitive form
-    let base = doc.verbs().toInfinitive().out('text');
-    // If it doesn’t return anything, try treating it as a noun
-    if (!base || base.trim() === '') {
-      base = doc.nouns().toSingular().out('text');
-    }
-    return base || word;
-  }
+    word = word.toLowerCase();
+
+    // Irregular verb forms
+    const irregularVerbs = {
+        "am": "be", "is": "be", "are": "be", "was": "be", "were": "be",
+        "has": "have", "had": "have",
+        "does": "do", "did": "do",
+        "goes": "go", "went": "go",
+        "comes": "come", "came": "come",
+        "becomes": "become", "became": "become",
+        "felt": "feel", "kept": "keep", "left": "leave", "made": "make",
+        "saw": "see", "thought": "think", "took": "take", "told": "tell",
+        "bought": "buy", "caught": "catch", "taught": "teach", "built": "build",
+        "wrote": "write", "spoken": "speak", "spoke": "speak", "driven": "drive", "drove": "drive",
+        "eaten": "eat", "ate": "eat", "fallen": "fall", "fell": "fall",
+        "given": "give", "gave": "give", "known": "know", "knew": "know",
+        "seen": "see", "shown": "show", "showed": "show",
+        "written": "write", "ran": "run", "swam": "swim", "swum": "swim",
+        "sung": "sing", "sang": "sing", "drunk": "drink", "drank": "drink"
+    };
+    if (irregularVerbs[word]) return irregularVerbs[word];
+
+    // Modal auxiliary verbs → Convert to root verb
+    const modals = {
+        "would": "will", "should": "shall", "could": "can", "might": "may", "must": "must"
+    };
+    if (modals[word]) return modals[word];
+
+    // Plural nouns to singular
+    if (word.endsWith("ies") && word.length > 4) return word.slice(0, -3) + "y";  // "stories" → "story"
+    if (word.endsWith("ves") && word.length > 4) return word.slice(0, -3) + "f";  // "leaves" → "leaf"
+    if (word.endsWith("es") && word.length > 4 && !word.endsWith("ss")) return word.slice(0, -2); // "wishes" → "wish"
+    if (word.endsWith("s") && word.length > 3 && !word.endsWith("ss")) return word.slice(0, -1); // "dogs" → "dog"
+
+    // Progressive & participle forms
+    if (word.endsWith("ing") && word.length > 5) return word.slice(0, -3);  // "running" → "run"
+    if (word.endsWith("ed") && word.length > 4) return word.slice(0, -2);   // "walked" → "walk"
+    if (word.endsWith("ied") && word.length > 4) return word.slice(0, -3) + "y";  // "studied" → "study"
+
+    // Handle words ending in "ying" (e.g., "studying" → "study")
+    if (word.endsWith("ying") && word.length > 5) return word.slice(0, -4) + "ie";
+
+    // Perfect tense and passive voice handling (e.g., "been" → "be")
+    const perfectTense = {
+        "been": "be", "gone": "go", "done": "do"
+    };
+    if (perfectTense[word]) return perfectTense[word];
+
+    return word;  // Default return if no rules apply
+}
 
 // Export for use in app.js
 export const webFeedbackAnalyzer = new WebFeedbackAnalyzer();
