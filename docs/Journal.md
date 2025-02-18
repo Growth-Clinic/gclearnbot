@@ -444,3 +444,8 @@ app.js:567 Lesson rules: {criteria: {…}}
 app.js:568 Feedback result: {feedback: Array(4), meetsExpectations: false, quality_metrics: {…}, keywords_found: Array(0)}
 app.js:569 Found keywords: []
 ```
+
+### 11:31 PM
+So I am done with adding better analysis of user's response and set up dynamic templates to send pseudo-personal feedback to users. For the next part of the app, I'd like to improve the user progress dashboard with the extra data we have, and then do an admin dashboard to see user details. 
+
+But I'll wait on those. Instead I'll start working on pushing out the app for people to test and collect feedback. Then based off the feedback, I'll launch proper, maybe use my custom domain and push everything out well 🤞🏾
