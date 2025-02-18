@@ -1,5 +1,5 @@
 import { getRelatedWords } from '/web/synonyms.js';
-import nlp from 'compromise';
+import nlp from 'https://cdn.jsdelivr.net/npm/compromise@14.0.0/builds/compromise.mjs';
 
 // Feedback rules configuration similar to feedback_config.py
 const LESSON_FEEDBACK_RULES = {
