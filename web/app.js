@@ -534,12 +534,6 @@ async function submitResponse(event) {
     const lessonSelect = document.getElementById("lessonSelect");
     let lessonId = lessonSelect.value;
     
-    // If only the main lesson is selected, default to the first step *ONLY IF NO STEP EXISTS*
-    if (lessonId.match(/^lesson_\d+$/) && !lessonId.includes("_step_")) {
-        lessonId = `${lessonId}_step_1`;
-        console.log('Adjusted lesson ID:', lessonId);
-    }
-    
     console.log('Selected lesson ID:', lessonId);
     console.log('Available rules:', Object.keys(webFeedbackAnalyzer.rules));
 
