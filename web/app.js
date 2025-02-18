@@ -605,14 +605,17 @@ async function submitResponse(event) {
 
         const data = await response.json();
         if (data.status === "success") {
-            // Create or get feedback card
+            // Ensure feedback card is recreated if it was removed
             let feedbackCard = document.getElementById('feedbackCard');
             if (!feedbackCard) {
                 feedbackCard = document.createElement('div');
                 feedbackCard.id = 'feedbackCard';
-                feedbackCard.className = 'card mb-4';
+                feedbackCard.className = 'card mb-4 is-hidden'; // Initially hidden
                 responseCard.parentNode.insertBefore(feedbackCard, responseCard.nextSibling);
             }
+
+            // Show the feedback card before inserting content
+            feedbackCard.classList.remove('is-hidden');
 
             // Combine feedback components
             const feedbackContent = {
