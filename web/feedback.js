@@ -1,5 +1,7 @@
 import { getRelatedWords } from '/web/synonyms.js';
 
+const API_BASE_URL = "https://gclearnbot.onrender.com";
+
 // Feedback rules configuration similar to feedback_config.py
 const LESSON_FEEDBACK_RULES = {
     "lesson_2_step_1": {
