@@ -979,3 +979,4 @@ document.getElementById('lessonSelect')?.addEventListener('change', (e) => {
 
 window.submitResponse = submitResponse;
 window.fetchJournal = fetchJournal;
+window.fetchProgress = fetchProgress;
