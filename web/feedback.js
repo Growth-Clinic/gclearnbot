@@ -727,16 +727,15 @@ class WebFeedbackAnalyzer {
 }
 
 function lemmatize(word) {
-    if (!window.winkNLP || !window.winkModel) {
-        console.error("⚠️ wink-nlp not loaded.");
-        return word; // Default to original word if NLP is missing
+    if (!window.nlp) {
+        console.error("⚠️ compromise.js not loaded.");
+        return word;
     }
 
-    const nlp = window.winkNLP(window.winkModel);
-    const doc = nlp.readDoc(word);
-    
-    // Get the base form of the word (lemmatization)
-    return doc.out().toLowerCase();
+    const doc = nlp(word);
+    let base = doc.verbs().toInfinitive().out('text') || doc.nouns().toSingular().out('text');
+
+    return base || word;
 }
 
 // Export for use in app.js

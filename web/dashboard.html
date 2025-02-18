@@ -166,12 +166,10 @@
     </script>
 
     <script type="module">
-        import winkNLP from 'https://unpkg.com/wink-nlp@6.0.1/src/wink-nlp.js';
-        import model from 'https://unpkg.com/wink-eng-lite-web-model@1.0.0/src/index.js';
+        import nlp from 'https://unpkg.com/compromise@14.6.0?module';
 
         // Store in global scope so `feedback.js` can access it
-        window.winkNLP = winkNLP;
-        window.winkModel = model;
+        window.nlp = nlp;
     </script>
 </body>
 
