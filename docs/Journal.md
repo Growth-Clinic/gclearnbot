@@ -405,3 +405,42 @@ I have gotten to the appendices of the book! Yippee! A few things I want to corr
 
 ### 3:45 AM
 It seems the stemming and synonym feature isn't working on responses, I'll need to look into that. I am also beginning to think I should restart my Job Auto-Applier tool I was building back then, since I have gotten this learning app to a point where I am okay with it. I'll also have to fix the Telegram issue too though before then.
+
+### 3:21 PM
+THis is the console log. It would seem the keywords are not matching as well, and I don't want to keep updating the lemmatize function manually. Would an SLM or LLM via an API be better or what would you suggest for a smoother expereince where the users who talked very different from each other but leave in a place with low connectivity can get good actionable feedback, but for the app, it would still be free and easy to implement?
+
+```
+📌 Lesson loaded: lesson_2
+app.js:386 📌 Lesson loaded: lesson_2_step_1
+app.js:546 ✅ Submitting response for: lesson_2_step_1
+app.js:547 Available rules: (29) ['lesson_2_step_1', 'lesson_2_step_2', 'lesson_2_step_3', 'lesson_2_step_4', 'lesson_2_step_5', 'lesson_2_step_6', 'lesson_3_step_1', 'lesson_3_step_2', 'lesson_3_step_3', 'lesson_3_step_4', 'lesson_3_step_5', 'lesson_3_step_6', 'lesson_4_step_1', 'lesson_4_step_2', 'lesson_4_step_3', 'lesson_4_step_4', 'lesson_4_step_5', 'lesson_5_step_1', 'lesson_5_step_2', 'lesson_5_step_3', 'lesson_5_step_4', 'lesson_5_step_5', 'lesson_6_step_1', 'lesson_6_step_2', 'lesson_6_step_3', 'lesson_6_step_4', 'lesson_6_step_5', 'lesson_6_step_6', 'lesson_6_step_7']
+feedback.js:610 Generating feedback for: lesson_2_step_1
+feedback.js:507 Finding rule for: lesson_2_step_1
+feedback.js:572 Extracting keywords for lesson: lesson_2_step_1
+feedback.js:507 Finding rule for: lesson_2_step_1
+feedback.js:554 Lemmatized match found for "finding" as "find"
+feedback.js:586 Matched keyword: finding
+feedback.js:593 Found keywords: ['finding']
+feedback.js:659 Generated feedback: (5) ['⚠️ Try to dig deeper into how your user feels and their experiences.', "💡 Consider asking 'why' questions to understand the underlying emotions and motivations.", '⚠️ Try to be more specific about what you learned from the interview.', '💡 Consider noting down specific quotes or moments that stood out.', '✨ Excellent detail in your response!']
+feedback.js:660 Found keywords: ['finding']
+app.js:565 Response text: I spoke with my friend about the last time they gave a gift, and they said it was for a friend they hadn't spoken to in a while. They were stressed about finding something nice like a book, but they weren't sure if it would be any good or if they'd read it before.
+app.js:566 Lesson ID: lesson_2_step_1
+app.js:567 Lesson rules: {criteria: {…}}
+app.js:568 Feedback result: {feedback: Array(5), meetsExpectations: false, quality_metrics: {…}, keywords_found: Array(1)}
+app.js:569 Found keywords: ['finding']
+app.js:386 📌 Lesson loaded: lesson_2_step_2
+app.js:546 ✅ Submitting response for: lesson_2_step_2
+app.js:547 Available rules: (29) ['lesson_2_step_1', 'lesson_2_step_2', 'lesson_2_step_3', 'lesson_2_step_4', 'lesson_2_step_5', 'lesson_2_step_6', 'lesson_3_step_1', 'lesson_3_step_2', 'lesson_3_step_3', 'lesson_3_step_4', 'lesson_3_step_5', 'lesson_3_step_6', 'lesson_4_step_1', 'lesson_4_step_2', 'lesson_4_step_3', 'lesson_4_step_4', 'lesson_4_step_5', 'lesson_5_step_1', 'lesson_5_step_2', 'lesson_5_step_3', 'lesson_5_step_4', 'lesson_5_step_5', 'lesson_6_step_1', 'lesson_6_step_2', 'lesson_6_step_3', 'lesson_6_step_4', 'lesson_6_step_5', 'lesson_6_step_6', 'lesson_6_step_7']
+feedback.js:610 Generating feedback for: lesson_2_step_2
+feedback.js:507 Finding rule for: lesson_2_step_2
+feedback.js:572 Extracting keywords for lesson: lesson_2_step_2
+feedback.js:507 Finding rule for: lesson_2_step_2
+feedback.js:593 Found keywords: []
+feedback.js:659 Generated feedback: (4) ['⚠️ Try to probe deeper into the initial responses.', '💡 Use the 5 Whys technique to uncover root causes.', '⚠️ Try to identify patterns or surprising findings from your research.', '💡 Look for unexpected or counter-intuitive findings in your research.']
+feedback.js:660 Found keywords: []
+app.js:565 Response text: They hadn't spoken to their friend in a while because she had gotten busy and so priorities came up and took her attention. She was hoping to use this gift as a way to reconnect with the friend.
+app.js:566 Lesson ID: lesson_2_step_2
+app.js:567 Lesson rules: {criteria: {…}}
+app.js:568 Feedback result: {feedback: Array(4), meetsExpectations: false, quality_metrics: {…}, keywords_found: Array(0)}
+app.js:569 Found keywords: []
+```

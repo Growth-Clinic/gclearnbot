@@ -463,8 +463,23 @@ function updateLessonNavigation(currentId, nextId) {
         }
     };
 
-    nextButton.onclick = () => {
-        if (nextId) loadLesson(nextId);
+    // ✅ Updated "Next" button behavior
+    nextButton.onclick = async () => {
+        if (nextId) {
+            await loadLesson(nextId); // Load the next step
+            
+            // ✅ Clear feedback card
+            let feedbackCard = document.getElementById('feedbackCard');
+            if (feedbackCard) {
+                feedbackCard.innerHTML = ''; // Remove old feedback content
+                feedbackCard.classList.add('is-hidden'); // Hide it completely
+            }
+
+            // ✅ Move focus back to lesson content
+            document.getElementById('lessonCard').scrollIntoView({ behavior: 'smooth' });
+
+            console.log(`➡️ Moved to next step: ${nextId}`);
+        }
     };
 }
 
