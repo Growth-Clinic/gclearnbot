@@ -530,42 +530,72 @@ class WebFeedbackAnalyzer {
 
     // Enhanced keyword matching
     _matchKeyword(text, keyword) {
-        // Convert text and keyword to lowercase for consistency
         text = text.toLowerCase();
         keyword = keyword.toLowerCase();
     
-        // Use the lemmatizer to get the base form of the keyword
+        // Use wink-nlp to lemmatize words before matching
         const lemmatizedKeyword = lemmatize(keyword);
-        // Split the response into words and lemmatize each one
         const lemmatizedWords = text.split(/\s+/).map(word => lemmatize(word));
     
-        // Handle multi-word phrases
-        if (keyword.includes(' ')) {
-            // Lemmatize each word in the phrase and rejoin them
-            const lemmatizedPhrase = keyword.split(' ').map(w => lemmatize(w)).join(' ');
-            const phraseRegex = new RegExp(`\\b${lemmatizedPhrase}\\b`, 'i');
-            if (phraseRegex.test(text)) {
-                console.log(`Multi-word phrase match found for "${keyword}"`);
-                return true;
-            }
-        } else {
-            // For single words, check if the lemmatized keyword is present in the lemmatized words of the text
-            if (lemmatizedWords.includes(lemmatizedKeyword)) {
-                console.log(`Lemmatized match found for "${keyword}" as "${lemmatizedKeyword}"`);
-                return true;
+        // Exact match, lemmatized match, or similarity match
+        return lemmatizedWords.includes(lemmatizedKeyword) || _isSimilar(lemmatizedWords, lemmatizedKeyword);
+    }
+    
+    // Helper function to check word similarity
+    _isSimilar(words, keyword) {
+        return words.some(word => {
+            const similarity = _getWordSimilarity(word, keyword);
+            return similarity > 0.85; // Adjust threshold as needed
+        });
+    }
+    
+    // Calculate word similarity (Jaro-Winkler Distance)
+    _getWordSimilarity(word1, word2) {
+        const l1 = word1.length;
+        const l2 = word2.length;
+        const matchDistance = Math.floor(Math.max(l1, l2) / 2) - 1;
+    
+        let matches = 0;
+        let transpositions = 0;
+        let hashS1 = Array(l1).fill(false);
+        let hashS2 = Array(l2).fill(false);
+    
+        for (let i = 0; i < l1; i++) {
+            let start = Math.max(0, i - matchDistance);
+            let end = Math.min(i + matchDistance + 1, l2);
+            
+            for (let j = start; j < end; j++) {
+                if (word1[i] === word2[j] && !hashS2[j]) {
+                    hashS1[i] = true;
+                    hashS2[j] = true;
+                    matches++;
+                    break;
+                }
             }
         }
     
-        // Optionally, also check using your synonyms function if you still want that extra layer.
-        const relatedWords = getRelatedWords(keyword);  // your existing function
-        const lemmatizedRelated = relatedWords.map(word => lemmatize(word));
-        if (lemmatizedRelated.some(relWord => lemmatizedWords.includes(relWord))) {
-            console.log(`Related word match found for "${keyword}"`);
-            return true;
+        if (matches === 0) return 0;
+    
+        let k = 0;
+        for (let i = 0; i < l1; i++) {
+            if (hashS1[i]) {
+                while (!hashS2[k]) k++;
+                if (word1[i] !== word2[k]) transpositions++;
+                k++;
+            }
         }
     
-        return false;
-    }    
+        transpositions /= 2;
+        let jaro = ((matches / l1) + (matches / l2) + ((matches - transpositions) / matches)) / 3;
+    
+        // Apply Jaro-Winkler boost for similar prefixes
+        let prefixLength = 0;
+        for (; prefixLength < Math.min(4, l1, l2); prefixLength++) {
+            if (word1[prefixLength] !== word2[prefixLength]) break;
+        }
+    
+        return jaro + (prefixLength * 0.1 * (1 - jaro));
+    }        
 
     // Extract keywords from response
     extractKeywords(response, lessonId) {
@@ -697,55 +727,16 @@ class WebFeedbackAnalyzer {
 }
 
 function lemmatize(word) {
-    word = word.toLowerCase();
+    if (!window.winkNLP || !window.winkModel) {
+        console.error("⚠️ wink-nlp not loaded.");
+        return word; // Default to original word if NLP is missing
+    }
 
-    // Irregular verb forms
-    const irregularVerbs = {
-        "am": "be", "is": "be", "are": "be", "was": "be", "were": "be",
-        "has": "have", "had": "have",
-        "does": "do", "did": "do",
-        "goes": "go", "went": "go",
-        "comes": "come", "came": "come",
-        "becomes": "become", "became": "become",
-        "felt": "feel", "kept": "keep", "left": "leave", "made": "make",
-        "saw": "see", "thought": "think", "took": "take", "told": "tell",
-        "bought": "buy", "caught": "catch", "taught": "teach", "built": "build",
-        "wrote": "write", "spoken": "speak", "spoke": "speak", "driven": "drive", "drove": "drive",
-        "eaten": "eat", "ate": "eat", "fallen": "fall", "fell": "fall",
-        "given": "give", "gave": "give", "known": "know", "knew": "know",
-        "seen": "see", "shown": "show", "showed": "show",
-        "written": "write", "ran": "run", "swam": "swim", "swum": "swim",
-        "sung": "sing", "sang": "sing", "drunk": "drink", "drank": "drink"
-    };
-    if (irregularVerbs[word]) return irregularVerbs[word];
-
-    // Modal auxiliary verbs → Convert to root verb
-    const modals = {
-        "would": "will", "should": "shall", "could": "can", "might": "may", "must": "must"
-    };
-    if (modals[word]) return modals[word];
-
-    // Plural nouns to singular
-    if (word.endsWith("ies") && word.length > 4) return word.slice(0, -3) + "y";  // "stories" → "story"
-    if (word.endsWith("ves") && word.length > 4) return word.slice(0, -3) + "f";  // "leaves" → "leaf"
-    if (word.endsWith("es") && word.length > 4 && !word.endsWith("ss")) return word.slice(0, -2); // "wishes" → "wish"
-    if (word.endsWith("s") && word.length > 3 && !word.endsWith("ss")) return word.slice(0, -1); // "dogs" → "dog"
-
-    // Progressive & participle forms
-    if (word.endsWith("ing") && word.length > 5) return word.slice(0, -3);  // "running" → "run"
-    if (word.endsWith("ed") && word.length > 4) return word.slice(0, -2);   // "walked" → "walk"
-    if (word.endsWith("ied") && word.length > 4) return word.slice(0, -3) + "y";  // "studied" → "study"
-
-    // Handle words ending in "ying" (e.g., "studying" → "study")
-    if (word.endsWith("ying") && word.length > 5) return word.slice(0, -4) + "ie";
-
-    // Perfect tense and passive voice handling (e.g., "been" → "be")
-    const perfectTense = {
-        "been": "be", "gone": "go", "done": "do"
-    };
-    if (perfectTense[word]) return perfectTense[word];
-
-    return word;  // Default return if no rules apply
+    const nlp = window.winkNLP(window.winkModel);
+    const doc = nlp.readDoc(word);
+    
+    // Get the base form of the word (lemmatization)
+    return doc.out().toLowerCase();
 }
 
 // Export for use in app.js
