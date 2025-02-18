@@ -570,20 +570,55 @@ class WebFeedbackAnalyzer {
 
     // Extract keywords from response
     extractKeywords(response, lessonId) {
-        if (!this.rules[lessonId]) return [];
-
-        const criteria = this.rules[lessonId].criteria;
-        const foundKeywords = new Set();
+        console.log('Extracting keywords for lesson:', lessonId);
         
-        Object.values(criteria).forEach(rule => {
+        // Find the correct lesson rule
+        const lessonRule = this._findLessonRule(lessonId);
+        
+        if (!lessonRule) {
+            console.warn(`No rules found for lesson: ${lessonId}`);
+            return [];
+        }
+    
+        const criteria = lessonRule.criteria;
+        const foundKeywords = new Set();
+        const lowercaseResponse = response.toLowerCase();
+        
+        console.log('Criteria:', criteria);
+        
+        Object.values(criteria).forEach((rule, criterionIndex) => {
+            console.log(`Checking criterion ${criterionIndex}:`, rule.keywords);
+            
             rule.keywords.forEach(keyword => {
-                if (this._matchKeyword(response, keyword)) {
+                // Multiple matching strategies
+                const keywordLower = keyword.toLowerCase();
+                
+                // Whole word match with word boundaries
+                const wholeWordRegex = new RegExp(`\\b${keywordLower}\\b`, 'i');
+                
+                // Partial match
+                const partialMatch = lowercaseResponse.includes(keywordLower);
+                
+                // Stemmed match using existing Stemmer
+                const stemmedKeyword = this.stemmer.stem(keywordLower);
+                const stemmedResponseWords = lowercaseResponse.split(/\s+/).map(word => this.stemmer.stem(word));
+                
+                // Check for match
+                const isMatch = 
+                    wholeWordRegex.test(lowercaseResponse) || 
+                    partialMatch || 
+                    stemmedResponseWords.includes(stemmedKeyword);
+                
+                if (isMatch) {
+                    console.log(`Matched keyword: ${keyword}`);
                     foundKeywords.add(keyword);
                 }
             });
         });
-
-        return Array.from(foundKeywords);
+    
+        const keywordsArray = Array.from(foundKeywords);
+        console.log('Found keywords:', keywordsArray);
+        return keywordsArray;
     }
 
     // Analyze response quality
