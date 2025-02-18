@@ -397,3 +397,10 @@ I have gotten to the appendices of the book! Yippee! A few things I want to corr
 
 ### 9:14 PM
 - Can we paginate the journals page so it is easier to browse through long entries?
+
+
+
+
+## 18 Feb 2025
+
+### 2:32 AM
