@@ -575,11 +575,19 @@ async function submitResponse(event) {
     submitButton.classList.add('is-loading');
 
     try {
-        // Use web feedback analyzer for enhanced keyword matching
+        const base64Url = token.split('.')[1];
+        const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+        const payload = JSON.parse(window.atob(base64));
+        const userEmail = payload.sub; // This is the email we stored in the token
+
+        // Show loading state
+        submitButton.classList.add('is-loading');
+
+        // Use webFeedbackAnalyzer with the email as userId
         const feedbackResult = await webFeedbackAnalyzer.generatePersonalizedFeedback(
             responseText, 
             lessonId,
-            userId
+            userEmail  // Use email as userId since that's what we have in the token
         );
         console.log('Response text:', responseText);
         console.log('Lesson ID:', lessonId);
