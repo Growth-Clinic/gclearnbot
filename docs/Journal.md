@@ -403,4 +403,5 @@ I have gotten to the appendices of the book! Yippee! A few things I want to corr
 
 ## 18 Feb 2025
 
-### 2:32 AM
+### 3:45 AM
+It seems the stemming and synonym feature isn't working on responses, I'll need to look into that. I am also beginning to think I should restart my Job Auto-Applier tool I was building back then, since I have gotten this learning app to a point where I am okay with it. I'll also have to fix the Telegram issue too though before then.
