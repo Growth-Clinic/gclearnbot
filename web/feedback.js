@@ -743,10 +743,10 @@ class WebFeedbackAnalyzer {
         const baseFeedback = this.generateFeedback(response, lessonId);
         
         try {
-            // Get personalization data from backend
+            // Get personalization data from backend using provided token
             const personalData = await fetch(`/api/feedback/personalization/${userId}`, {
                 headers: {
-                    'Authorization': `Bearer ${getAuthToken()}`,
+                    'Authorization': `Bearer ${token}`,  // Use passed token
                     'Content-Type': 'application/json'
                 }
             }).then(res => res.json());
@@ -802,11 +802,11 @@ class WebFeedbackAnalyzer {
         }
     }
     
-    async getTemplate(templateKey) {
+    async getTemplate(templateKey, token) {  // Add token parameter
         try {
             const response = await fetch(`/api/feedback/templates/${templateKey}`, {
                 headers: {
-                    'Authorization': `Bearer ${getAuthToken()}`,
+                    'Authorization': `Bearer ${token}`,  // Use passed token
                     'Content-Type': 'application/json'
                 }
             });

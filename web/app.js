@@ -581,10 +581,12 @@ async function submitResponse(event) {
         const userEmail = payload.sub; // This is the email we stored in the token
 
         // Use webFeedbackAnalyzer with the email as userId
+        const token = getAuthToken();
         const feedbackResult = await webFeedbackAnalyzer.generatePersonalizedFeedback(
             responseText, 
             lessonId,
-            userEmail  // Use email as userId since that's what we have in the token
+            userEmail,  // Use email as userId since that's what we have in the token
+            token       // Pass the token
         );
         console.log('Response text:', responseText);
         console.log('Lesson ID:', lessonId);
