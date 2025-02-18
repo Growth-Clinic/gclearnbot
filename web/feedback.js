@@ -738,13 +738,13 @@ class WebFeedbackAnalyzer {
         return Math.round(score);
     }
 
-    async generatePersonalizedFeedback(response, lessonId, userId, token) {  // receive token parameter
+    async generatePersonalizedFeedback(response, lessonId, userId, token) {
         // Get base feedback first
         const baseFeedback = this.generateFeedback(response, lessonId);
         
         try {
             // Get personalization data from backend
-            const personalData = await fetch(`/api/feedback/personalization/${userId}`, {
+            const personalData = await fetch(`${API_BASE_URL}/feedback/personalization/${userId}`, {
                 headers: {
                     'Authorization': `Bearer ${token}`,
                     'Content-Type': 'application/json'
@@ -761,7 +761,7 @@ class WebFeedbackAnalyzer {
             // Add strength-based feedback if applicable
             if (data.top_strengths && data.top_strengths.length > 0) {
                 const strength = data.top_strengths[0];
-                const template = await this.getTemplate('strength_template', token);  // Pass token here
+                const template = await this.getTemplate('strength_template', token);
                 if (template) {
                     personalizedFeedback.push(template.replace(
                         '{strength_area}', strength
@@ -772,7 +772,7 @@ class WebFeedbackAnalyzer {
             // Add improvement-based feedback if needed
             if (data.top_weaknesses && data.top_weaknesses.length > 0) {
                 const weakness = data.top_weaknesses[0];
-                const template = await this.getTemplate('improvement_template', token);  // Pass token here
+                const template = await this.getTemplate('improvement_template', token);
                 if (template) {
                     personalizedFeedback.push(template.replace(
                         '{weakness_area}', weakness
@@ -782,7 +782,7 @@ class WebFeedbackAnalyzer {
             
             // Add progress feedback if user has sufficient history
             if (data.response_count > 5) {
-                const progressTemplate = await this.getTemplate('progress_template', token);  // Pass token here
+                const progressTemplate = await this.getTemplate('progress_template', token);
                 if (progressTemplate) {
                     personalizedFeedback.push(progressTemplate.replace(
                         '{skill_area}', data.top_strengths[0] || 'analysis'
@@ -802,9 +802,9 @@ class WebFeedbackAnalyzer {
         }
     }
     
-    async getTemplate(templateKey, token) {  // Add token parameter
+    async getTemplate(templateKey, token) {
         try {
-            const response = await fetch(`/api/feedback/templates/${templateKey}`, {
+            const response = await fetch(`${API_BASE_URL}/feedback/templates/${templateKey}`, {
                 headers: {
                     'Authorization': `Bearer ${token}`,  // Use passed token
                     'Content-Type': 'application/json'
