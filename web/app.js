@@ -530,6 +530,9 @@ async function submitResponse(event) {
         event.stopPropagation();
     }
     const lessonId = document.getElementById("lessonSelect").value;
+    console.log('Selected lesson ID:', lessonId);
+    console.log('Available rules:', Object.keys(webFeedbackAnalyzer.rules));
+
     const responseText = document.getElementById("responseText").value;
     const responseCard = document.getElementById('responseCard');
     const token = getAuthToken();
