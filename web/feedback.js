@@ -501,7 +501,6 @@ const LESSON_FEEDBACK_RULES = {
 class WebFeedbackAnalyzer {
     constructor() {
         this.rules = LESSON_FEEDBACK_RULES;
-        this.stemmer = new Stemmer();  // Simple Porter stemmer implementation
     }
 
     // Enhanced method to find the correct lesson rule
@@ -709,25 +708,6 @@ function lemmatize(word) {
     }
     return base || word;
   }
-
-class Stemmer {
-    stem(word) {
-        // Basic implementation of Porter Stemmer algorithm
-        word = word.toLowerCase();
-        
-        // Handle basic plural forms
-        if (word.endsWith('ies')) return word.slice(0, -3) + 'y';
-        if (word.endsWith('es')) return word.slice(0, -2);
-        if (word.endsWith('s')) return word.slice(0, -1);
-        
-        // Handle common suffixes
-        if (word.endsWith('ing')) return word.slice(0, -3);
-        if (word.endsWith('ed')) return word.slice(0, -2);
-        if (word.endsWith('ly')) return word.slice(0, -2);
-        
-        return word;
-    }
-}
 
 // Export for use in app.js
 export const webFeedbackAnalyzer = new WebFeedbackAnalyzer();
