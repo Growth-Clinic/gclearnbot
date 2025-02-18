@@ -552,9 +552,15 @@ class JournalManager:
     """Manages journal operations in MongoDB with improved data quality and validation"""
     
     @staticmethod
-    async def save_journal_entry(user_id: str, lesson_key: str, response: str) -> bool:
+    async def save_journal_entry(user_id: str, lesson_key: str, response: str, keywords: Optional[Dict[str, List[str]]] = None) -> bool:
         """
         Save a user's response to their journal with validation and error handling.
+        
+        Args:
+            user_id: The user's ID
+            lesson_key: The lesson identifier
+            response: The user's response text
+            keywords: Optional dictionary of keyword types and their matched keywords
         """
         user_id = str(user_id)
 
@@ -575,7 +581,7 @@ class JournalManager:
                 "response": response.strip(),
                 "response_length": len(response.strip()),
                 "keywords_used": extract_keywords_from_response(response, lesson_key),
-                # Add new keyword tracking
+                # Add new keyword tracking, with a default empty dict if None
                 "enhanced_keywords": keywords or {}
             }
 
