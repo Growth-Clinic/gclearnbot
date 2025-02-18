@@ -2,6 +2,7 @@ import { webFeedbackAnalyzer } from '/web/feedback.js';
 
 const API_BASE_URL = "https://gclearnbot.onrender.com"; 
 const PROTECTED_ROUTES = ['/web/dashboard.html', '/web/journal.html', '/web/progress.html'];
+let currentLessonId = ""; 
 
 // Initialize the app
 async function initializeApp() {
@@ -380,6 +381,10 @@ async function loadLesson(lessonId) {
         const data = await response.json();
 
         if (data.status === "success" && data.lesson) {
+            // ✅ Store the correct lesson step globally
+            currentLessonId = lessonId;
+            console.log(`📌 Lesson loaded: ${currentLessonId}`);
+
             // Fade out selector
             lessonSelectCard.classList.add('fade-out');
             setTimeout(() => {
@@ -530,11 +535,15 @@ async function submitResponse(event) {
         event.stopPropagation();
     }
     
-    // Get the full lesson ID from the select element
-    const lessonSelect = document.getElementById("lessonSelect");
-    let lessonId = lessonSelect.value;
-    
-    console.log('Selected lesson ID:', lessonId);
+    // ✅ Use the stored lesson step instead of dropdown selection
+    let lessonId = currentLessonId;
+
+    if (!lessonId) {
+        console.error("⚠️ No lesson step selected! Cannot submit response.");
+        return;
+    }
+
+    console.log('✅ Submitting response for:', lessonId);
     console.log('Available rules:', Object.keys(webFeedbackAnalyzer.rules));
 
     const responseText = document.getElementById("responseText").value;
@@ -609,7 +618,7 @@ async function submitResponse(event) {
                     </div>
                 </div>
             `;
-            
+
             // Smooth scroll to feedback
             feedbackCard.scrollIntoView({ behavior: 'smooth' });
 
