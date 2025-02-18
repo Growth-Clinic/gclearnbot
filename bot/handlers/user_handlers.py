@@ -177,7 +177,7 @@ async def handle_email(update: Update, context: ContextTypes.DEFAULT_TYPE) -> in
                 f"Thanks! Your account has been created with {email}."
             )
         
-        # Show lesson menu
+        # Always show lesson menu after successful email handling
         await show_lesson_menu(update, context)
         return ConversationHandler.END
         
@@ -205,12 +205,17 @@ async def show_lesson_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 )
             ])
     
-    reply_markup = InlineKeyboardMarkup(keyboard)
-    await update.message.reply_text(
-        "Welcome to Growth Clinic! 🌱\n\n"
-        "Choose your learning path:",
-        reply_markup=reply_markup
-    )
+    # Use edit_message or send_message depending on context
+    if update.message:
+        await update.message.reply_text(
+            "Welcome to Growth Clinic! 🌱\n\nChoose your learning path:",
+            reply_markup=InlineKeyboardMarkup(keyboard)
+        )
+    elif update.callback_query:
+        await update.callback_query.message.edit_text(
+            "Welcome to Growth Clinic! 🌱\n\nChoose your learning path:",
+            reply_markup=InlineKeyboardMarkup(keyboard)
+        )
 
 async def handle_start_choice(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Handle user's choice between lessons and tasks"""
