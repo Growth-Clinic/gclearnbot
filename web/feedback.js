@@ -497,91 +497,77 @@ const LESSON_FEEDBACK_RULES = {
     }
 };
 
+function lemmatize(word) {
+    if (!window.nlp) {
+        console.error("⚠️ compromise.js not loaded.");
+        return word;
+    }
+
+    const doc = nlp(word);
+    let base = doc.verbs().toInfinitive().out('text') || doc.nouns().toSingular().out('text');
+
+    return base || word;
+}
+
+// Helper function to check word similarity
+function _isSimilar(words, keyword) {
+    return words.some(word => {
+        const similarity = _getWordSimilarity(word, keyword);
+        return similarity > 0.85; // Adjust threshold as needed
+    });
+}
+
+// Calculate word similarity (Jaro-Winkler Distance)
+function _getWordSimilarity(word1, word2) {
+    const l1 = word1.length;
+    const l2 = word2.length;
+    const matchDistance = Math.floor(Math.max(l1, l2) / 2) - 1;
+
+    let matches = 0;
+    let transpositions = 0;
+    let hashS1 = Array(l1).fill(false);
+    let hashS2 = Array(l2).fill(false);
+
+    for (let i = 0; i < l1; i++) {
+        let start = Math.max(0, i - matchDistance);
+        let end = Math.min(i + matchDistance + 1, l2);
+        
+        for (let j = start; j < end; j++) {
+            if (word1[i] === word2[j] && !hashS2[j]) {
+                hashS1[i] = true;
+                hashS2[j] = true;
+                matches++;
+                break;
+            }
+        }
+    }
+
+    if (matches === 0) return 0;
+
+    let k = 0;
+    for (let i = 0; i < l1; i++) {
+        if (hashS1[i]) {
+            while (!hashS2[k]) k++;
+            if (word1[i] !== word2[k]) transpositions++;
+            k++;
+        }
+    }
+
+    transpositions /= 2;
+    let jaro = ((matches / l1) + (matches / l2) + ((matches - transpositions) / matches)) / 3;
+
+    // Apply Jaro-Winkler boost for similar prefixes
+    let prefixLength = 0;
+    for (; prefixLength < Math.min(4, l1, l2); prefixLength++) {
+        if (word1[prefixLength] !== word2[prefixLength]) break;
+    }
+
+    return jaro + (prefixLength * 0.1 * (1 - jaro));
+}
+
 class WebFeedbackAnalyzer {
     constructor() {
         this.rules = LESSON_FEEDBACK_RULES;
-    }
-
-    // Enhanced method to find the correct lesson rule
-    _findLessonRule(lessonId) {
-        console.log('Finding rule for:', lessonId);
-        
-        // If direct match exists, return it
-        if (this.rules[lessonId]) {
-            return this.rules[lessonId];
-        }
-    
-        // Try to match the base lesson to its first step
-        const baseMatch = lessonId.match(/^(lesson_\d+)$/);
-        if (baseMatch) {
-            const firstStepRule = `${baseMatch[1]}_step_1`;
-            console.log('Attempting to match first step:', firstStepRule);
-            return this.rules[firstStepRule];
-        }
-    
-        // Try matching main lesson steps
-        const stepMatch = Object.keys(this.rules).find(ruleKey => 
-            ruleKey.startsWith(lessonId + '_step_')
-        );
-    
-        console.log('Matched step rule:', stepMatch);
-        return stepMatch ? this.rules[stepMatch] : null;
-    }
-    
-    // Helper function to check word similarity
-    _isSimilar(words, keyword) {
-        return words.some(word => {
-            const similarity = _getWordSimilarity(word, keyword);
-            return similarity > 0.85; // Adjust threshold as needed
-        });
-    }
-    
-    // Calculate word similarity (Jaro-Winkler Distance)
-    _getWordSimilarity(word1, word2) {
-        const l1 = word1.length;
-        const l2 = word2.length;
-        const matchDistance = Math.floor(Math.max(l1, l2) / 2) - 1;
-    
-        let matches = 0;
-        let transpositions = 0;
-        let hashS1 = Array(l1).fill(false);
-        let hashS2 = Array(l2).fill(false);
-    
-        for (let i = 0; i < l1; i++) {
-            let start = Math.max(0, i - matchDistance);
-            let end = Math.min(i + matchDistance + 1, l2);
-            
-            for (let j = start; j < end; j++) {
-                if (word1[i] === word2[j] && !hashS2[j]) {
-                    hashS1[i] = true;
-                    hashS2[j] = true;
-                    matches++;
-                    break;
-                }
-            }
-        }
-    
-        if (matches === 0) return 0;
-    
-        let k = 0;
-        for (let i = 0; i < l1; i++) {
-            if (hashS1[i]) {
-                while (!hashS2[k]) k++;
-                if (word1[i] !== word2[k]) transpositions++;
-                k++;
-            }
-        }
-    
-        transpositions /= 2;
-        let jaro = ((matches / l1) + (matches / l2) + ((matches - transpositions) / matches)) / 3;
-    
-        // Apply Jaro-Winkler boost for similar prefixes
-        let prefixLength = 0;
-        for (; prefixLength < Math.min(4, l1, l2); prefixLength++) {
-            if (word1[prefixLength] !== word2[prefixLength]) break;
-        }
-    
-        return jaro + (prefixLength * 0.1 * (1 - jaro));
     }
 
     // Enhanced keyword matching
@@ -589,13 +575,13 @@ class WebFeedbackAnalyzer {
         text = text.toLowerCase();
         keyword = keyword.toLowerCase();
     
-        // Use wink-nlp to lemmatize words before matching
+        // ✅ Use compromise.js for lemmatization
         const lemmatizedKeyword = lemmatize(keyword);
         const lemmatizedWords = text.split(/\s+/).map(word => lemmatize(word));
     
-        // Exact match, lemmatized match, or similarity match
+        // ✅ Use similarity matching
         return lemmatizedWords.includes(lemmatizedKeyword) || _isSimilar(lemmatizedWords, lemmatizedKeyword);
-    }        
+    }            
 
     // Extract keywords from response
     extractKeywords(response, lessonId) {
@@ -624,6 +610,32 @@ class WebFeedbackAnalyzer {
         return keywordsArray;
     }
 
+    // Enhanced method to find the correct lesson rule
+    _findLessonRule(lessonId) {
+        console.log('Finding rule for:', lessonId);
+        
+        // If direct match exists, return it
+        if (this.rules[lessonId]) {
+            return this.rules[lessonId];
+        }
+    
+        // Try to match the base lesson to its first step
+        const baseMatch = lessonId.match(/^(lesson_\d+)$/);
+        if (baseMatch) {
+            const firstStepRule = `${baseMatch[1]}_step_1`;
+            console.log('Attempting to match first step:', firstStepRule);
+            return this.rules[firstStepRule];
+        }
+    
+        // Try matching main lesson steps
+        const stepMatch = Object.keys(this.rules).find(ruleKey => 
+            ruleKey.startsWith(lessonId + '_step_')
+        );
+    
+        console.log('Matched step rule:', stepMatch);
+        return stepMatch ? this.rules[stepMatch] : null;
+    }
+
     // Analyze response quality
     analyzeResponseQuality(response) {
         return {
@@ -641,27 +653,28 @@ class WebFeedbackAnalyzer {
         
         // Find the correct lesson rule
         const lessonRule = this._findLessonRule(lessonId);
-        
+    
+        // ✅ If no lesson rule is found, return a default message
         if (!lessonRule) {
             console.warn(`No rules found for lesson: ${lessonId}`);
             return {
-                feedback: ["Thank you for your response!"],
+                feedback: ["⚠️ No specific feedback rules found for this lesson. Try to follow the lesson instructions!"],
                 keywords_found: [],
                 quality_metrics: this.analyzeResponseQuality(response)
             };
         }
-
+    
         const foundKeywords = this.extractKeywords(response, lessonId);
         const criteria = lessonRule.criteria;
         const feedback = [];
         let meetsExpectations = true;
-
+    
         // Check each criterion
         Object.entries(criteria).forEach(([criterion, rule]) => {
             const matchCount = rule.keywords.filter(keyword => 
                 foundKeywords.includes(keyword.toLowerCase())
             ).length;
-
+    
             const threshold = Math.ceil(rule.keywords.length * 0.3); // 30% threshold
             
             if (matchCount >= threshold) {
@@ -677,7 +690,7 @@ class WebFeedbackAnalyzer {
                 }
             }
         });
-
+    
         // Add quality-based feedback
         const quality = this.analyzeResponseQuality(response);
         if (quality.word_count >= 50) {
@@ -685,10 +698,10 @@ class WebFeedbackAnalyzer {
         } else if (quality.word_count < 20) {
             feedback.push("💡 Consider providing more details in your response.");
         }
-
+    
         console.log('Generated feedback:', feedback);
         console.log('Found keywords:', foundKeywords);
-
+    
         return {
             feedback,
             meetsExpectations,
@@ -724,18 +737,6 @@ class WebFeedbackAnalyzer {
         
         return Math.round(score);
     }
-}
-
-function lemmatize(word) {
-    if (!window.nlp) {
-        console.error("⚠️ compromise.js not loaded.");
-        return word;
-    }
-
-    const doc = nlp(word);
-    let base = doc.verbs().toInfinitive().out('text') || doc.nouns().toSingular().out('text');
-
-    return base || word;
 }
 
 // Export for use in app.js
