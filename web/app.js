@@ -2,7 +2,51 @@ import { webFeedbackAnalyzer } from '/web/feedback.js';
 
 const API_BASE_URL = "https://gclearnbot.onrender.com"; 
 const PROTECTED_ROUTES = ['/web/dashboard.html', '/web/journal.html', '/web/progress.html'];
-let currentLessonId = ""; 
+let currentLessonId = "";
+
+// Make functions globally available
+window.toggleAuth = toggleAuth;
+window.loginUser = loginUser;
+window.registerUser = registerUser;
+window.logoutUser = logoutUser;
+window.checkRedirect = checkRedirect;
+window.initializeApp = initializeApp;
+window.initializeProtectedPage = initializeProtectedPage;
+window.initializeMobileMenu = initializeMobileMenu;
+window.initializeAuthDisplay = initializeAuthDisplay;
+window.showError = showError;
+window.showSuccess = showSuccess;
+window.submitResponse = submitResponse;
+window.fetchJournal = fetchJournal;
+window.fetchProgress = fetchProgress;
+window.getAuthToken = getAuthToken;
+
+// Initialize on page load
+window.onload = initializeApp;
+
+document.addEventListener('DOMContentLoaded', () => {
+    updateAuthNavigation();
+    initializeMobileMenu();
+});
+
+// Mobile menu functionality (Bulma)
+function initializeMobileMenu() {
+    // Get all "navbar-burger" elements
+    const $navbarBurgers = Array.prototype.slice.call(document.querySelectorAll('.navbar-burger'), 0);
+
+    // Add click event on each of them
+    $navbarBurgers.forEach(el => {
+        el.addEventListener('click', () => {
+            // Get the target from the "data-target" attribute
+            const target = el.dataset.target;
+            const $target = document.getElementById(target);
+
+            // Toggle the class on both the "navbar-burger" and the "navbar-menu"
+            el.classList.toggle('is-active');
+            $target.classList.toggle('is-active');
+        });
+    });
+}
 
 // Initialize the app
 async function initializeApp() {
@@ -70,25 +114,6 @@ async function initializeProtectedPage() {
     
     initializeMobileMenu();
     updateAuthNavigation();
-}
-
-// Mobile menu functionality (Bulma)
-function initializeMobileMenu() {
-    // Get all "navbar-burger" elements
-    const burgers = document.querySelectorAll('.navbar-burger');
-    
-    // Add click event to each burger
-    burgers.forEach(burger => {
-        burger.addEventListener('click', function() {
-            // Get the target from the "data-target" attribute
-            const targetId = this.dataset.target;
-            const target = document.getElementById(targetId);
-            
-            // Toggle the class on both the burger and menu
-            this.classList.toggle('is-active');
-            target?.classList.toggle('is-active');
-        });
-    });
 }
 
 // Check if user is signed in, else redirect to homepage
@@ -1025,14 +1050,6 @@ async function fetchJournal(page = 1, perPage = 10) {
     }
 }
 
-// Initialize on page load
-window.onload = initializeApp;
-
-document.addEventListener('DOMContentLoaded', () => {
-    updateAuthNavigation();
-    initializeMobileMenu();
-});
-
 document.addEventListener('DOMContentLoaded', () => {
     // Get all "navbar-burger" elements
     const $navbarBurgers = Array.prototype.slice.call(document.querySelectorAll('.navbar-burger'), 0);
@@ -1056,7 +1073,3 @@ document.getElementById('lessonSelect')?.addEventListener('change', (e) => {
         loadLesson(e.target.value);
     }
 });
-
-window.submitResponse = submitResponse;
-window.fetchJournal = fetchJournal;
-window.fetchProgress = fetchProgress;
