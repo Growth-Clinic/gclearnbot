@@ -634,3 +634,47 @@ def setup_routes(app: Quart, application: Application) -> None:
             return jsonify({"status": "success", "template": template})
         except Exception as e:
             return jsonify({"status": "error", "message": str(e)}), 500
+        
+    @app.route('/link-telegram', methods=['POST'])
+    @async_jwt_required()
+    async def link_telegram():
+        """Link Telegram account to existing web user"""
+        try:
+            data = await request.get_json()
+            telegram_id = data.get('telegram_id')
+            user_email = request.user_email
+            
+            if not telegram_id:
+                return jsonify({
+                    "status": "error",
+                    "message": "Telegram ID is required"
+                }), 400
+
+            # Update user record with Telegram ID
+            result = await db.users.update_one(
+                {"email": user_email},
+                {
+                    "$set": {
+                        "telegram_id": telegram_id,
+                        "platforms": ["web", "telegram"]
+                    }
+                }
+            )
+
+            if result.modified_count > 0:
+                return jsonify({
+                    "status": "success",
+                    "message": "Telegram account linked successfully"
+                })
+            else:
+                return jsonify({
+                    "status": "error", 
+                    "message": "Failed to link account"
+                }), 500
+
+        except Exception as e:
+            logger.error(f"Error linking Telegram account: {e}")
+            return jsonify({
+                "status": "error",
+                "message": "Server error"
+            }), 500

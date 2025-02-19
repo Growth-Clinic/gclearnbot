@@ -20,6 +20,7 @@ window.submitResponse = submitResponse;
 window.fetchJournal = fetchJournal;
 window.fetchProgress = fetchProgress;
 window.getAuthToken = getAuthToken;
+window.linkTelegramAccount = linkTelegramAccount;
 
 // Initialize on page load
 window.onload = initializeApp;
@@ -1047,6 +1048,51 @@ async function fetchJournal(page = 1, perPage = 10) {
                 </button>
             </div>`;
         paginationContainer.classList.add('is-hidden');
+    }
+}
+
+// Function for Telegram account linking
+async function linkTelegramAccount() {
+    const telegramId = document.getElementById('telegramId').value;
+    const messageDiv = document.getElementById('linkMessage');
+    const token = getAuthToken();
+
+    if (!token) {
+        showError("Please log in first");
+        return;
+    }
+
+    try {
+        const response = await fetch(`${API_BASE_URL}/link-telegram`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                telegram_id: parseInt(telegramId)
+            })
+        });
+
+        const data = await response.json();
+
+        if (data.status === "success") {
+            messageDiv.classList.remove('is-danger', 'is-hidden');
+            messageDiv.classList.add('is-success');
+            messageDiv.innerHTML = `
+                ✅ Your Telegram account has been linked successfully!<br>
+                You can now access your learning progress via Telegram.<br><br>
+                <a href="https://t.me/gclearnbot" class="button is-info is-small">
+                    Open Telegram Bot
+                </a>
+            `;
+        } else {
+            throw new Error(data.message || "Failed to link account");
+        }
+    } catch (error) {
+        messageDiv.classList.remove('is-success', 'is-hidden');
+        messageDiv.classList.add('is-danger');
+        messageDiv.textContent = `Error: ${error.message}`;
     }
 }
 

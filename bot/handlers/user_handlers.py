@@ -151,18 +151,16 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         return ConversationHandler.END
     
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    """Start command handler with improved email collection"""
+    """Start command handler with web-first approach"""
     user = update.message.from_user
     logger.info(f"Start command received from user {user.id}")
     
     try:
-        # Check if user already exists with email
+        # Check if user exists with this Telegram ID
         existing_user = await UserManager.get_user_by_telegram_id(user.id)
-        logger.info(f"User lookup result for {user.id}: {existing_user is not None}")
         
         if existing_user and existing_user.get('email'):
-            logger.info(f"Existing user found with email: {user.id}")
-            # Show lesson menu directly
+            # User already linked - show lesson menu
             await update.message.reply_text(
                 "Welcome back to Growth Clinic! 🌱\n\n"
                 "Let's continue your learning journey!"
@@ -170,16 +168,16 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
             await show_lesson_menu(update, context)
             return ConversationHandler.END
         else:
-            logger.info(f"New user or no email found for {user.id}")
-            # Ask for email
+            # No linked account - direct to web
             await update.message.reply_text(
                 "Welcome to Growth Clinic! 🌱\n\n"
-                "To get started and sync your progress across platforms, "
-                "please share your email address.\n\n"
-                "Your email will only be used for account synchronization.",
-                reply_markup=ForceReply(selective=True)
+                "To get started, please create an account on our website first:\n"
+                "https://gclearnbot.onrender.com\n\n"
+                "After creating your account, go to:\n"
+                "https://gclearnbot.onrender.com/web/link-telegram.html\n\n"
+                "Once you've linked your account, come back here and use /start again!"
             )
-            return AWAITING_EMAIL
+            return ConversationHandler.END
             
     except Exception as e:
         logger.error(f"Error in start command for user {user.id}: {e}")

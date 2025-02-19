@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- Favicon -->
+    <link rel="apple-touch-icon" sizes="57x57" href="/web/img/favicon/apple-icon-57x57.png">
+    <link rel="apple-touch-icon" sizes="60x60" href="/web/img/favicon/apple-icon-60x60.png">
+    <link rel="apple-touch-icon" sizes="72x72" href="/web/img/favicon/apple-icon-72x72.png">
+    <link rel="apple-touch-icon" sizes="76x76" href="/web/img/favicon/apple-icon-76x76.png">
+    <link rel="apple-touch-icon" sizes="114x114" href="/web/img/favicon/apple-icon-114x114.png">
+    <link rel="apple-touch-icon" sizes="120x120" href="/web/img/favicon/apple-icon-120x120.png">
+    <link rel="apple-touch-icon" sizes="144x144" href="/web/img/favicon/apple-icon-144x144.png">
+    <link rel="apple-touch-icon" sizes="152x152" href="/web/img/favicon/apple-icon-152x152.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/web/img/favicon/apple-icon-180x180.png">
+    <link rel="icon" type="image/png" sizes="192x192" href="/web/img/favicon/android-icon-192x192.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/web/img/favicon/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="96x96" href="/web/img/favicon/favicon-96x96.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/web/img/favicon/favicon-16x16.png">
+    <link rel="manifest" href="/web/img/favicon/manifest.json">
+    <meta name="msapplication-TileColor" content="#ffffff">
+    <meta name="msapplication-TileImage" content="/web/img/favicon/ms-icon-144x144.png">
+    <meta name="theme-color" content="#ffffff">
+    <title>Learning Dashboard - Growth Clinic</title>
+    <!-- Bulma CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css">
+    <link rel="stylesheet" href="/web/css/styles.css">
+    <script type="module" defer src="/web/app.js"></script>
+</head>
+
+<body onload="initializeProtectedPage()">
+    <!-- Navbar -->
+    <nav class="navbar is-light" role="navigation" aria-label="main navigation">
+        <div class="container">
+            <div class="navbar-brand">
+                <a class="navbar-item" href="/web/index.html">
+                    <img src="/web/img/gc-logo.svg" alt="Growth Clinic Logo">
+                </a>
+                <a role="button" class="navbar-burger" aria-label="menu" aria-expanded="false" data-target="navbarMain">
+                    <span aria-hidden="true"></span>
+                    <span aria-hidden="true"></span>
+                    <span aria-hidden="true"></span>
+                </a>
+            </div>
+            <div id="navbarMain" class="navbar-menu">
+                <div class="navbar-start">
+                    <a class="navbar-item auth-links" href="/web/dashboard.html">Learning Dashboard</a>
+                    <a class="navbar-item auth-links" href="/web/journal.html">Journal</a>
+                    <a class="navbar-item auth-links" href="/web/progress.html">Progress</a>
+                    <a class="navbar-item" href="mailto:growthclinic@gmail.com">Contact</a>
+                </div>
+                <div class="navbar-end">
+                    <div class="navbar-item">
+                        <button onclick="logoutUser()" class="button is-danger logout-button is-hidden">Logout</button>
+                        <a href="/web/index.html#loginSection" class="button is-primary login-button">Start Learning for Free</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Protected Content -->
+    <section class="section" id="protectedContent">
+        <div class="container">
+            <div class="columns is-centered">
+                <div class="column is-half">
+                    <div class="card">
+                        <div class="card-content">
+                            <h1 class="title">Link Your Telegram Account</h1>
+                            <p class="subtitle">Sync your learning progress with Telegram</p>
+
+                            <div class="content mb-5">
+                                <p>To link your account, you'll need your Telegram User ID. Here's how to get it:</p>
+                                <ol>
+                                    <li>Open Telegram and search for <strong>@userinfobot</strong></li>
+                                    <li>Start a chat with @userinfobot</li>
+                                    <li>The bot will reply with your User ID</li>
+                                </ol>
+                            </div>
+
+                            <form id="linkTelegramForm" onsubmit="return false;">
+                                <div class="field">
+                                    <label class="label">Your Telegram User ID</label>
+                                    <div class="control">
+                                        <input id="telegramId" class="input" type="number" 
+                                               placeholder="Enter your Telegram User ID" required>
+                                    </div>
+                                    <p class="help">This is a number, like 123456789</p>
+                                </div>
+
+                                <div class="field">
+                                    <div class="control">
+                                        <button onclick="linkTelegramAccount()" 
+                                                class="button is-success is-fullwidth">
+                                            Link Account
+                                        </button>
+                                    </div>
+                                </div>
+                            </form>
+
+                            <div id="linkMessage" class="notification is-hidden mt-4"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Not Signed In Message -->
+    <section class="section is-hidden" id="notSignedIn">
+        <div class="container">
+            <div class="notification is-warning">
+                <p>Please <a href="/web/index.html#loginSection">log in</a> to link your Telegram account.</p>
+            </div>
+        </div>
+    </section>
+</body>
+</html>
