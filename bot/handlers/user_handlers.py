@@ -193,8 +193,7 @@ async def handle_email(update: Update, context: ContextTypes.DEFAULT_TYPE) -> in
     email = update.message.text.strip().lower()
     user = update.message.from_user
     logger.info(f"Handling email submission for user {user.id}: {email}")
-    
-    # Validate email format
+
     if not re.match(EMAIL_REGEX, email):
         logger.info(f"Invalid email format from user {user.id}")
         await update.message.reply_text(
@@ -204,20 +203,18 @@ async def handle_email(update: Update, context: ContextTypes.DEFAULT_TYPE) -> in
         return AWAITING_EMAIL
 
     try:
-        # Check if a user with this email already exists
         existing_user = await UserManager.get_user_by_email(email)
-        logger.info(f"Existing user check for email {email}: {existing_user is not None}")
         
         if existing_user:
             logger.info(f"User with email {email} exists. Updating with Telegram ID {user.id}.")
-            
-            # Ensure telegram_id and platforms are updated
             update_data = {"telegram_id": user.id}
-
             existing_platforms = existing_user.get("platforms", [])
             if "telegram" not in existing_platforms:
                 update_data["platforms"] = list(set(existing_platforms + ["telegram"]))
+            # Also force platform to 'telegram' so that get_user_info can find it
+            update_data["platform"] = "telegram"
             
+            # Use the existing user_id (which is a UUID) for updating the record.
             update_success = await UserManager.update_user_info(existing_user["user_id"], update_data)
             
             if update_success:
@@ -238,7 +235,7 @@ async def handle_email(update: Update, context: ContextTypes.DEFAULT_TYPE) -> in
             user_data = {
                 "user_id": str(user.id),
                 "email": email,
-                "telegram_id": user.id,  # Ensure telegram_id is set for new users
+                "telegram_id": user.id,
                 "username": user.username,
                 "first_name": user.first_name,
                 "last_name": user.last_name,
@@ -259,9 +256,9 @@ async def handle_email(update: Update, context: ContextTypes.DEFAULT_TYPE) -> in
                 "Let's begin your learning journey! 🌱"
             )
 
-        # Confirm that the user now has both email and telegram_id
-        updated_user = await UserManager.get_user_info(user.id)
-        if updated_user and updated_user.get("email") == email and updated_user.get("telegram_id") == user.id:
+        # (Optional) To verify, fetch the record by email instead of telegram_id:
+        updated_user = await UserManager.get_user_by_email(email)
+        if updated_user and updated_user.get("telegram_id") == user.id:
             logger.info(f"User {user.id} successfully updated with email {email} and telegram_id {user.id}")
         else:
             logger.error(f"User {user.id} update failed after saving email {email}")
@@ -279,8 +276,6 @@ async def handle_email(update: Update, context: ContextTypes.DEFAULT_TYPE) -> in
             "❌ Sorry, there was an error processing your email. Please try again later."
         )
         return AWAITING_EMAIL
-
-
     
 async def show_lesson_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Show the main lesson menu to users with enhanced error handling"""
