@@ -194,33 +194,74 @@ async def handle_email(update: Update, context: ContextTypes.DEFAULT_TYPE) -> in
         return AWAITING_EMAIL
     
 async def show_lesson_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Show the main lesson menu to users"""
-    # Get main lessons
-    lessons = content_loader.get_full_lessons(platform='telegram')
-    
-    keyboard = []
-    for lesson_id, lesson in lessons.items():
-        if (lesson_id != "lesson_1" and 
-            not "congratulations" in lesson_id.lower() and 
-            lesson.get("type") == "full_lesson"):
-            keyboard.append([
-                InlineKeyboardButton(
-                    f"📚 {lesson.get('description')}",
-                    callback_data=lesson_id
-                )
-            ])
-    
-    # Use edit_message or send_message depending on context
-    if update.message:
-        await update.message.reply_text(
-            "Welcome to Growth Clinic! 🌱\n\nChoose your learning path:",
-            reply_markup=InlineKeyboardMarkup(keyboard)
+    """Show the main lesson menu to users with enhanced error handling"""
+    try:
+        # Get main lessons and log the result
+        lessons = content_loader.get_full_lessons(platform='telegram')
+        logger.info(f"Loaded {len(lessons)} total lessons")
+        
+        # Log available lessons before filtering
+        logger.info(f"Available lesson IDs: {list(lessons.keys())}")
+        
+        keyboard = []
+        filtered_count = 0
+        for lesson_id, lesson in lessons.items():
+            if (lesson_id != "lesson_1" and 
+                not "congratulations" in lesson_id.lower() and 
+                lesson.get("type") == "full_lesson"):
+                keyboard.append([
+                    InlineKeyboardButton(
+                        f"📚 {lesson.get('description')}",
+                        callback_data=lesson_id
+                    )
+                ])
+                filtered_count += 1
+        
+        logger.info(f"Created keyboard with {filtered_count} lessons after filtering")
+        
+        # Check if there are lessons to display
+        if not keyboard:
+            logger.warning("No lessons available after filtering. Check lesson criteria.")
+            # Send a clearer message to the user
+            message = (
+                "🔧 Setting up your learning path...\n\n"
+                "Please wait a moment and try /start again."
+            )
+            if update.message:
+                await update.message.reply_text(message)
+            elif update.callback_query:
+                await update.callback_query.message.edit_text(message)
+            return
+        
+        # Use edit_message or send_message depending on context
+        welcome_message = (
+            "Welcome to Growth Clinic! 🌱\n\n"
+            "Choose your learning path:"
         )
-    elif update.callback_query:
-        await update.callback_query.message.edit_text(
-            "Welcome to Growth Clinic! 🌱\n\nChoose your learning path:",
-            reply_markup=InlineKeyboardMarkup(keyboard)
+        
+        if update.message:
+            await update.message.reply_text(
+                welcome_message,
+                reply_markup=InlineKeyboardMarkup(keyboard)
+            )
+            logger.info("Sent lesson menu via reply_text")
+        elif update.callback_query:
+            await update.callback_query.message.edit_text(
+                welcome_message,
+                reply_markup=InlineKeyboardMarkup(keyboard)
+            )
+            logger.info("Sent lesson menu via edit_text")
+            
+    except Exception as e:
+        logger.error(f"Error showing lesson menu: {e}", exc_info=True)
+        error_message = (
+            "Sorry, there was an error loading the lessons.\n"
+            "Please try /start again in a moment."
         )
+        if update.message:
+            await update.message.reply_text(error_message)
+        elif update.callback_query:
+            await update.callback_query.message.edit_text(error_message)
 
 async def handle_start_choice(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Handle user's choice between lessons and tasks"""
