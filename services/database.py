@@ -275,11 +275,14 @@ class DataValidator:
 class UserManager:
     @staticmethod
     async def get_user_by_telegram_id(telegram_id: int) -> Optional[Dict[str, Any]]:
-        """Get user by Telegram ID"""
+        """Get user by Telegram ID with improved logging"""
         try:
             user = await db.users.find_one({"telegram_id": telegram_id})
             if user:
                 user.pop('_id', None)
+                logger.info(f"Found user for Telegram ID {telegram_id}")
+            else:
+                logger.info(f"No user found for Telegram ID {telegram_id}")
             return user
         except Exception as e:
             logger.error(f"Error getting user by telegram_id: {e}")
@@ -287,7 +290,7 @@ class UserManager:
 
     @staticmethod
     async def link_telegram_account(email: str, telegram_id: int, telegram_data: Dict[str, Any]) -> bool:
-        """Link Telegram account to existing user"""
+        """Link Telegram account to existing user with better error handling"""
         try:
             result = await db.users.update_one(
                 {"email": email},
@@ -304,7 +307,13 @@ class UserManager:
                     }
                 }
             )
-            return result.modified_count > 0
+            success = result.modified_count > 0
+            if success:
+                logger.info(f"Successfully linked Telegram account {telegram_id} to email {email}")
+            else:
+                logger.error(f"Failed to link Telegram account {telegram_id} to email {email}")
+            return success
+            
         except Exception as e:
             logger.error(f"Error linking Telegram account: {e}")
             return False
