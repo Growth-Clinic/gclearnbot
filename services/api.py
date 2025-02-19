@@ -668,6 +668,7 @@ def setup_routes(app: Quart, application: Application) -> None:
     @async_jwt_required()
     async def link_telegram():
         """Link Telegram account to existing web user"""
+        masked_email = "Unknown Email"  # Default value
         try:
             # Ensure database is initialized
             db = await get_db()
@@ -682,14 +683,14 @@ def setup_routes(app: Quart, application: Application) -> None:
             telegram_id = data.get('telegram_id')
             user_email = request.user_email
             
+            # Mask email immediately after getting it
+            masked_email = mask_email(user_email)
+            
             if not telegram_id:
                 return jsonify({
                     "status": "error",
                     "message": "Telegram ID is required"
                 }), 400
-
-            # Masked email for logging
-            masked_email = mask_email(user_email)
 
             # Extra logging for debugging
             logger.info(f"Attempting to link Telegram account for email: {masked_email}")
