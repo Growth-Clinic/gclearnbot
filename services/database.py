@@ -322,15 +322,28 @@ class UserManager:
     async def save_user_info(user, platform: str = 'telegram', email: str = None) -> Dict[str, Any]:
         """Save comprehensive user information when they start using the bot or link their email."""
         try:
-            # Convert user_id to string for consistency across platforms
-            user_id = str(user.id if platform == 'telegram' else user)
+            # Support both dict and object types
+            if isinstance(user, dict):
+                user_id = str(user.get("user_id"))
+                username = user.get("username", "")
+                first_name = user.get("first_name", "")
+                last_name = user.get("last_name", "")
+                language_code = user.get("language_code", "en")
+                telegram_id = user.get("telegram_id")  # May be provided in a dict
+            else:
+                user_id = str(user.id)
+                username = user.username if platform == 'telegram' else user.get('name', '')
+                first_name = user.first_name if platform == 'telegram' else user.get('real_name', '')
+                last_name = user.last_name or ""
+                language_code = user.language_code or "en"
+                telegram_id = user.id if platform == 'telegram' else None
 
             user_data = {
                 "user_id": user_id,
-                "username": user.username if platform == 'telegram' else user.get('name', ''),
-                "first_name": user.first_name if platform == 'telegram' else user.get('real_name', ''),
-                "last_name": user.last_name or "",
-                "language_code": user.language_code or "en",
+                "username": username,
+                "first_name": first_name,
+                "last_name": last_name,
+                "language_code": language_code,
                 "joined_date": datetime.now(timezone.utc).isoformat(),
                 "current_lesson": "lesson_1",
                 "completed_lessons": [],
@@ -343,20 +356,22 @@ class UserManager:
                     "last_lesson_date": None
                 },
                 "learning_preferences": {
-                    "preferred_language": user.language_code or "en",
+                    "preferred_language": language_code,
                     "notification_enabled": True
                 }
             }
+            # If telegram_id exists, include it
+            if telegram_id:
+                user_data["telegram_id"] = telegram_id
 
             # If the user provided an email, add it to their profile
             update_fields = {"$set": user_data}
-
             if email:
                 update_fields["$set"]["email"] = email  # Store email
                 update_fields["$set"]["chat_id"] = user_id  # Ensure chat_id is saved
 
             if not DataValidator.validate_user_data(user_data):
-                logger.error(f"Invalid user data for user {user.id}")
+                logger.error(f"Invalid user data for user {user_id}")
                 return None
 
             result = await db.users.update_one(
@@ -368,11 +383,11 @@ class UserManager:
             if not result.acknowledged:
                 raise OperationFailure("Failed to save user data")
 
-            logger.info(f"User data saved/updated for user {user.id}")
+            logger.info(f"User data saved/updated for user {user_id}")
             return user_data
 
         except OperationFailure as e:
-            logger.error(f"Database error saving user {user.id}: {e}")
+            logger.error(f"Database error saving user {user_id}: {e}")
             raise
 
     @staticmethod

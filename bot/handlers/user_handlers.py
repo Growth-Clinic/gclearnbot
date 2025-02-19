@@ -240,9 +240,9 @@ async def handle_email(update: Update, context: ContextTypes.DEFAULT_TYPE) -> in
             # Create new user entry
             logger.info(f"Creating new user {user.id} with email {email}")
             user_data = {
-                "user_id": str(user.id),
+                "user_id": str(user.id),  # Ensure user_id is string
                 "email": email,
-                "telegram_id": user.id,
+                "telegram_id": user.id,  # Explicitly set telegram_id
                 "username": user.username,
                 "first_name": user.first_name,
                 "last_name": user.last_name,
@@ -250,25 +250,33 @@ async def handle_email(update: Update, context: ContextTypes.DEFAULT_TYPE) -> in
                 "platform": "telegram",
                 "joined_date": datetime.now(timezone.utc).isoformat()
             }
-
+            
             save_success = await UserManager.save_user_info(user_data)
-            if save_success:
-                logger.info(f"Successfully created new user {user.id} with email {email}")
-                await update.message.reply_text(
-                    f"✅ Your account has been created and email {email} saved.\n"
-                    "Let's begin your learning journey! 🌱"
-                )
-            else:
+            if not save_success:
                 logger.error(f"Failed to save user data for {user.id}")
-                await update.message.reply_text(
-                    "❌ There was an error saving your email. Please try again."
-                )
-                return AWAITING_EMAIL
+                raise Exception("Failed to save user data")
+            
+            logger.info(f"Successfully created new user {user.id} with email {email}")
+            await update.message.reply_text(
+                f"✅ Your account has been created and email {email} saved.\n"
+                "Let's begin your learning journey! 🌱"
+            )
+        
+        # Confirm the saved user data
+        updated_user = await UserManager.get_user_info(user.id)
+        if updated_user and updated_user.get("email") == email and updated_user.get("telegram_id") == user.id:
+            logger.info(f"User {user.id} successfully updated with email {email} and telegram_id {user.id}")
+        else:
+            logger.error(f"User {user.id} update failed after saving email {email}")
+            await update.message.reply_text(
+                "❌ There was an error verifying your account details. Please try again."
+            )
+            return AWAITING_EMAIL
 
         # Show lesson menu and end conversation
         await show_lesson_menu(update, context)
         return ConversationHandler.END
-
+        
     except Exception as e:
         logger.error(f"Error handling email for user {user.id}: {e}", exc_info=True)
         await update.message.reply_text(
