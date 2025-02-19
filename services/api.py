@@ -672,7 +672,7 @@ def setup_routes(app: Quart, application: Application) -> None:
         try:
             # Ensure database is initialized
             db = await get_db()
-            if not db:
+            if db is None:
                 logger.error("Database connection failed during Telegram account linking")
                 return jsonify({
                     "status": "error",
@@ -682,10 +682,10 @@ def setup_routes(app: Quart, application: Application) -> None:
             data = await request.get_json()
             telegram_id = data.get('telegram_id')
             user_email = request.user_email
-            
+
             # Mask email immediately after getting it
             masked_email = mask_email(user_email)
-            
+
             if not telegram_id:
                 return jsonify({
                     "status": "error",
