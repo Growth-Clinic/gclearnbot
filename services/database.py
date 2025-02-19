@@ -291,6 +291,7 @@ class UserManager:
     @staticmethod
     async def link_telegram_account(email: str, telegram_id: int, telegram_data: Dict[str, Any]) -> bool:
         """Link Telegram account to existing user with better error handling"""
+        masked_email = email[:3] + "..." + email.split("@")[-1]
         try:
             result = await db.users.update_one(
                 {"email": email},
@@ -309,9 +310,9 @@ class UserManager:
             )
             success = result.modified_count > 0
             if success:
-                logger.info(f"Successfully linked Telegram account {telegram_id} to email {email}")
+                logger.info(f"Successfully linked Telegram account {telegram_id} to email {masked_email}")
             else:
-                logger.error(f"Failed to link Telegram account {telegram_id} to email {email}")
+                logger.error(f"Failed to link Telegram account {telegram_id} to email {masked_email}")
             return success
 
         except Exception as e:

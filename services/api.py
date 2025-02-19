@@ -83,7 +83,11 @@ def setup_routes(app: Quart, application: Application) -> None:
         """Register a new user and return a JWT token"""
         try:
             data = await request.get_json()
-            logger.info(f"Received registration data: {data}")
+
+            # Mask email for logging
+            email = data.get("email", "")
+            masked_email = f"{email[:3]}***{email.split('@')[-1]}" if email else "No email provided"
+            logger.info(f"Registration attempt for masked email: {masked_email}")
 
             email = data.get("email")
             password = data.get("password")
@@ -176,7 +180,11 @@ def setup_routes(app: Quart, application: Application) -> None:
         """Authenticate user and return JWT"""
         try:
             data = await request.get_json()
-            logger.info(f"Login request received: {data}")
+            
+            # Mask email for logging
+            email = data.get("email", "")
+            masked_email = f"{email[:3]}***{email.split('@')[-1]}" if email else "No email provided"
+            logger.info(f"Login attempt for masked email: {masked_email}")
 
             email = data.get("email")
             password = data.get("password")
@@ -191,11 +199,11 @@ def setup_routes(app: Quart, application: Application) -> None:
             result = await db.users.find_one({"email": email})
             
             if not result:
-                logger.info(f"User not found: {email}")
+                logger.info(f"User not found: {masked_email}")
                 return jsonify({"status": "error", "message": "User not found"}), 404
 
             if not verify_password(password, result["password"]):
-                logger.info(f"Invalid password for user: {email}")
+                logger.info(f"Invalid password for user: {masked_email}")
                 return jsonify({"status": "error", "message": "Invalid credentials"}), 401
 
             # Use PyJWT directly for token generation
@@ -206,7 +214,7 @@ def setup_routes(app: Quart, application: Application) -> None:
                 algorithm="HS256"
             )
 
-            logger.info(f"Login successful for user: {email}")
+            logger.info(f"Login successful for user: {masked_email}")
             return jsonify({
                 "status": "success", 
                 "token": token

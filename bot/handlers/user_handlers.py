@@ -73,7 +73,11 @@ async def save_email(update: Update, context: ContextTypes.DEFAULT_TYPE):
     updated_user = await UserManager.get_user_info(chat_id)
 
     if updated_user and updated_user.get("email") == email:
-        logger.info(f"User {chat_id} successfully updated with email {email}")
+
+        # Mask email for logging
+        masked_email = f"{email[:3]}***{email.split('@')[-1]}"
+        logger.info(f"User {chat_id} successfully updated with email {masked_email}")
+
         await context.bot.send_message(chat_id, f"✅ Your email {email} has been linked successfully!")
     else:
         logger.error(f"Failed to save email {email} for user {chat_id}")
@@ -190,7 +194,10 @@ async def handle_email(update: Update, context: ContextTypes.DEFAULT_TYPE) -> in
     """Handle email submission with enhanced error handling and logging"""
     email = update.message.text.strip().lower()
     user = update.message.from_user
-    logger.info(f"Handling email submission for user {user.id}: {email}")
+    
+    # Mask email for logging
+    masked_email = f"{email[:3]}***{email.split('@')[-1]}"
+    logger.info(f"Email submission handling for user {user.id}, masked email: {masked_email}")
 
     if not re.match(EMAIL_REGEX, email):
         logger.info(f"Invalid email format from user {user.id}")
@@ -204,7 +211,7 @@ async def handle_email(update: Update, context: ContextTypes.DEFAULT_TYPE) -> in
         existing_user = await UserManager.get_user_by_email(email)
         
         if existing_user:
-            logger.info(f"User with email {email} exists. Updating with Telegram ID {user.id}.")
+            logger.info(f"User with email {masked_email} exists. Updating with Telegram ID {user.id}.")
             update_data = {"telegram_id": user.id}
             existing_platforms = existing_user.get("platforms", [])
             if "telegram" not in existing_platforms:
@@ -216,7 +223,7 @@ async def handle_email(update: Update, context: ContextTypes.DEFAULT_TYPE) -> in
             update_success = await UserManager.update_user_info(existing_user["user_id"], update_data)
             
             if update_success:
-                logger.info(f"Successfully linked Telegram ID {user.id} to existing user {email}")
+                logger.info(f"Successfully linked Telegram ID {user.id} to existing user {masked_email}")
                 await update.message.reply_text(
                     f"✅ Your Telegram account has been linked to {email}.\n"
                     "Your progress is now synced across platforms.\n\n"
@@ -229,7 +236,7 @@ async def handle_email(update: Update, context: ContextTypes.DEFAULT_TYPE) -> in
                 )
                 return AWAITING_EMAIL
         else:
-            logger.info(f"Creating new user {user.id} with email {email}")
+            logger.info(f"Creating new user {user.id} with email {masked_email}")
             user_data = {
                 "user_id": str(user.id),
                 "email": email,
@@ -248,7 +255,7 @@ async def handle_email(update: Update, context: ContextTypes.DEFAULT_TYPE) -> in
                 logger.error(f"Failed to save user data for {user.id}")
                 raise Exception("Failed to save user data")
             
-            logger.info(f"Successfully created new user {user.id} with email {email}")
+            logger.info(f"Successfully created new user {user.id} with email {masked_email}")
             await update.message.reply_text(
                 f"✅ Your account has been created and email {email} saved.\n"
                 "Let's begin your learning journey! 🌱"
@@ -257,9 +264,9 @@ async def handle_email(update: Update, context: ContextTypes.DEFAULT_TYPE) -> in
         # (Optional) To verify, fetch the record by email instead of telegram_id:
         updated_user = await UserManager.get_user_by_email(email)
         if updated_user and updated_user.get("telegram_id") == user.id:
-            logger.info(f"User {user.id} successfully updated with email {email} and telegram_id {user.id}")
+            logger.info(f"User {user.id} successfully updated with email {masked_email} and telegram_id {user.id}")
         else:
-            logger.error(f"User {user.id} update failed after saving email {email}")
+            logger.error(f"User {user.id} update failed after saving email {masked_email}")
             await update.message.reply_text(
                 "❌ There was an error verifying your account details. Please try again."
             )
