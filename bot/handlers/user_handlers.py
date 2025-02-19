@@ -104,31 +104,41 @@ async def initialize_new_user(user_id: str, email: str = None, platform: str = '
     return base_data
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    """Start command handler with email collection"""
+    """Start command handler with database check first"""
     user = update.message.from_user
+    logger.info(f"Start command received from user {user.id}")
     
-    # Check if user already exists
-    existing_user = await UserManager.get_user_by_telegram_id(user.id)
-    
-    if existing_user and existing_user.get('email'):
-        # User already has email, proceed normally
-        welcome_text = """
-Welcome back to Growth Clinic! 🌱
-
-Ready to continue your learning journey? Choose your path:
-        """
-        await show_lesson_menu(update, context)
-        return ConversationHandler.END
-    else:
-        # Ask for email
+    try:
+        # First check if user exists with this Telegram ID
+        existing_user = await UserManager.get_user_by_telegram_id(user.id)
+        
+        if existing_user and existing_user.get('email'):
+            logger.info(f"Existing user found with email for Telegram ID {user.id}")
+            # User already has email - show lesson menu directly
+            await update.message.reply_text(
+                "Welcome back to Growth Clinic! 🌱\n\n"
+                "Let's continue your learning journey!"
+            )
+            await show_lesson_menu(update, context)
+            return ConversationHandler.END
+            
+        # No existing user or no email - collect email
+        logger.info(f"No email found for Telegram ID {user.id}, collecting email")
         await update.message.reply_text(
             "Welcome to Growth Clinic! 🌱\n\n"
             "To get started and sync your progress across platforms, "
             "please share your email address.\n\n"
             "Your email will only be used for account synchronization.",
-            reply_markup=ForceReply(selective=True, input_field_placeholder="Enter your email")
+            reply_markup=ForceReply(selective=True)
         )
         return AWAITING_EMAIL
+            
+    except Exception as e:
+        logger.error(f"Error in start command for user {user.id}: {e}")
+        await update.message.reply_text(
+            "Sorry, something went wrong. Please try again later."
+        )
+        return ConversationHandler.END
     
 async def handle_email(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     """Handle email submission from user with improved error handling and clear feedback."""
