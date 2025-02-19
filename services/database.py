@@ -277,7 +277,7 @@ class UserManager:
     async def get_user_by_telegram_id(telegram_id: int) -> Optional[Dict[str, Any]]:
         """Get user by Telegram ID with improved logging"""
         try:
-            user = await db.users.find_one({"telegram_id": telegram_id})
+            user = await db.users.find_one({"telegram_id": telegram_id, "platforms": "telegram"})
             if user:
                 user.pop('_id', None)
                 logger.info(f"Found user for Telegram ID {telegram_id}")

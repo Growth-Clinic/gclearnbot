@@ -209,28 +209,28 @@ async def handle_email(update: Update, context: ContextTypes.DEFAULT_TYPE) -> in
         logger.info(f"Existing user check for email {email}: {existing_user is not None}")
         
         if existing_user:
-            logger.info(f"Linking existing user {user.id} with email {email}")
-            link_success = await UserManager.link_telegram_account(
-                email=email,
-                telegram_id=user.id,
-                telegram_data={
-                    "username": user.username,
-                    "first_name": user.first_name,
-                    "last_name": user.last_name,
-                    "language_code": user.language_code
-                }
-            )
-            if link_success:
-                logger.info(f"Successfully linked Telegram ID {user.id} to email {email}")
+            logger.info(f"User with email {email} exists. Updating with Telegram ID {user.id}.")
+            
+            # Ensure telegram_id and platforms are updated
+            update_data = {"telegram_id": user.id}
+
+            existing_platforms = existing_user.get("platforms", [])
+            if "telegram" not in existing_platforms:
+                update_data["platforms"] = list(set(existing_platforms + ["telegram"]))
+            
+            update_success = await UserManager.update_user_info(existing_user["user_id"], update_data)
+            
+            if update_success:
+                logger.info(f"Successfully linked Telegram ID {user.id} to existing user {email}")
                 await update.message.reply_text(
                     f"✅ Your Telegram account has been linked to {email}.\n"
                     "Your progress is now synced across platforms.\n\n"
                     "Let's begin your learning journey! 🌱"
                 )
             else:
-                logger.error(f"Failed to link Telegram ID {user.id} to email {email}")
+                logger.error(f"Failed to update user {email} with Telegram ID {user.id}")
                 await update.message.reply_text(
-                    "❌ There was an issue linking your email. Please try again."
+                    "❌ There was an issue linking your Telegram account. Please try again."
                 )
                 return AWAITING_EMAIL
         else:
@@ -244,6 +244,7 @@ async def handle_email(update: Update, context: ContextTypes.DEFAULT_TYPE) -> in
                 "last_name": user.last_name,
                 "language_code": user.language_code,
                 "platform": "telegram",
+                "platforms": ["telegram"],
                 "joined_date": datetime.now(timezone.utc).isoformat()
             }
             
@@ -257,7 +258,7 @@ async def handle_email(update: Update, context: ContextTypes.DEFAULT_TYPE) -> in
                 f"✅ Your account has been created and email {email} saved.\n"
                 "Let's begin your learning journey! 🌱"
             )
-        
+
         # Confirm that the user now has both email and telegram_id
         updated_user = await UserManager.get_user_info(user.id)
         if updated_user and updated_user.get("email") == email and updated_user.get("telegram_id") == user.id:
