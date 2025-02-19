@@ -111,6 +111,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     try:
         # First check if user exists with this Telegram ID
         existing_user = await UserManager.get_user_by_telegram_id(user.id)
+        logger.info(f"User lookup result for {user.id}: {existing_user is not None}")
         
         if existing_user and existing_user.get('email'):
             logger.info(f"Existing user found with email for Telegram ID {user.id}")
@@ -121,17 +122,17 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
             )
             await show_lesson_menu(update, context)
             return ConversationHandler.END
-            
-        # No existing user or no email - collect email
-        logger.info(f"No email found for Telegram ID {user.id}, collecting email")
-        await update.message.reply_text(
-            "Welcome to Growth Clinic! 🌱\n\n"
-            "To get started and sync your progress across platforms, "
-            "please share your email address.\n\n"
-            "Your email will only be used for account synchronization.",
-            reply_markup=ForceReply(selective=True)
-        )
-        return AWAITING_EMAIL
+        else:
+            # No existing user or no email - collect email
+            logger.info(f"No email found for Telegram ID {user.id}, collecting email")
+            await update.message.reply_text(
+                "Welcome to Growth Clinic! 🌱\n\n"
+                "To get started and sync your progress across platforms, "
+                "please share your email address.\n\n"
+                "Your email will only be used for account synchronization.",
+                reply_markup=ForceReply(selective=True)
+            )
+            return AWAITING_EMAIL
             
     except Exception as e:
         logger.error(f"Error in start command for user {user.id}: {e}")
@@ -140,12 +141,52 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         )
         return ConversationHandler.END
     
+async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Start command handler with improved email collection"""
+    user = update.message.from_user
+    logger.info(f"Start command received from user {user.id}")
+    
+    try:
+        # Check if user already exists with email
+        existing_user = await UserManager.get_user_by_telegram_id(user.id)
+        logger.info(f"User lookup result for {user.id}: {existing_user is not None}")
+        
+        if existing_user and existing_user.get('email'):
+            logger.info(f"Existing user found with email: {user.id}")
+            # Show lesson menu directly
+            await update.message.reply_text(
+                "Welcome back to Growth Clinic! 🌱\n\n"
+                "Let's continue your learning journey!"
+            )
+            await show_lesson_menu(update, context)
+            return ConversationHandler.END
+        else:
+            logger.info(f"New user or no email found for {user.id}")
+            # Ask for email
+            await update.message.reply_text(
+                "Welcome to Growth Clinic! 🌱\n\n"
+                "To get started and sync your progress across platforms, "
+                "please share your email address.\n\n"
+                "Your email will only be used for account synchronization.",
+                reply_markup=ForceReply(selective=True)
+            )
+            return AWAITING_EMAIL
+            
+    except Exception as e:
+        logger.error(f"Error in start command for user {user.id}: {e}")
+        await update.message.reply_text(
+            "Sorry, something went wrong. Please try again later."
+        )
+        return ConversationHandler.END
+
 async def handle_email(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
-    """Handle email submission from user with improved error handling and clear feedback."""
+    """Handle email submission with enhanced error handling and logging"""
     email = update.message.text.strip().lower()
     user = update.message.from_user
+    logger.info(f"Handling email submission for user {user.id}: {email}")
     
     if not re.match(EMAIL_REGEX, email):
+        logger.info(f"Invalid email format from user {user.id}")
         await update.message.reply_text(
             "Please provide a valid email address.",
             reply_markup=ForceReply(selective=True)
@@ -156,8 +197,9 @@ async def handle_email(update: Update, context: ContextTypes.DEFAULT_TYPE) -> in
         existing_user = await UserManager.get_user_by_email(email)
         
         if existing_user:
+            logger.info(f"Linking existing user {user.id} with email {email}")
             # Link Telegram account to existing user
-            await UserManager.link_telegram_account(
+            link_success = await UserManager.link_telegram_account(
                 email=email,
                 telegram_id=user.id,
                 telegram_data={
@@ -167,13 +209,19 @@ async def handle_email(update: Update, context: ContextTypes.DEFAULT_TYPE) -> in
                     "language_code": user.language_code
                 }
             )
-            logger.info(f"User linked: {user.id} with email {email}")
+            
+            if not link_success:
+                logger.error(f"Failed to link account for user {user.id}")
+                raise Exception("Account linking failed")
+                
+            logger.info(f"Successfully linked user {user.id} with email {email}")
             await update.message.reply_text(
                 f"✅ Your Telegram account has been successfully linked to {email}.\n"
                 "Your progress will be synced across platforms.\n\n"
                 "Let's begin your learning journey! 🌱"
             )
         else:
+            logger.info(f"Creating new user {user.id} with email {email}")
             # Create new user with standard defaults
             user_data = await initialize_new_user(
                 str(uuid4()),
@@ -182,11 +230,12 @@ async def handle_email(update: Update, context: ContextTypes.DEFAULT_TYPE) -> in
                 user_data=user.__dict__
             )
             
-            success = await UserManager.save_user_info(user_data)
-            if not success:
+            save_success = await UserManager.save_user_info(user_data)
+            if not save_success:
+                logger.error(f"Failed to save user data for {user.id}")
                 raise Exception("Failed to save user data")
             
-            logger.info(f"User info created: {user.id} with email {email}")    
+            logger.info(f"Successfully created new user {user.id} with email {email}")    
             await update.message.reply_text(
                 f"✅ Your account has been created and email {email} saved.\n"
                 "Let's begin your learning journey! 🌱"
@@ -197,9 +246,9 @@ async def handle_email(update: Update, context: ContextTypes.DEFAULT_TYPE) -> in
         return ConversationHandler.END
         
     except Exception as e:
-        logger.error(f"Error handling email submission: {e}")
+        logger.error(f"Error handling email for user {user.id}: {e}")
         await update.message.reply_text(
-            "Sorry, there was an error processing your email. Please try again."
+            "Sorry, there was an error processing your email. Please try again later."
         )
         return AWAITING_EMAIL
     
