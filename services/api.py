@@ -71,6 +71,27 @@ def async_jwt_required():
         return decorator
     return wrapper
 
+def mask_email(email: str) -> str:
+    """
+    Mask an email address for logging purposes.
+    
+    Examples:
+    - john.doe@example.com → j***e@example.com
+    - short@example.com → s***t@example.com
+    """
+    if not email or '@' not in email:
+        return email
+    
+    parts = email.split('@')
+    if len(parts[0]) <= 2:
+        # For very short usernames, mask most of it
+        masked_username = parts[0][0] + '***' + parts[0][-1]
+    else:
+        # For longer usernames, show first and last char
+        masked_username = parts[0][0] + '***' + parts[0][-1]
+    
+    return f"{masked_username}@{parts[1]}"
+
 def setup_routes(app: Quart, application: Application) -> None:
 
     """Set up API routes for web access"""
@@ -648,6 +669,15 @@ def setup_routes(app: Quart, application: Application) -> None:
     async def link_telegram():
         """Link Telegram account to existing web user"""
         try:
+            # Ensure database is initialized
+            db = await get_db()
+            if not db:
+                logger.error("Database connection failed during Telegram account linking")
+                return jsonify({
+                    "status": "error",
+                    "message": "Database connection error"
+                }), 500
+
             data = await request.get_json()
             telegram_id = data.get('telegram_id')
             user_email = request.user_email
@@ -658,31 +688,49 @@ def setup_routes(app: Quart, application: Application) -> None:
                     "message": "Telegram ID is required"
                 }), 400
 
+            # Masked email for logging
+            masked_email = mask_email(user_email)
+
+            # Extra logging for debugging
+            logger.info(f"Attempting to link Telegram account for email: {masked_email}")
+            logger.info(f"Telegram ID: {telegram_id}")
+
+            # Verify user exists
+            user = await db.users.find_one({"email": user_email})
+            if not user:
+                logger.error(f"No user found with email: {masked_email}")
+                return jsonify({
+                    "status": "error", 
+                    "message": "User not found"
+                }), 404
+
             # Update user record with Telegram ID
             result = await db.users.update_one(
                 {"email": user_email},
                 {
                     "$set": {
                         "telegram_id": telegram_id,
-                        "platforms": ["web", "telegram"]
+                        "platforms": list(set(user.get("platforms", []) + ["telegram"]))
                     }
                 }
             )
 
             if result.modified_count > 0:
+                logger.info(f"Successfully linked Telegram account for {masked_email}")
                 return jsonify({
                     "status": "success",
                     "message": "Telegram account linked successfully"
                 })
             else:
+                logger.warning(f"Failed to link Telegram account for {masked_email}")
                 return jsonify({
                     "status": "error", 
                     "message": "Failed to link account"
                 }), 500
 
         except Exception as e:
-            logger.error(f"Error linking Telegram account: {e}")
+            logger.error(f"Error linking Telegram account for {masked_email}: {e}", exc_info=True)
             return jsonify({
                 "status": "error",
-                "message": "Server error"
+                "message": str(e)
             }), 500
