@@ -67,7 +67,7 @@ async def save_email(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
 
     # Save email to user profile
-    await UserManager.update_user_info(chat_id, {"email": email})
+    await UserManager.update_user_info(chat_id, {"email": email, "platform": "telegram"})
     
     # Confirm email is actually saved
     updated_user = await UserManager.get_user_info(chat_id)
