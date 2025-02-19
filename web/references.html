@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <script type="module" src="/web/app.js"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description"
+        content="Future-proof your career with Growth Clinic. Learn essential mental models through practical, bite-sized lessons designed for busy professionals.">
+    <meta name="keywords"
+        content="career development, mental models, design thinking, business modeling, market thinking, professional growth">
+    <meta name="author" content="Growth Clinic">
+    <!-- Favicon -->
+    <link rel="apple-touch-icon" sizes="57x57" href="/web/img/favicon/apple-icon-57x57.png">
+    <link rel="apple-touch-icon" sizes="60x60" href="/web/img/favicon/apple-icon-60x60.png">
+    <link rel="apple-touch-icon" sizes="72x72" href="/web/img/favicon/apple-icon-72x72.png">
+    <link rel="apple-touch-icon" sizes="76x76" href="/web/img/favicon/apple-icon-76x76.png">
+    <link rel="apple-touch-icon" sizes="114x114" href="/web/img/favicon/apple-icon-114x114.png">
+    <link rel="apple-touch-icon" sizes="120x120" href="/web/img/favicon/apple-icon-120x120.png">
+    <link rel="apple-touch-icon" sizes="144x144" href="/web/img/favicon/apple-icon-144x144.png">
+    <link rel="apple-touch-icon" sizes="152x152" href="/web/img/favicon/apple-icon-152x152.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/web/img/favicon/apple-icon-180x180.png">
+    <link rel="icon" type="image/png" sizes="192x192" href="/web/img/favicon/android-icon-192x192.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/web/img/favicon/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="96x96" href="/web/img/favicon/favicon-96x96.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/web/img/favicon/favicon-16x16.png">
+    <link rel="manifest" href="/web/img/favicon/manifest.json">
+    <meta name="msapplication-TileColor" content="#ffffff">
+    <meta name="msapplication-TileImage" content="/web/img/favicon/ms-icon-144x144.png">
+    <meta name="theme-color" content="#ffffff">
+    <!-- Bulma CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css">
+    <!-- Optional custom overrides -->
+    <link rel="stylesheet" href="/web/css/styles.css">
+</head>
+
+<body>
+
+    <!-- Navbar -->
+    <nav class="navbar is-light" role="navigation" aria-label="main navigation">
+        <div class="container">
+            <div class="navbar-brand">
+                <a class="navbar-item" href="/web/index.html">
+                    <img src="/web/img/gc-logo.svg" alt="Growth Clinic Logo">
+                </a>
+                <a role="button" class="navbar-burger" aria-label="menu" aria-expanded="false" data-target="navbarMain">
+                    <span aria-hidden="true"></span>
+                    <span aria-hidden="true"></span>
+                    <span aria-hidden="true"></span>
+                </a>
+            </div>
+            <div id="navbarMain" class="navbar-menu">
+                <div class="navbar-start">
+                    <a class="navbar-item auth-links" href="/web/dashboard.html">Learning Dashboard</a>
+                    <a class="navbar-item auth-links" href="/web/journal.html">Journal</a>
+                    <a class="navbar-item auth-links" href="/web/progress.html">Progress</a>
+                    <a class="navbar-item" href="mailto:growthclinic@gmail.com">Contact</a>
+                </div>
+                <div class="navbar-end">
+                    <div class="navbar-item">
+                        <button onclick="logoutUser()" class="button is-danger logout-button is-hidden">Logout</button>
+                        <a href="#loginSection" class="button is-primary login-button">Start Learning for Free</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- References & Credits Section -->
+    <section class="section">
+        <div class="container">
+            <h1 class="title">References & Credits</h1>
+            <p class="subtitle">Acknowledging Our Sources and Inspirations</p>
+            <p>Our course content has been transformed and expanded with original interactive elements. We adapted ideas from the following sources:</p>
+
+            <div class="content">
+                <h2 class="subtitle is-4">Lesson 2: Design Thinking</h2>
+                <ul>
+                    <li><a href="https://dschool.stanford.edu/resources/get-started-with-design" target="_blank">Stanford's Virtual Design Thinking Workshop</a></li>
+                    <li><a href="https://en.wikipedia.org/wiki/5_Whys" target="_blank">The 5 Whys Method (Wikipedia)</a></li>
+                    <li><a href="https://youtu.be/16p9YRF0l-g" target="_blank">How to Build Your Creative Confidence (Video)</a></li>
+                    <li><a href="https://youtu.be/L1kbrlZRDvU" target="_blank">How to Generate Ideas (Video)</a></li>
+                    <li><a href="https://medium.com/@katheen_warner/how-to-develop-an-eye-for-design-c5_a4c64bb26c" target="_blank">Develop an Eye for Design (Article)</a></li>
+                    <li><a href="https://danmall.com/posts/stealing-your-way-to-original-designs/" target="_blank">Stealing Your Way to Original Designs (Article)</a></li>
+                </ul>
+
+                <h2 class="subtitle is-4">Lesson 3: Business Modelling</h2>
+                <ul>
+                    <li><a href="https://www.youtube.com/watch?v=QoAOzMTLP5s" target="_blank">Strategyzer’s Quick 2-Minute Overview of the Business Model Canvas</a></li>
+                    <li><a href="https://youtube.com/playlist?list=PLBh9h0LWoawphbpUvC1DofjagNqG1Qdf3" target="_blank">Strategyzer’s From Idea to Business - Animated Series</a></li>
+                </ul>
+
+                <h2 class="subtitle is-4">Lesson 4: Market Thinking</h2>
+                <ul>
+                    <li><a href="https://brianbalfour.com/essays/product-market-fit-isnt-enough" target="_blank">Why Product-Market Fit Isn’t Enough (Brian Balfour)</a></li>
+                    <li><a href="https://brianbalfour.com/essays/market-product-fit" target="_blank">Market-Product Fit: The Road to a $100M Company Doesn't Start with Product (Brian Balfour)</a></li>
+                    <li><a href="https://brianbalfour.com/essays/product-channel-fit" target="_blank">Product-Channel Fit: Product Channel Fit Will Make or Break Your Growth Strategy (Brian Balfour)</a></li>
+                    <li><a href="https://brianbalfour.com/essays/channel-model-fit-for-user-acquisition" target="_blank">Channel-Model Fit: Get Out of the ARPU-CAC Danger Zone with Channel Model Fit (Brian Balfour)</a></li>
+                    <li><a href="https://brianbalfour.com/essays/model-market-fit-threshold-for-growth" target="_blank">Model-Market Fit: The Model Market Fit Threshold & What it Means for Your Growth Strategy (Brian Balfour)</a></li>
+                    <li><a href="https://brianbalfour.com/essays/how-the-four-fits-work-together" target="_blank">How The Four Fits Work Together: Why Most Companies Fail At Moving Up or Down Market (Brian Balfour)</a></li>
+                    <li><a href="https://brianbalfour.com/essays/hubspot-growth-framework-100m" target="_blank">A Case Study On HubSpot.com For How The Four Fits Work Together (Brian Balfour)</a></li>
+                </ul>
+
+                <h2 class="subtitle is-4">Lesson 5: User Thinking</h2>
+                <ul>
+                    <li><a href="https://www.youtube.com/watch?v=RR9PnPr529k" target="_blank">A 30 Mins Summary on How to Build Habit-Forming Products Using The Hook Model and BJ Fogg’s Behaviour Model (Video)</a></li>
+                    <li><a href="https://drive.google.com/file/d/0B27e0z0T2hi2NmI5S0tqdWlwWHk2RiNNTWFMUVBxWEdSN1VF/view?usp=sharing" target="_blank">A workbook on the Hooked Model with exercises on how to apply it (Workbook)</a></li>
+                    <li><a href="https://medium.com/behavior-design/the-secret-behind-alexas-success-31880473199c" target="_blank">A case study on Behaviour and Habit-Forming Design: How Amazon’s Alexa design changes our behaviour (Article)</a></li>
+                    <li><a href="https://drive.google.com/file/d/1jHrV9Ur8YrG-i3VDA8_rw6NCMtCB97LO/view?usp=sharing" target="_blank">A Behavior Model for Persuasive Design (Paper)</a></li>
+                </ul>
+
+                <h2 class="subtitle is-4">Lesson 6: Project Thinking</h2>
+                <ul>
+                    <li><a href="http://agilemanifesto.org/" target="_blank">The Manifesto for Agile Software Development</a></li>
+                    <li><a href="https://www.coursera.org/learn/project-planning" target="_blank">Initiating and Planning Projects (Coursera)</a></li>
+                    <li><a href="https://www.coursera.org/learn/schedule-projects" target="_blank">Budgeting and Scheduling Projects (Coursera)</a></li>
+                </ul>
+
+                <p>If you have any questions about our sources or would like more information, please <a href="mailto:growthclinic@gmail.com">contact us</a>.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer has-background-dark has-text-white-ter">
+        <div class="container">
+            <div class="columns">
+                <div class="column">
+                    <figure class="image is-128x128">
+                        <img src="/web/img/gc-logo.svg" alt="Growth Clinic Logo">
+                    </figure>
+                    <p>Empowering individuals and communities with the skills to grow their career, business and finance.</p>
+                    <div class="mt-4">
+                        <p class="is-size-6">Subscribe to our newsletter to stay updated. We don't spam.</p>
+                        <button class="button is-success mt-2">Subscribe</button>
+                    </div>
+                </div>
+                <div class="column">
+                    <h6 class="title is-6 has-text-white">Company</h6>
+                    <ul>
+                        <li><a href="mailto:growthclinic@gmail.com" class="has-text-white-ter">Contact</a></li>
+                        <li><a href="#pricingSection" class="has-text-white-ter">Pricing</a></li>
+                        <li><a href="/web/references.html" class="has-text-white-ter">Courses References and Credits</a></li>
+                    </ul>
+                </div>
+                <div class="column">
+                    <h6 class="title is-6 has-text-white">Follow us</h6>
+                    <ul>
+                        <li><a href="https://linkedin.com/company/growthclinic" class="has-text-white-ter">LinkedIn</a></li>
+                        <li><a href="https://twitter.com/growthclinic" class="has-text-white-ter">Twitter</a></li>
+                        <li><a href="https://instagram.com/growthclinic" class="has-text-white-ter">Instagram</a></li>
+                    </ul>
+                </div>
+                <div class="column">
+                    <h6 class="title is-6 has-text-white">Connect</h6>
+                    <ul>
+                        <li><a href="/web/link-telegram.html" class="has-text-white-ter">Link Telegram Account</a></li>
+                        <li><a href="https://t.me/gclearnbot" class="has-text-white-ter">Access via Telegram</a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // Get all "navbar-burger" elements
+            const $navbarBurgers = Array.prototype.slice.call(document.querySelectorAll('.navbar-burger'), 0);
+
+            // Add a click event on each of them
+            $navbarBurgers.forEach(el => {
+                el.addEventListener('click', () => {
+                    // Get the target from the "data-target" attribute
+                    const target = el.dataset.target;
+                    const $target = document.getElementById(target);
+
+                    // Toggle the "is-active" class on both the "navbar-burger" and the "navbar-menu"
+                    el.classList.toggle('is-active');
+                    $target.classList.toggle('is-active');
+                });
+            });
+        });
+    </script>
+
+</body>
+</html>
