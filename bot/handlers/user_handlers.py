@@ -68,7 +68,16 @@ async def save_email(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     # Save email to user profile
     await UserManager.update_user_info(chat_id, {"email": email})
-    await context.bot.send_message(chat_id, f"✅ Your email {email} has been linked successfully!")
+    
+    # Confirm email is actually saved
+    updated_user = await UserManager.get_user_info(chat_id)
+
+    if updated_user and updated_user.get("email") == email:
+        logger.info(f"User {chat_id} successfully updated with email {email}")
+        await context.bot.send_message(chat_id, f"✅ Your email {email} has been linked successfully!")
+    else:
+        logger.error(f"Failed to save email {email} for user {chat_id}")
+        await context.bot.send_message(chat_id, "❌ There was an error saving your email. Please try again.")
 
 async def initialize_new_user(user_id: str, email: str = None, platform: str = 'telegram', user_data: dict = None) -> dict:
     """Initialize a new user with standard defaults."""
@@ -189,19 +198,19 @@ async def handle_email(update: Update, context: ContextTypes.DEFAULT_TYPE) -> in
     if not re.match(EMAIL_REGEX, email):
         logger.info(f"Invalid email format from user {user.id}")
         await update.message.reply_text(
-            "Please provide a valid email address.",
+            "❌ Please provide a valid email address.",
             reply_markup=ForceReply(selective=True)
         )
         return AWAITING_EMAIL
-    
+
     try:
-        # Check for existing user
+        # Check for existing user by email
         existing_user = await UserManager.get_user_by_email(email)
         logger.info(f"Existing user check for email {email}: {existing_user is not None}")
         
         if existing_user:
+            # Link Telegram ID to the existing email
             logger.info(f"Linking existing user {user.id} with email {email}")
-            # Link Telegram account to existing user
             link_success = await UserManager.link_telegram_account(
                 email=email,
                 telegram_id=user.id,
@@ -212,24 +221,28 @@ async def handle_email(update: Update, context: ContextTypes.DEFAULT_TYPE) -> in
                     "language_code": user.language_code
                 }
             )
-            
-            if not link_success:
-                logger.error(f"Failed to link account for user {user.id}")
-                raise Exception("Account linking failed")
-            
-            logger.info(f"Successfully linked user {user.id} with email {email}")
-            await update.message.reply_text(
-                f"✅ Your Telegram account has been successfully linked to {email}.\n"
-                "Your progress will be synced across platforms.\n\n"
-                "Let's begin your learning journey! 🌱"
-            )
+
+            if link_success:
+                logger.info(f"Successfully linked Telegram ID {user.id} to email {email}")
+                await update.message.reply_text(
+                    f"✅ Your Telegram account has been linked to {email}.\n"
+                    "Your progress is now synced across platforms.\n\n"
+                    "Let's begin your learning journey! 🌱"
+                )
+            else:
+                logger.error(f"Failed to link Telegram ID {user.id} to email {email}")
+                await update.message.reply_text(
+                    "❌ There was an issue linking your email. Please try again."
+                )
+                return AWAITING_EMAIL
+
         else:
+            # Create new user entry
             logger.info(f"Creating new user {user.id} with email {email}")
-            # Create new user
             user_data = {
-                "user_id": str(user.id),  # Ensure user_id is string
+                "user_id": str(user.id),
                 "email": email,
-                "telegram_id": user.id,  # Add explicit telegram_id field
+                "telegram_id": user.id,
                 "username": user.username,
                 "first_name": user.first_name,
                 "last_name": user.last_name,
@@ -237,28 +250,32 @@ async def handle_email(update: Update, context: ContextTypes.DEFAULT_TYPE) -> in
                 "platform": "telegram",
                 "joined_date": datetime.now(timezone.utc).isoformat()
             }
-            
+
             save_success = await UserManager.save_user_info(user_data)
-            if not save_success:
+            if save_success:
+                logger.info(f"Successfully created new user {user.id} with email {email}")
+                await update.message.reply_text(
+                    f"✅ Your account has been created and email {email} saved.\n"
+                    "Let's begin your learning journey! 🌱"
+                )
+            else:
                 logger.error(f"Failed to save user data for {user.id}")
-                raise Exception("Failed to save user data")
-            
-            logger.info(f"Successfully created new user {user.id} with email {email}")
-            await update.message.reply_text(
-                f"✅ Your account has been created and email {email} saved.\n"
-                "Let's begin your learning journey! 🌱"
-            )
-        
+                await update.message.reply_text(
+                    "❌ There was an error saving your email. Please try again."
+                )
+                return AWAITING_EMAIL
+
         # Show lesson menu and end conversation
         await show_lesson_menu(update, context)
         return ConversationHandler.END
-        
+
     except Exception as e:
         logger.error(f"Error handling email for user {user.id}: {e}", exc_info=True)
         await update.message.reply_text(
-            "Sorry, there was an error processing your email. Please try again later."
+            "❌ Sorry, there was an error processing your email. Please try again later."
         )
         return AWAITING_EMAIL
+
     
 async def show_lesson_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Show the main lesson menu to users with enhanced error handling"""
