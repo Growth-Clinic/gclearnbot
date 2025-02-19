@@ -515,29 +515,32 @@ class SemanticAnalyzer:
 
 
 class FeedbackCache:
-    """Manages caching of user responses and feedback"""
+    """Manages caching of user responses and feedback intelligently"""
     _cache = {}
     _cache_timeout = timedelta(minutes=30)
 
     @classmethod
-    def get_cached_feedback(cls, user_id: int, lesson_id: str) -> Optional[str]:
-        """Get cached feedback if available and not expired"""
+    def get_cached_feedback(cls, user_id: int, lesson_id: str, response_text: str) -> Optional[str]:
+        """Only return cached feedback if the response hasn't changed"""
         cache_key = f"{user_id}_{lesson_id}"
-        if cache_key in cls._cache:
-            cached_data = cls._cache[cache_key]
-            if datetime.now() - cached_data['timestamp'] < cls._cache_timeout:
-                return cached_data['feedback']
+        cached_data = cls._cache.get(cache_key)
+
+        if cached_data:
+            if cached_data["response_text"] == response_text:  # Only use cache if response is identical
+                return cached_data["feedback"]
             else:
-                del cls._cache[cache_key]
+                del cls._cache[cache_key]  # Invalidate old feedback if the response changes
+
         return None
 
     @classmethod
-    def cache_feedback(cls, user_id: int, lesson_id: str, feedback: str) -> None:
-        """Cache feedback for a user and lesson"""
+    def cache_feedback(cls, user_id: int, lesson_id: str, response_text: str, feedback: str) -> None:
+        """Cache feedback but only for the same response"""
         cache_key = f"{user_id}_{lesson_id}"
         cls._cache[cache_key] = {
-            'feedback': feedback,
-            'timestamp': datetime.now()
+            "feedback": feedback,
+            "response_text": response_text,  # Store response to detect changes
+            "timestamp": datetime.now()
         }
 
 # Add new class for skill tracking configuration
