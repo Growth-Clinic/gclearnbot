@@ -185,6 +185,7 @@ async def handle_email(update: Update, context: ContextTypes.DEFAULT_TYPE) -> in
     user = update.message.from_user
     logger.info(f"Handling email submission for user {user.id}: {email}")
     
+    # Validate email format
     if not re.match(EMAIL_REGEX, email):
         logger.info(f"Invalid email format from user {user.id}")
         await update.message.reply_text(
@@ -194,7 +195,9 @@ async def handle_email(update: Update, context: ContextTypes.DEFAULT_TYPE) -> in
         return AWAITING_EMAIL
     
     try:
+        # Check for existing user
         existing_user = await UserManager.get_user_by_email(email)
+        logger.info(f"Existing user check for email {email}: {existing_user is not None}")
         
         if existing_user:
             logger.info(f"Linking existing user {user.id} with email {email}")
@@ -213,7 +216,7 @@ async def handle_email(update: Update, context: ContextTypes.DEFAULT_TYPE) -> in
             if not link_success:
                 logger.error(f"Failed to link account for user {user.id}")
                 raise Exception("Account linking failed")
-                
+            
             logger.info(f"Successfully linked user {user.id} with email {email}")
             await update.message.reply_text(
                 f"✅ Your Telegram account has been successfully linked to {email}.\n"
@@ -222,20 +225,25 @@ async def handle_email(update: Update, context: ContextTypes.DEFAULT_TYPE) -> in
             )
         else:
             logger.info(f"Creating new user {user.id} with email {email}")
-            # Create new user with standard defaults
-            user_data = await initialize_new_user(
-                str(uuid4()),
-                email=email,
-                platform='telegram',
-                user_data=user.__dict__
-            )
+            # Create new user
+            user_data = {
+                "user_id": str(user.id),  # Ensure user_id is string
+                "email": email,
+                "telegram_id": user.id,  # Add explicit telegram_id field
+                "username": user.username,
+                "first_name": user.first_name,
+                "last_name": user.last_name,
+                "language_code": user.language_code,
+                "platform": "telegram",
+                "joined_date": datetime.now(timezone.utc).isoformat()
+            }
             
             save_success = await UserManager.save_user_info(user_data)
             if not save_success:
                 logger.error(f"Failed to save user data for {user.id}")
                 raise Exception("Failed to save user data")
             
-            logger.info(f"Successfully created new user {user.id} with email {email}")    
+            logger.info(f"Successfully created new user {user.id} with email {email}")
             await update.message.reply_text(
                 f"✅ Your account has been created and email {email} saved.\n"
                 "Let's begin your learning journey! 🌱"
@@ -246,7 +254,7 @@ async def handle_email(update: Update, context: ContextTypes.DEFAULT_TYPE) -> in
         return ConversationHandler.END
         
     except Exception as e:
-        logger.error(f"Error handling email for user {user.id}: {e}")
+        logger.error(f"Error handling email for user {user.id}: {e}", exc_info=True)
         await update.message.reply_text(
             "Sorry, there was an error processing your email. Please try again later."
         )
