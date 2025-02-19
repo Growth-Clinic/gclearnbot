@@ -118,6 +118,7 @@ Welcome back to Growth Clinic! 🌱
 Ready to continue your learning journey? Choose your path:
         """
         await show_lesson_menu(update, context)
+        return ConversationHandler.END
     else:
         # Ask for email
         await update.message.reply_text(
@@ -130,7 +131,7 @@ Ready to continue your learning journey? Choose your path:
         return AWAITING_EMAIL
     
 async def handle_email(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
-    """Handle email submission from user with improved error handling."""
+    """Handle email submission from user with improved error handling and clear feedback."""
     email = update.message.text.strip().lower()
     user = update.message.from_user
     
@@ -156,9 +157,11 @@ async def handle_email(update: Update, context: ContextTypes.DEFAULT_TYPE) -> in
                     "language_code": user.language_code
                 }
             )
+            logger.info(f"User linked: {user.id} with email {email}")
             await update.message.reply_text(
-                f"Welcome back! Your Telegram account has been linked to {email}. "
-                "Your progress will be synced across platforms."
+                f"✅ Your Telegram account has been successfully linked to {email}.\n"
+                "Your progress will be synced across platforms.\n\n"
+                "Let's begin your learning journey! 🌱"
             )
         else:
             # Create new user with standard defaults
@@ -172,12 +175,14 @@ async def handle_email(update: Update, context: ContextTypes.DEFAULT_TYPE) -> in
             success = await UserManager.save_user_info(user_data)
             if not success:
                 raise Exception("Failed to save user data")
-                
+            
+            logger.info(f"User info created: {user.id} with email {email}")    
             await update.message.reply_text(
-                f"Thanks! Your account has been created with {email}."
+                f"✅ Your account has been created and email {email} saved.\n"
+                "Let's begin your learning journey! 🌱"
             )
         
-        # Always show lesson menu after successful email handling
+        # Show lesson menu and end conversation
         await show_lesson_menu(update, context)
         return ConversationHandler.END
         

@@ -65,9 +65,16 @@ async def initialize_application() -> Application:
         conv_handler = ConversationHandler(
             entry_points=[CommandHandler("start", start)],
             states={
-                AWAITING_EMAIL: [MessageHandler(filters.TEXT & ~filters.COMMAND, handle_email)]
+                AWAITING_EMAIL: [
+                    MessageHandler(filters.TEXT & ~filters.COMMAND, handle_email)
+                ]
             },
-            fallbacks=[CommandHandler("cancel", cancel_email_collection)]
+            fallbacks=[
+                CommandHandler("cancel", cancel_email_collection),
+                CommandHandler("start", start)  # Allow restart
+            ],
+            allow_reentry=True,  # Allow conversation to be restarted
+            name="email_collection"  # Add name for debugging
         )
         application.add_handler(conv_handler)
         
