@@ -449,3 +449,19 @@ app.js:569 Found keywords: []
 So I am done with adding better analysis of user's response and set up dynamic templates to send pseudo-personal feedback to users. For the next part of the app, I'd like to improve the user progress dashboard with the extra data we have, and then do an admin dashboard to see user details. 
 
 But I'll wait on those. Instead I'll start working on pushing out the app for people to test and collect feedback. Then based off the feedback, I'll launch proper, maybe use my custom domain and push everything out well 🤞🏾
+
+
+
+
+## 19 Feb 2025
+
+### 7:44 PM
+I have finished most of the edits I want to do on the web app, I tried working to link the Telegram to the web app, but that is a lot more work, especially around ensuring progress and journals are synced. Since I want to focus on the web app, I'll pause and ignore all work on other platforms for now.
+
+Next for me is to get the app into people's hands and collect feedback, tweak and collect some more. Then when I have gotten 10 unique feedback from 10 different people, I think that should be enough to launch the app more widely. I am scared if it is enough though, if the learning material on it is enough, but we'll see.
+
+While feedback is ongoing, I'll start work on the cv, cover letter and job personaliser/auto applier I designed on deepseek, so that it can serve as a campaign to pull in users to the learning app, where there'd be a clear call-out somewhere saying if they want to improve their skills, they can use the learning app to get more skills or something like that.
+
+Either I do that, or I look for an easy app to build that will make me passive money. I think that may be a better idea.
+
+For now though, let me take a break, eat and play, then I'll see what's next. But I'll do a quick research on quick app ideas first before login off.
