@@ -204,12 +204,11 @@ async def handle_email(update: Update, context: ContextTypes.DEFAULT_TYPE) -> in
         return AWAITING_EMAIL
 
     try:
-        # Check for existing user by email
+        # Check if a user with this email already exists
         existing_user = await UserManager.get_user_by_email(email)
         logger.info(f"Existing user check for email {email}: {existing_user is not None}")
         
         if existing_user:
-            # Link Telegram ID to the existing email
             logger.info(f"Linking existing user {user.id} with email {email}")
             link_success = await UserManager.link_telegram_account(
                 email=email,
@@ -221,7 +220,6 @@ async def handle_email(update: Update, context: ContextTypes.DEFAULT_TYPE) -> in
                     "language_code": user.language_code
                 }
             )
-
             if link_success:
                 logger.info(f"Successfully linked Telegram ID {user.id} to email {email}")
                 await update.message.reply_text(
@@ -235,14 +233,12 @@ async def handle_email(update: Update, context: ContextTypes.DEFAULT_TYPE) -> in
                     "❌ There was an issue linking your email. Please try again."
                 )
                 return AWAITING_EMAIL
-
         else:
-            # Create new user entry
             logger.info(f"Creating new user {user.id} with email {email}")
             user_data = {
-                "user_id": str(user.id),  # Ensure user_id is string
+                "user_id": str(user.id),
                 "email": email,
-                "telegram_id": user.id,  # Explicitly set telegram_id
+                "telegram_id": user.id,  # Ensure telegram_id is set for new users
                 "username": user.username,
                 "first_name": user.first_name,
                 "last_name": user.last_name,
@@ -262,7 +258,7 @@ async def handle_email(update: Update, context: ContextTypes.DEFAULT_TYPE) -> in
                 "Let's begin your learning journey! 🌱"
             )
         
-        # Confirm the saved user data
+        # Confirm that the user now has both email and telegram_id
         updated_user = await UserManager.get_user_info(user.id)
         if updated_user and updated_user.get("email") == email and updated_user.get("telegram_id") == user.id:
             logger.info(f"User {user.id} successfully updated with email {email} and telegram_id {user.id}")
@@ -273,7 +269,6 @@ async def handle_email(update: Update, context: ContextTypes.DEFAULT_TYPE) -> in
             )
             return AWAITING_EMAIL
 
-        # Show lesson menu and end conversation
         await show_lesson_menu(update, context)
         return ConversationHandler.END
         
@@ -283,6 +278,7 @@ async def handle_email(update: Update, context: ContextTypes.DEFAULT_TYPE) -> in
             "❌ Sorry, there was an error processing your email. Please try again later."
         )
         return AWAITING_EMAIL
+
 
     
 async def show_lesson_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):

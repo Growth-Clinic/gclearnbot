@@ -313,7 +313,7 @@ class UserManager:
             else:
                 logger.error(f"Failed to link Telegram account {telegram_id} to email {email}")
             return success
-            
+
         except Exception as e:
             logger.error(f"Error linking Telegram account: {e}")
             return False
@@ -322,14 +322,14 @@ class UserManager:
     async def save_user_info(user, platform: str = 'telegram', email: str = None) -> Dict[str, Any]:
         """Save comprehensive user information when they start using the bot or link their email."""
         try:
-            # Support both dict and object types
+            # Support both object and dictionary inputs
             if isinstance(user, dict):
                 user_id = str(user.get("user_id"))
                 username = user.get("username", "")
                 first_name = user.get("first_name", "")
                 last_name = user.get("last_name", "")
                 language_code = user.get("language_code", "en")
-                telegram_id = user.get("telegram_id")  # May be provided in a dict
+                telegram_id = user.get("telegram_id")  # May already be present in dict
             else:
                 user_id = str(user.id)
                 username = user.username if platform == 'telegram' else user.get('name', '')
@@ -338,6 +338,7 @@ class UserManager:
                 language_code = user.language_code or "en"
                 telegram_id = user.id if platform == 'telegram' else None
 
+            # Build user_data including telegram_id if available
             user_data = {
                 "user_id": user_id,
                 "username": username,
@@ -360,15 +361,18 @@ class UserManager:
                     "notification_enabled": True
                 }
             }
-            # If telegram_id exists, include it
             if telegram_id:
                 user_data["telegram_id"] = telegram_id
 
-            # If the user provided an email, add it to their profile
+            # If an email is provided, add it along with chat_id
             update_fields = {"$set": user_data}
             if email:
-                update_fields["$set"]["email"] = email  # Store email
-                update_fields["$set"]["chat_id"] = user_id  # Ensure chat_id is saved
+                update_fields["$set"]["email"] = email
+
+                if isinstance(user, dict) and "chat_id" in user:
+                    update_fields["$set"]["chat_id"] = user["chat_id"]
+                elif platform == 'telegram':
+                    update_fields["$set"]["chat_id"] = user_id
 
             if not DataValidator.validate_user_data(user_data):
                 logger.error(f"Invalid user data for user {user_id}")
@@ -387,7 +391,7 @@ class UserManager:
             return user_data
 
         except OperationFailure as e:
-            logger.error(f"Database error saving user {user_id}: {e}")
+            logger.error(f"Database error saving user {user.id}: {e}")
             raise
 
     @staticmethod
